@@ -1,0 +1,12 @@
+{
+  "qualysUsername": {
+    "type": "string"
+  },
+  "qualysPassword": {
+    "type": "string",
+    "mask": true
+  },
+  "qualysApiUrl": {
+    "type": "string"
+  }
+}
