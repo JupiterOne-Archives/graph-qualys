@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.env
+.j1-integration
+.eslintcache
+temp/
+.http-recordings/
