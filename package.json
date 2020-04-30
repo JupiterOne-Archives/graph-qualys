@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Qualys integration for JupiterOne",
   "license": "MPL-2.0",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "j1-integration collect",
     "lint": "eslint . --cache --fix --ext .ts,.tsx",
@@ -11,7 +14,8 @@
     "test": "jest --passWithNoTests",
     "test:ci": "yarn lint && yarn type-check && yarn test",
     "prebuild": "yarn test:ci",
-    "build": "tsc -p tsconfig.dist.json --declaration"
+    "build": "tsc -p tsconfig.dist.json --declaration",
+    "prepublishOnly": "yarn build"
   },
   "dependencies": {
     "@jupiterone/integration-sdk": "^0.8.1",
