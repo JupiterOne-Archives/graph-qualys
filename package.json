@@ -6,6 +6,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "j1-integration collect",
     "lint": "eslint . --cache --fix --ext .ts,.tsx",
