@@ -1,11 +1,14 @@
 {
   "name": "@jupiterone/graph-qualys",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Qualys integration for JupiterOne",
   "license": "MPL-2.0",
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "j1-integration collect",
     "lint": "eslint . --cache --fix --ext .ts,.tsx",
