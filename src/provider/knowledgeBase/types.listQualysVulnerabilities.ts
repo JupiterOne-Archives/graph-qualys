@@ -1,8 +1,18 @@
 import { PossibleArray, ISODateString } from '../../types';
 
-export interface ListQualysVulnerabilitiesReply {
+export type QualysVulnerabilitiesErrorResponse = {
+  "SIMPLE_RETURN": {
+    "RESPONSE": {
+      "DATETIME": ISODateString,
+      "CODE": number,
+      "TEXT": string;
+    }
+  }
+};
+
+export type ListQualysVulnerabilitiesReply = {
   KNOWLEDGE_BASE_VULN_LIST_OUTPUT?: KnowledgeBaseVulnListOutput;
-}
+};
 
 export interface KnowledgeBaseVulnListOutput {
   RESPONSE?: Response;
