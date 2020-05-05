@@ -1,18 +1,7 @@
 # Development
 
-Add details here to give a brief overview of how to work with the provider APIs.
-Please reference any SDKs or API docs used to help build the integration here.
-
-## Prerequisites
-
-Supply details about software or tooling (like maybe Docker or Terraform) that
-is needed for development here.
-
-Please supply references to documentation that details how to install those
-dependencies here.
-
-Tools like Node.js and NPM are already covered in the [README](../README.md) so
-don't bother documenting that here.
+The Qualys integration uses various endpoints within the collection of
+Qualys APIs to ingest data.
 
 ## Provider account setup
 
@@ -27,6 +16,50 @@ You can then find your API URL from the **Help** -> **About** link in the web
 app.
 
 ![API URL from About Page](./images/qualys-help-about-api-url.png)
+
+## Configure your .env
+
+By default, a Qualys trial does not allow access to knowledge base so
+a fake Qualys knowledge base is provided as a tool in this integration.
+
+Here's the recommended `.env` for this project:
+
+```ini
+QUALYS_USERNAME=
+QUALYS_PASSWORD=
+QUALYS_API_URL=https://qualysapi.qg3.apps.qualys.com
+
+# Specify the port that will be used by fake Qualys Knowledge Base server
+FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT=8080
+
+# Use a fake Qualysis Knowldge Base API server during development.
+#
+# Start the server with following command:
+#
+# yarn start:fake-knowledge-base-server
+#
+QUALYS_KNOWLEDGE_BASE_API_URL=http://localhost:${FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT}
+
+# If you want to log all request and responses then change RECORD_HTTP to true
+RECORD_HTTP=false
+
+JUPITERONE_API_KEY=
+```
+
+## Running integration
+
+First, start fake Qualys Knowledge Base server if your license does not
+allow knowledge base requests.
+
+```sh
+yarn start:fake-knowledge-base-server
+```
+
+Next, run the integration:
+
+```sh
+yarn start
+```
 
 ## Authentication
 

@@ -18,7 +18,8 @@
     "test:ci": "yarn lint && yarn type-check && yarn test",
     "prebuild": "yarn test:ci",
     "build": "tsc -p tsconfig.dist.json --declaration",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "start:fake-knowledge-base-server": "./tools/bin/run-command fake-knowledge-base"
   },
   "dependencies": {
     "@jupiterone/integration-sdk": "^0.16.2",
