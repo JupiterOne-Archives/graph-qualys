@@ -16,6 +16,7 @@ export class QualysKnowledgeBaseClient {
     const buildUrl = (startIndex: number) => {
       const ids = options.qidList.slice(startIndex, startIndex + options.limit);
       return this.qualysClient.buildRequestUrl({
+        apiUrl: process.env.QUALYS_KNOWLEDGE_BASE_API_URL,
         path: '/api/2.0/fo/knowledge_base/vuln',
         query: {
           action: 'list',

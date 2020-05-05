@@ -24,39 +24,49 @@ export default async function collectWebApps(
   const webAppScanIdSet = new Set<number>();
   const webAppWork: PromiseFactory<void>[] = [];
 
+  let pageIndex = 0;
+
   do {
     logger.info('Fetching page of web apps...');
 
-    const result = await paginator.nextPage();
+    const {responseData} = await paginator.nextPage();
 
-    const webApps = toArray(result.responseData.ServiceResponse?.data?.WebApp);
+    const webApps = toArray(responseData.ServiceResponse?.data?.WebApp);
 
-    logger.info(
-      {
-        numWebApps: webApps.length,
-      },
-      'Fetched page of web apps',
-    );
+    if (webApps.length) {
+      logger.info(
+        {
+          numWebApps: webApps.length,
+        },
+        'Fetched page of web apps',
+      );
 
-    await context.jobState.addEntities(
-      webApps.map((webApp) => {
-        webAppWork.push(async () => {
-          const {
-            responseData,
-          } = await qualysClient.webApplicationScanning.fetchWebApp({
-            webAppId: webApp.id!,
+      await context.jobState.addEntities(
+        webApps.map((webApp) => {
+          webAppWork.push(async () => {
+            const {
+              responseData,
+            } = await qualysClient.webApplicationScanning.fetchWebApp({
+              webAppId: webApp.id!,
+            });
+
+            const lastScanId =
+              responseData.ServiceResponse?.data?.WebApp?.lastScan?.id;
+            if (lastScanId !== undefined) {
+              webAppScanIdSet.add(lastScanId);
+            }
           });
 
-          const lastScanId =
-            responseData.ServiceResponse?.data?.WebApp?.lastScan?.id;
-          if (lastScanId !== undefined) {
-            webAppScanIdSet.add(lastScanId);
-          }
-        });
+          return convertWebAppToEntity({ webApp });
+        }),
+      );
+    } else if (pageIndex === 0) {
+      logger.info({
+        responseData
+      }, 'No data in listWebApps');
+    }
 
-        return convertWebAppToEntity({ webApp });
-      }),
-    );
+    pageIndex++;
   } while (paginator.hasNextPage());
 
   await pAll(webAppWork, {

@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+require('ts-node/register/transpile-only');
+const dotenvExpand = require('dotenv-expand')
+dotenvExpand(require('dotenv').config());
+
+const path = require('path');
+
+const commandName = process.argv[2];
+
+let modulePath;
+
+const commandModulePath = path.normalize(path.join(__dirname, '../commands', commandName));
+try {
+  modulePath = require.resolve(commandModulePath);
+} catch(err) {
+  throw new Error(`Unrecognized command: ${commandName} (could not load ${commandModulePath})`);
+}
+
+const { run } = require(modulePath);
+
+run().catch(err => {
+  console.error(`Error running command. ${err.stack || err.toString()}`)
+  process.exit(1);
+});

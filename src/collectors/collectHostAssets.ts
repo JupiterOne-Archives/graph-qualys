@@ -19,21 +19,32 @@ export default async function collectHostAssets(
   const hostAssetsPaginator = qualysClient.assetManagement.listHostAssets({
     limit: 10,
   });
+
+  let pageIndex = 0;
+
   do {
     const { responseData } = await hostAssetsPaginator.nextPage();
     const hostAssets = toArray(responseData?.ServiceResponse?.data?.HostAsset);
     const hostEntities: HostEntity[] = [];
-    for (const hostAsset of hostAssets) {
-      const qwebHostId = hostAsset.qwebHostId;
-      if (qwebHostId) {
-        const hostEntity = convertHostAssetToEntity({
-          hostAsset,
-        });
-        hostAssetIdSet.add(hostEntity.hostId);
-        hostEntities.push(hostEntity);
+    if (hostAssets.length) {
+      for (const hostAsset of hostAssets) {
+        const qwebHostId = hostAsset.qwebHostId;
+        if (qwebHostId) {
+          const hostEntity = convertHostAssetToEntity({
+            hostAsset,
+          });
+          hostAssetIdSet.add(hostEntity.hostId);
+          hostEntities.push(hostEntity);
+        }
       }
+      await context.jobState.addEntities(hostEntities);
+    } else if (pageIndex === 0) {
+      logger.info({
+        responseData
+      }, 'No data in listHostAssets');
     }
-    await context.jobState.addEntities(hostEntities);
+
+    pageIndex++;
   } while (hostAssetsPaginator.hasNextPage());
 
   logger.info('Finished collecting host assets');

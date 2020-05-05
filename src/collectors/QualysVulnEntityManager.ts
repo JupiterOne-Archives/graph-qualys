@@ -1,17 +1,18 @@
 import {
   IntegrationStepExecutionContext,
-  createIntegrationEntity,
 } from '@jupiterone/integration-sdk';
 import { QualysVulnerabilityEntity } from '../converters/types';
 import QualysClient from '../provider/QualysClient';
 import toArray from '../util/toArray';
 import { convertQualysVulnerabilityToEntity } from '../converters';
+import { QualysVulnerabilitiesErrorResponse } from '../provider/knowledgeBase/types.listQualysVulnerabilities';
 
 export default class QualysVulnEntityManager {
   context: IntegrationStepExecutionContext;
   unfetchedQidSet = new Set<number>();
   fetchedVulnMap = new Map<number, QualysVulnerabilityEntity>();
   qualysClient: QualysClient;
+  fetchNotAllowed = false;
 
   constructor(options: {
     context: IntegrationStepExecutionContext;
@@ -23,7 +24,7 @@ export default class QualysVulnEntityManager {
 
   addQID(qid: number) {
     // safety check because we're dealing with some inconsistent APIs
-    if (qid == null) {
+    if (qid == null || this.fetchNotAllowed) {
       return;
     }
 
@@ -33,7 +34,7 @@ export default class QualysVulnEntityManager {
   }
 
   private async fetchMissingVulnerabilities() {
-    if (!this.unfetchedQidSet.size) {
+    if (!this.unfetchedQidSet.size || this.fetchNotAllowed) {
       return;
     }
 
@@ -54,6 +55,24 @@ export default class QualysVulnEntityManager {
 
     do {
       const { responseData } = await qualysVulnPaginator.nextPage();
+
+      const errorResponse = (responseData as Partial<QualysVulnerabilitiesErrorResponse>);
+      if (errorResponse.SIMPLE_RETURN?.RESPONSE?.CODE === 2010) {
+        // Check for reply that looks like this:
+        // {
+        //   "SIMPLE_RETURN": {
+        //     "RESPONSE": {
+        //       "DATETIME": "2020-05-01T01:10:13Z",
+        //       "CODE": 2010,
+        //       "TEXT": "You are not allowed to download the KnowledgeBase, please contact your sales representative for more information."
+        //     }
+        //   }
+        // }
+        this.context.logger.error(errorResponse.SIMPLE_RETURN.RESPONSE.TEXT || 'Unable to fetch from knowledge base (will not try again)');
+        this.fetchNotAllowed = true;
+        break;
+      }
+
       const vulnList = toArray(
         responseData.KNOWLEDGE_BASE_VULN_LIST_OUTPUT?.RESPONSE?.VULN_LIST?.VULN,
       );
@@ -87,24 +106,8 @@ export default class QualysVulnEntityManager {
     return this.fetchedVulnMap.get(qid);
   }
 
-  async saveVulnerabilities() {
+  async getCollectedVulnerabilities() {
     await this.fetchMissingVulnerabilities();
-
-    const entities = [...this.fetchedVulnMap.values()];
-
-    if (entities.length === 0) {
-      return;
-    }
-
-    await this.context.jobState.addEntities(
-      entities.map((entity) => {
-        return createIntegrationEntity({
-          entityData: {
-            source: {},
-            assign: entity,
-          },
-        });
-      }),
-    );
+    return [...this.fetchedVulnMap.values()];
   }
 }

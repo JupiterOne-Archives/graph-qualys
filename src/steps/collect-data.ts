@@ -15,6 +15,7 @@ import collectHostAssets from '../collectors/collectHostAssets';
 import collectHostDetections from '../collectors/collectHostDetections';
 import collectWebAppScans from '../collectors/collectWebAppScans';
 import collectWebApps from '../collectors/collectWebApps';
+import collectVulnerabilities from '../collectors/collectVulnerabilities';
 import QualysVulnEntityManager from '../collectors/QualysVulnEntityManager';
 import { QualysHttpRecorder } from '../provider/QualysHttpRecorder';
 
@@ -80,7 +81,9 @@ const step: IntegrationStep = {
         hostAssetIdSet,
       });
 
-      await qualysVulnEntityManager.saveVulnerabilities();
+      await collectVulnerabilities(context, {
+        qualysVulnEntityManager
+      });
     } finally {
       httpRecorder?.close();
     }

@@ -37,76 +37,86 @@ export default async function collectHostDetections(
     },
   );
 
+  let pageIndex = 0;
+
   do {
     const { responseData } = await hostDetectionsPaginator.nextPage();
     const hosts = toArray(
       responseData.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
     );
 
-    for (const host of hosts) {
-      const hostId = host.ID!;
-      let hostKey: string;
+    if (hosts.length) {
+      for (const host of hosts) {
+        const hostId = host.ID!;
+        let hostKey: string;
 
-      if (hostAssetIdSet.has(hostId)) {
-        hostKey = buildHostKey({
-          qwebHostId: hostId,
-        });
-      } else {
-        const hostEntity = convertHostToEntity({
-          host,
-        });
-        context.jobState.addEntities([hostEntity]);
-        hostKey = hostEntity._key;
+        if (hostAssetIdSet.has(hostId)) {
+          hostKey = buildHostKey({
+            qwebHostId: hostId,
+          });
+        } else {
+          const hostEntity = convertHostToEntity({
+            host,
+          });
+          context.jobState.addEntities([hostEntity]);
+          hostKey = hostEntity._key;
+        }
+
+        const detections = toArray(host.DETECTION_LIST?.DETECTION);
+        for (const detection of detections) {
+          qualysVulnEntityManager.addQID(detection.QID!);
+        }
+
+        for (const detection of detections) {
+          const vulnFromKnowledgeBase = await qualysVulnEntityManager.getVulnerabilityByQID(
+            detection.QID!,
+          );
+
+          const findingEntity = convertHostDetectionToEntity({
+            detection,
+            hostId,
+            vulnFromKnowledgeBase,
+          });
+
+          // Create the Finding
+          context.jobState.addEntities([findingEntity]);
+
+          // Relate the Host to the Finding
+          const hostHasFindingRelationship = createIntegrationRelationship({
+            fromKey: hostKey,
+            toKey: findingEntity._key,
+            fromType: TYPE_QUALYS_HOST,
+            toType: TYPE_QUALYS_HOST_FINDING,
+            _class: 'HAS',
+          });
+
+          await context.jobState.addRelationships([hostHasFindingRelationship]);
+
+          // Relate the Finding to the Vulnerability
+          const findingIsVulnerabilityRelationship = createIntegrationRelationship(
+            {
+              fromKey: findingEntity._key,
+              toKey: buildQualysVulnKey({
+                qid: detection.QID!,
+              }),
+              fromType: TYPE_QUALYS_HOST_FINDING,
+              toType: TYPE_QUALYS_VULN,
+              _class: 'IS',
+            },
+          );
+
+          await context.jobState.addRelationships([
+            findingIsVulnerabilityRelationship,
+          ]);
+        }
       }
-
-      const detections = toArray(host.DETECTION_LIST?.DETECTION);
-      for (const detection of detections) {
-        qualysVulnEntityManager.addQID(detection.QID!);
-      }
-
-      for (const detection of detections) {
-        const vulnFromKnowledgeBase = await qualysVulnEntityManager.getVulnerabilityByQID(
-          detection.QID!,
-        );
-
-        const findingEntity = convertHostDetectionToEntity({
-          detection,
-          hostId,
-          vulnFromKnowledgeBase,
-        });
-
-        // Create the Finding
-        context.jobState.addEntities([findingEntity]);
-
-        // Relate the Host to the Finding
-        const hostHasFindingRelationship = createIntegrationRelationship({
-          fromKey: hostKey,
-          toKey: findingEntity._key,
-          fromType: TYPE_QUALYS_HOST,
-          toType: TYPE_QUALYS_HOST_FINDING,
-          _class: 'HAS',
-        });
-
-        await context.jobState.addRelationships([hostHasFindingRelationship]);
-
-        // Relate the Finding to the Vulnerability
-        const findingIsVulnerabilityRelationship = createIntegrationRelationship(
-          {
-            fromKey: findingEntity._key,
-            toKey: buildQualysVulnKey({
-              qid: detection.QID!,
-            }),
-            fromType: TYPE_QUALYS_HOST_FINDING,
-            toType: TYPE_QUALYS_VULN,
-            _class: 'IS',
-          },
-        );
-
-        await context.jobState.addRelationships([
-          findingIsVulnerabilityRelationship,
-        ]);
-      }
+    } else if (pageIndex === 0) {
+      logger.info({
+        responseData
+      }, 'No data in listHostDetections');
     }
+
+    pageIndex++;
   } while (hostDetectionsPaginator.hasNextPage());
 
   logger.info('Finished collecting host detections');
