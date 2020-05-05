@@ -38,50 +38,56 @@ export default async function collectWebAppScans(
       });
 
       const targetWebApp = responseData.WasScan?.target?.webApp;
-      const vulns = toArray(responseData.WasScan?.vulns?.list?.WasScanVuln);
-      for (const vuln of vulns) {
-        if (vuln.qid !== undefined && targetWebApp) {
-          qualysVulnEntityManager.addQID(vuln.qid);
+      if (targetWebApp) {
+        const vulns = toArray(responseData.WasScan?.vulns?.list?.WasScanVuln);
+        for (const vuln of vulns) {
+          if (vuln.qid !== undefined) {
+            qualysVulnEntityManager.addQID(vuln.qid);
+          }
         }
-      }
 
-      for (const vuln of vulns) {
-        if (targetWebApp && vuln.qid) {
-          const webAppFindingEntity = convertWebAppVulnerabilityToFinding({
-            vuln,
-            webApp: targetWebApp,
-            vulnFromKnowledgeBase: await qualysVulnEntityManager.getVulnerabilityByQID(
-              vuln.qid!,
-            ),
-          });
+        for (const vuln of vulns) {
+          if (vuln.qid) {
+            const webAppFindingEntity = convertWebAppVulnerabilityToFinding({
+              vuln,
+              webApp: targetWebApp,
+              vulnFromKnowledgeBase: await qualysVulnEntityManager.getVulnerabilityByQID(
+                vuln.qid!,
+              ),
+            });
 
-          // Create the Finding
-          await context.jobState.addEntities([webAppFindingEntity]);
+            // Create the Finding
+            await context.jobState.addEntities([webAppFindingEntity]);
 
-          // Relate the Web App to the Finding
-          const webAppHasFinding = createIntegrationRelationship({
-            fromKey: buildWebAppKey({
-              webAppId: targetWebApp.id!,
-            }),
-            toKey: webAppFindingEntity._key,
-            fromType: TYPE_QUALYS_WEB_APP,
-            toType: TYPE_QUALYS_WEB_APP_FINDING,
-            _class: 'HAS',
-          });
-          await context.jobState.addRelationships([webAppHasFinding]);
+            // Relate the Web App to the Finding
+            const webAppHasFinding = createIntegrationRelationship({
+              fromKey: buildWebAppKey({
+                webAppId: targetWebApp.id!,
+              }),
+              toKey: webAppFindingEntity._key,
+              fromType: TYPE_QUALYS_WEB_APP,
+              toType: TYPE_QUALYS_WEB_APP_FINDING,
+              _class: 'HAS',
+            });
+            await context.jobState.addRelationships([webAppHasFinding]);
 
-          // Relate the Finding to the Vulnerability
-          const webAppFindingIsVuln = createIntegrationRelationship({
-            fromKey: webAppFindingEntity._key,
-            toKey: buildQualysVulnKey({
-              qid: vuln.qid,
-            }),
-            fromType: TYPE_QUALYS_WEB_APP_FINDING,
-            toType: TYPE_QUALYS_VULN,
-            _class: 'IS',
-          });
-          await context.jobState.addRelationships([webAppFindingIsVuln]);
+            // Relate the Finding to the Vulnerability
+            const webAppFindingIsVuln = createIntegrationRelationship({
+              fromKey: webAppFindingEntity._key,
+              toKey: buildQualysVulnKey({
+                qid: vuln.qid,
+              }),
+              fromType: TYPE_QUALYS_WEB_APP_FINDING,
+              toType: TYPE_QUALYS_VULN,
+              _class: 'IS',
+            });
+            await context.jobState.addRelationships([webAppFindingIsVuln]);
+          }
         }
+      } else {
+        logger.info({
+          responseData
+        }, 'No data in fetchScanResults');
       }
     },
     {
