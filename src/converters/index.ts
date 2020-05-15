@@ -12,6 +12,7 @@ import {
   QualysVulnerabilityEntity,
   HostEntity,
   HostFindingEntity,
+  HostEntityEC2Metadata,
 } from './types';
 import toArray from '../util/toArray';
 
@@ -202,6 +203,14 @@ export function convertHostAssetToEntity(options: {
   });
 
   const hostname = hostAsset.dnsHostName || hostAsset.fqdn;
+  const hostEC2Metadata = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+  let hostEntityEC2Metadata: HostEntityEC2Metadata | undefined;
+
+  if (hostEC2Metadata) {
+    const { ec2InstanceTags, ...metadata } = hostEC2Metadata;
+    hostEntityEC2Metadata = metadata;
+  }
+
   const hostDetails: HostEntity = {
     _type: TYPE_QUALYS_HOST,
     _key: hostKey,
@@ -215,15 +224,8 @@ export function convertHostAssetToEntity(options: {
     os: hostAsset.os,
     platform: determinePlatform(hostAsset),
     lastScannedOn: convertISODateStringToTimestamp(hostAsset.lastVulnScan),
+    ...hostEntityEC2Metadata,
   };
-
-  const hostEC2Metadata = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
-
-  if (hostEC2Metadata) {
-    Object.assign(hostDetails, hostEC2Metadata);
-  }
-
-  delete hostDetails.ec2InstanceTags;
 
   return (createIntegrationEntity({
     entityData: {
@@ -237,6 +239,10 @@ export function convertHostAssetToEntity(options: {
       },
     },
   }) as unknown) as HostEntity;
+}
+
+export function isHostEC2Instance(hostEntity: HostEntity) {
+  return hostEntity.type === 'EC_2' && hostEntity.instanceId;
 }
 
 export function convertHostToEntity(options: {

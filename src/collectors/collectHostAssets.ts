@@ -2,7 +2,7 @@ import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
 import QualysClient from '../provider/QualysClient';
 import toArray from '../util/toArray';
 import { HostEntity } from '../converters/types';
-import { convertHostAssetToEntity } from '../converters';
+import { convertHostAssetToEntity, isHostEC2Instance } from '../converters';
 
 export default async function collectHostAssets(
   context: IntegrationStepExecutionContext,
@@ -15,7 +15,7 @@ export default async function collectHostAssets(
   logger.info('Collecting host assets...');
 
   const { qualysClient } = options;
-  const hostAssetIdSet = new Set<number>();
+  const hostEntityLookup: Record<string, HostEntity> = {};
   const hostAssetsPaginator = qualysClient.assetManagement.listHostAssets({
     limit: 10,
   });
@@ -33,15 +33,20 @@ export default async function collectHostAssets(
           const hostEntity = convertHostAssetToEntity({
             hostAsset,
           });
-          hostAssetIdSet.add(hostEntity.hostId);
-          hostEntities.push(hostEntity);
+          hostEntityLookup[hostEntity.hostId] = hostEntity;
+          if (!isHostEC2Instance(hostEntity)) {
+            hostEntities.push(hostEntity);
+          }
         }
       }
       await context.jobState.addEntities(hostEntities);
     } else if (pageIndex === 0) {
-      logger.info({
-        responseData
-      }, 'No data in listHostAssets');
+      logger.info(
+        {
+          responseData,
+        },
+        'No data in listHostAssets',
+      );
     }
 
     pageIndex++;
@@ -50,6 +55,6 @@ export default async function collectHostAssets(
   logger.info('Finished collecting host assets');
 
   return {
-    hostAssetIdSet,
+    hostEntityLookup,
   };
 }

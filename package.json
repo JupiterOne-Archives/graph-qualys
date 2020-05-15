@@ -13,6 +13,7 @@
   },
   "scripts": {
     "start": "j1-integration collect",
+    "sync": "JUPITERONE_DEV=true j1-integration sync -i 1c1aed28-d2ae-4af2-bd15-72b4688c2dff",
     "lint": "eslint . --cache --fix --ext .ts,.tsx",
     "format": "prettier --write '**/*.{ts,js,json,css,md,yml}'",
     "type-check": "tsc --noEmit",
@@ -24,7 +25,7 @@
     "start:fake-knowledge-base-server": "./tools/bin/run-command fake-knowledge-base"
   },
   "dependencies": {
-    "@jupiterone/integration-sdk": "^1.0.0",
+    "@jupiterone/integration-sdk": "^1.1.2",
     "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "fast-xml-parser": "^3.16.0",

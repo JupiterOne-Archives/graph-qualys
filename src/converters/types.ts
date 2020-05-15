@@ -1,4 +1,5 @@
 import { Entity } from '@jupiterone/integration-sdk';
+import { Ec2AssetSourceSimple } from 'src/provider/assetManagement/types.listHostAssets';
 
 export interface QualysVulnerabilityEntity extends Entity {
   _type: 'qualys_vuln';
@@ -56,19 +57,25 @@ export interface WebAppFindingEntity extends Entity {
   public: boolean;
 }
 
-export interface HostEntity extends Entity {
-  _type: 'qualys_host';
-  _key: string;
-  _class: 'Host';
-  name: string;
-  hostname: string;
-  hostId: number;
-  assetId: number | undefined;
-  fqdn: string | undefined;
-  os: string | undefined;
-  platform: string | undefined;
-  lastScannedOn: number | undefined;
-}
+export type HostEntityEC2Metadata = Omit<
+  Ec2AssetSourceSimple,
+  'ec2InstanceTags'
+>;
+
+export type HostEntity = Entity &
+  HostEntityEC2Metadata & {
+    _type: 'qualys_host';
+    _key: string;
+    _class: 'Host';
+    name: string;
+    hostname: string;
+    hostId: number;
+    assetId: number | undefined;
+    fqdn: string | undefined;
+    os: string | undefined;
+    platform: string | undefined;
+    lastScannedOn: number | undefined;
+  };
 
 export interface HostFindingEntity extends Entity {
   _type: 'qualys_host_finding';

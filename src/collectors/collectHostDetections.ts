@@ -4,30 +4,33 @@ import {
   TYPE_QUALYS_HOST_FINDING,
   TYPE_QUALYS_VULN,
   buildQualysVulnKey,
-  buildHostKey,
   convertHostToEntity,
   convertHostDetectionToEntity,
+  isHostEC2Instance,
 } from '../converters';
 import QualysClient from '../provider/QualysClient';
+import QualysVulnEntityManager from './QualysVulnEntityManager';
+import { HostEntity } from 'src/converters/types';
 import {
   IntegrationStepExecutionContext,
+  Relationship,
+  RelationshipDirection,
   createIntegrationRelationship,
 } from '@jupiterone/integration-sdk';
-import QualysVulnEntityManager from './QualysVulnEntityManager';
 
 export default async function collectHostDetections(
   context: IntegrationStepExecutionContext,
   options: {
     qualysClient: QualysClient;
     qualysVulnEntityManager: QualysVulnEntityManager;
-    hostAssetIdSet: Set<number>;
+    hostEntityLookup: Record<string, HostEntity>;
   },
 ) {
   const { logger } = context;
 
   logger.info('Collecting host detections...');
 
-  const { qualysClient, qualysVulnEntityManager, hostAssetIdSet } = options;
+  const { qualysClient, qualysVulnEntityManager, hostEntityLookup } = options;
   const hostDetectionsPaginator = qualysClient.vulnerabilityManagement.listHostDetections(
     {
       truncation_limit: 1000,
@@ -48,18 +51,15 @@ export default async function collectHostDetections(
     if (hosts.length) {
       for (const host of hosts) {
         const hostId = host.ID!;
-        let hostKey: string;
+        let hostEntity: HostEntity = hostEntityLookup[hostId];
 
-        if (hostAssetIdSet.has(hostId)) {
-          hostKey = buildHostKey({
-            qwebHostId: hostId,
-          });
-        } else {
-          const hostEntity = convertHostToEntity({
+        if (!hostEntity) {
+          hostEntity = convertHostToEntity({
             host,
           });
-          context.jobState.addEntities([hostEntity]);
-          hostKey = hostEntity._key;
+          if (!isHostEC2Instance(hostEntity)) {
+            context.jobState.addEntities([hostEntity]);
+          }
         }
 
         const detections = toArray(host.DETECTION_LIST?.DETECTION);
@@ -81,14 +81,33 @@ export default async function collectHostDetections(
           // Create the Finding
           context.jobState.addEntities([findingEntity]);
 
+          let hostHasFindingRelationship: Relationship;
+
           // Relate the Host to the Finding
-          const hostHasFindingRelationship = createIntegrationRelationship({
-            fromKey: hostKey,
-            toKey: findingEntity._key,
-            fromType: TYPE_QUALYS_HOST,
-            toType: TYPE_QUALYS_HOST_FINDING,
-            _class: 'HAS',
-          });
+          if (isHostEC2Instance(hostEntity)) {
+            hostHasFindingRelationship = createIntegrationRelationship({
+              _class: 'HAS',
+              _key: `${hostEntity._key}_HAS_${findingEntity._key}`,
+              _mapping: {
+                relationshipDirection: RelationshipDirection.FORWARD,
+                sourceEntityKey: findingEntity._key,
+                skipTargetCreation: false,
+                targetFilterKeys: [['_type', 'instanceId']],
+                targetEntity: {
+                  _type: 'aws_instance',
+                  instanceId: hostEntity.instanceId,
+                },
+              },
+            });
+          } else {
+            hostHasFindingRelationship = createIntegrationRelationship({
+              fromKey: hostEntity._key,
+              toKey: findingEntity._key,
+              fromType: TYPE_QUALYS_HOST,
+              toType: TYPE_QUALYS_HOST_FINDING,
+              _class: 'HAS',
+            });
+          }
 
           await context.jobState.addRelationships([hostHasFindingRelationship]);
 
@@ -111,9 +130,12 @@ export default async function collectHostDetections(
         }
       }
     } else if (pageIndex === 0) {
-      logger.info({
-        responseData
-      }, 'No data in listHostDetections');
+      logger.info(
+        {
+          responseData,
+        },
+        'No data in listHostDetections',
+      );
     }
 
     pageIndex++;
