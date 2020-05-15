@@ -58,6 +58,8 @@ test('should be able to collect all data', async () => {
 
   await collectDataStep.executionHandler(context);
 
+  //////////////////////////////////////////////////////////////////////////////
+
   const webAppDisplayNames: string[] = [];
 
   await context.jobState.iterateEntities(
@@ -76,6 +78,8 @@ test('should be able to collect all data', async () => {
     'Second Web App - BoQ',
     'apps.dev.jupiterone.io',
   ]);
+
+  //////////////////////////////////////////////////////////////////////////////
 
   const webAppFindingKeys: string[] = [];
   await context.jobState.iterateEntities(
@@ -137,6 +141,8 @@ test('should be able to collect all data', async () => {
     'qid:150263|uri:http://54.173.177.208:8080/bodgeit/|undefined-on-webapp:62249034',
   ]);
 
+  //////////////////////////////////////////////////////////////////////////////
+
   const hostDisplayNames: string[] = [];
 
   await context.jobState.iterateEntities(
@@ -151,20 +157,11 @@ test('should be able to collect all data', async () => {
   hostDisplayNames.sort();
 
   expect(hostDisplayNames).toEqual([
-    'ecs-cluster-primary',
-    'ecs-cluster-primary',
-    'i-0906e8b908f2dd0b3',
     'ip-10-55-26-62.ec2.internal',
     'ip-10-55-46-210.ec2.internal',
-    'qualys-cloud-agent-test',
-    'qualys-cloud-agent-test-neo4j',
-    'qualys-cloud-agent-test-wordpress',
-    'qualys-cloud-agent-test-wordpress',
-    'qualys-cloud-agent-test-wordpress-2',
-    'qualys-scanner',
-    'qualys-scanner-old',
-    'vpn-server-encrypted',
   ]);
+
+  //////////////////////////////////////////////////////////////////////////////
 
   const hostFindingKeys: string[] = [];
   await context.jobState.iterateEntities(
@@ -209,6 +206,8 @@ test('should be able to collect all data', async () => {
     'qid:38739|port:22|protocol:tcp-on-host:92661485',
     'qid:38739|port:22|protocol:tcp-on-host:92662027',
   ]);
+
+  //////////////////////////////////////////////////////////////////////////////
 
   const qidList: number[] = [];
 
@@ -267,6 +266,8 @@ test('should be able to collect all data', async () => {
     38739,
   ]);
 
+  //////////////////////////////////////////////////////////////////////////////
+
   const hostHasFindingKeys: string[] = [];
 
   await context.jobState.iterateRelationships(
@@ -287,30 +288,9 @@ test('should be able to collect all data', async () => {
     'qualys-host:92662027|has|qid:38170|port:443|protocol:tcp-on-host:92662027',
     'qualys-host:92662027|has|qid:38174|port:443|protocol:tcp-on-host:92662027',
     'qualys-host:92662027|has|qid:38739|port:22|protocol:tcp-on-host:92662027',
-    'qualys-host:93010479|has|qid:197595|port:undefined|protocol:undefined-on-host:93010479',
-    'qualys-host:93010479|has|qid:197617|port:undefined|protocol:undefined-on-host:93010479',
-    'qualys-host:93010479|has|qid:197652|port:undefined|protocol:undefined-on-host:93010479',
-    'qualys-host:93010480|has|qid:197595|port:undefined|protocol:undefined-on-host:93010480',
-    'qualys-host:93010480|has|qid:197617|port:undefined|protocol:undefined-on-host:93010480',
-    'qualys-host:93010480|has|qid:197652|port:undefined|protocol:undefined-on-host:93010480',
-    'qualys-host:93011161|has|qid:197146|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197234|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197236|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197246|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197291|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197301|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197339|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197347|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197371|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197375|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197401|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197424|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197553|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197599|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197608|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197760|port:undefined|protocol:undefined-on-host:93011161',
-    'qualys-host:93011161|has|qid:197784|port:undefined|protocol:undefined-on-host:93011161',
   ]);
+
+  //////////////////////////////////////////////////////////////////////////////
 
   const hostFindingIsVulnKeys: string[] = [];
 
@@ -356,6 +336,8 @@ test('should be able to collect all data', async () => {
     'qid:38739|port:22|protocol:tcp-on-host:92661485|is|vuln-qid:38739',
     'qid:38739|port:22|protocol:tcp-on-host:92662027|is|vuln-qid:38739',
   ]);
+
+  //////////////////////////////////////////////////////////////////////////////
 
   const webAppHasFindingKeys: string[] = [];
 
@@ -418,6 +400,8 @@ test('should be able to collect all data', async () => {
     'web_app:62249034|has|qid:150263|uri:http://54.173.177.208:8080/bodgeit/|undefined-on-webapp:62249034',
   ]);
 
+  //////////////////////////////////////////////////////////////////////////////
+
   const webAppfindingIsVulnKeys: string[] = [];
 
   await context.jobState.iterateRelationships(
@@ -477,5 +461,46 @@ test('should be able to collect all data', async () => {
     'qid:150246|uri:http://54.173.177.208:8080/bodgeit/search.jsp|undefined-on-webapp:62249034|is|vuln-qid:150246',
     'qid:150246|uri:http://54.173.177.208:8080/bodgeit/|undefined-on-webapp:62249034|is|vuln-qid:150246',
     'qid:150263|uri:http://54.173.177.208:8080/bodgeit/|undefined-on-webapp:62249034|is|vuln-qid:150263',
+  ]);
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  const ec2InstanceHasFindingKeys: string[] = [];
+
+  await context.jobState.iterateRelationships(
+    {
+      _type: 'mapping_source_has_aws_instance',
+    },
+    (relationship) => {
+      ec2InstanceHasFindingKeys.push(relationship._key as string);
+    },
+  );
+
+  ec2InstanceHasFindingKeys.sort();
+
+  expect(ec2InstanceHasFindingKeys).toEqual([
+    'qid:197146|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197146|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197234|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197234|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197236|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197236|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197246|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197246|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197291|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197291|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197301|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197301|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197339|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197339|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197347|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197347|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197371|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197371|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197375|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197375|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197401|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197401|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197424|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197424|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197553|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197553|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197595|port:undefined|protocol:undefined-on-host:93010479|has|qualys-host:93010479_HAS_qid:197595|port:undefined|protocol:undefined-on-host:93010479',
+    'qid:197595|port:undefined|protocol:undefined-on-host:93010480|has|qualys-host:93010480_HAS_qid:197595|port:undefined|protocol:undefined-on-host:93010480',
+    'qid:197599|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197599|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197608|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197608|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197617|port:undefined|protocol:undefined-on-host:93010479|has|qualys-host:93010479_HAS_qid:197617|port:undefined|protocol:undefined-on-host:93010479',
+    'qid:197617|port:undefined|protocol:undefined-on-host:93010480|has|qualys-host:93010480_HAS_qid:197617|port:undefined|protocol:undefined-on-host:93010480',
+    'qid:197652|port:undefined|protocol:undefined-on-host:93010479|has|qualys-host:93010479_HAS_qid:197652|port:undefined|protocol:undefined-on-host:93010479',
+    'qid:197652|port:undefined|protocol:undefined-on-host:93010480|has|qualys-host:93010480_HAS_qid:197652|port:undefined|protocol:undefined-on-host:93010480',
+    'qid:197760|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197760|port:undefined|protocol:undefined-on-host:93011161',
+    'qid:197784|port:undefined|protocol:undefined-on-host:93011161|has|qualys-host:93011161_HAS_qid:197784|port:undefined|protocol:undefined-on-host:93011161',
   ]);
 });
