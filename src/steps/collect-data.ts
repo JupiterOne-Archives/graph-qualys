@@ -71,18 +71,18 @@ const step: IntegrationStep = {
         webAppScanIdSet,
       });
 
-      const { hostAssetIdSet } = await collectHostAssets(context, {
+      const { hostEntityLookup } = await collectHostAssets(context, {
         qualysClient,
       });
 
       await collectHostDetections(context, {
         qualysClient,
         qualysVulnEntityManager,
-        hostAssetIdSet,
+        hostEntityLookup,
       });
 
       await collectVulnerabilities(context, {
-        qualysVulnEntityManager
+        qualysVulnEntityManager,
       });
     } finally {
       httpRecorder?.close();

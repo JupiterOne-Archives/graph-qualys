@@ -189,7 +189,7 @@ export interface Ec2InstanceTags {
 }
 
 export interface Ec2InstanceTagsTags {
-  list?: string;
+  list?: PossibleArray<string>;
 }
 
 export interface HostAssetTags {
