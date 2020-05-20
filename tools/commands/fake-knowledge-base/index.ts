@@ -228,21 +228,24 @@ type RequestHandlerInput = {
 
 type RequestHandlerOutput = {
   body: string;
-}
+};
 
-type RequestHandler = (input: RequestHandlerInput) => Promise<RequestHandlerOutput>;
-
+type RequestHandler = (
+  input: RequestHandlerInput,
+) => Promise<RequestHandlerOutput>;
 
 const ROUTES: Record<string, RequestHandler> = {
   '/api/2.0/fo/knowledge_base/vuln': async function (input) {
-    const {req, res, url} = input;
+    const { req, res, url } = input;
     res.setHeader('content-type', 'text/xml');
     console.log('REQUEST URL: ' + req.url);
 
     const ids = url.searchParams.get('ids');
     const qidList = ids ? ids.split(',') : [];
 
-    console.log('Responding with fake response for following QIDs: ' + qidList.join(', '));
+    console.log(
+      'Responding with fake response for following QIDs: ' + qidList.join(', '),
+    );
 
     const body = `
   <KNOWLEDGE_BASE_VULN_LIST_OUTPUT>
@@ -252,19 +255,23 @@ const ROUTES: Record<string, RequestHandler> = {
       </VULN_LIST>
     </RESPONSE>
   </KNOWLEDGE_BASE_VULN_LIST_OUTPUT>`;
-    return {body};
-  }
-}
+    return { body };
+  },
+};
 
-async function handleRequest(req: IncomingMessage, res: ServerResponse, serverConfig: {
-  host: string;
-}): Promise<RequestHandlerOutput> {
+async function handleRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  serverConfig: {
+    host: string;
+  },
+): Promise<RequestHandlerOutput> {
   const url = new URL(req.url!, serverConfig.host);
   const handler = ROUTES[url.pathname];
   if (!handler) {
     res.statusCode = 404;
     return {
-      body: 'Not found'
+      body: 'Not found',
     };
   }
 
@@ -272,7 +279,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, serverCo
     req,
     res,
     url,
-    serverConfig
+    serverConfig,
   });
 }
 
@@ -284,19 +291,21 @@ function handleRequestError(err: Error, res: ServerResponse) {
 
 async function startServer(options: RunOptions) {
   const serverConfig = {
-    host: `http://localhost:${options.port}`
+    host: `http://localhost:${options.port}`,
   };
 
   return new Promise<StartOutput>((resolve, reject) => {
     const server = http.createServer(
       (req: IncomingMessage, res: ServerResponse) => {
         try {
-          handleRequest(req, res, serverConfig).then((output) => {
-            res.write(output.body);
-            res.end();
-          }).catch(err => {
-            handleRequestError(err, res);
-          })
+          handleRequest(req, res, serverConfig)
+            .then((output) => {
+              res.write(output.body);
+              res.end();
+            })
+            .catch((err) => {
+              handleRequestError(err, res);
+            });
         } catch (err) {
           handleRequestError(err, res);
         }
@@ -304,7 +313,7 @@ async function startServer(options: RunOptions) {
     );
 
     server.on('error', (err) => {
-      console.log('Error!')
+      console.log('Error!');
       reject(err);
     });
 
@@ -319,11 +328,11 @@ async function startServer(options: RunOptions) {
   });
 }
 
-
-
 export async function run() {
-  const port = process.env.FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT ? parseInt(process.env.FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT, 10) : 8080;
+  const port = process.env.FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT
+    ? parseInt(process.env.FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT, 10)
+    : 8080;
   await startServer({
     port,
-  })
+  });
 }

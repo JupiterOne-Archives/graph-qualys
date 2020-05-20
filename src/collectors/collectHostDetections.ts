@@ -10,7 +10,7 @@ import {
 } from '../converters';
 import QualysClient from '../provider/QualysClient';
 import QualysVulnEntityManager from './QualysVulnEntityManager';
-import { HostEntity } from 'src/converters/types';
+import { HostEntity } from '../converters/types';
 import {
   IntegrationStepExecutionContext,
   Relationship,

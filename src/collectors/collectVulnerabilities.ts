@@ -1,5 +1,6 @@
 import {
-  IntegrationStepExecutionContext, createIntegrationEntity,
+  IntegrationStepExecutionContext,
+  createIntegrationEntity,
 } from '@jupiterone/integration-sdk';
 import QualysVulnEntityManager from './QualysVulnEntityManager';
 

@@ -1,13 +1,13 @@
 import { PossibleArray, ISODateString } from '../../types';
 
 export type QualysVulnerabilitiesErrorResponse = {
-  "SIMPLE_RETURN": {
-    "RESPONSE": {
-      "DATETIME": ISODateString,
-      "CODE": number,
-      "TEXT": string;
-    }
-  }
+  SIMPLE_RETURN: {
+    RESPONSE: {
+      DATETIME: ISODateString;
+      CODE: number;
+      TEXT: string;
+    };
+  };
 };
 
 export type ListQualysVulnerabilitiesReply = {

@@ -443,24 +443,25 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
-"@jupiterone/data-model@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@jupiterone/data-model/-/data-model-0.3.1.tgz#81533c2e073c0f6a137b328d7d568b1f1437dff9"
-  integrity sha512-fryUlbB5q08YdtkoQ+Vw8EmTLRDMYCw/nE9J9QcGj+vko7zau7qDzZZtqKU7XsBrl+eThdIaCAdsQv8fMA9Hzw==
+"@jupiterone/data-model@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@jupiterone/data-model/-/data-model-0.4.1.tgz#75405273c07eaab1892ef2a829f5894c6bf5b5a7"
+  integrity sha512-Z5NalEL9yQQ3wdQ0BLzo2rXvvxyURKZmw2V8kVX8UjKExwXBStgoArEIZEklN3l/r3PjjviPJk51V+J9K8+Q4w==
   dependencies:
     ajv "^6.12.0"
 
-"@jupiterone/integration-sdk@^1.1.2":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk/-/integration-sdk-1.1.2.tgz#21606ce7581342e1f333bc583af8d055133accf1"
-  integrity sha512-jydy9HsCqWXclBMJqgJjB/WSn/nbuvikwucJTdYW8faUlJR4prX6x/WYIIPLfiWfztVny+apH+edHwA5mxUxeA==
+"@jupiterone/integration-sdk@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk/-/integration-sdk-2.1.0.tgz#f77d04d275e11a55f52a878766aca27ac4d3f82d"
+  integrity sha512-2bpYFO6YnpaYmtIqUZNHj309FpIiOHzMm13RUZ+MbPhhVfhCc3k+hoc4bOj65OwubhAi5CYpZdj6gOl9v7UpdA==
   dependencies:
-    "@jupiterone/data-model" "^0.3.1"
+    "@jupiterone/data-model" "^0.4.1"
     "@lifeomic/alpha" "^1.1.3"
     "@pollyjs/adapter-node-http" "^4.0.4"
     "@pollyjs/core" "^4.0.4"
     "@pollyjs/persister-fs" "^4.0.4"
     "@types/bunyan" "^1.8.6"
+    "@types/har-format" "^1.2.4"
     "@types/pollyjs__adapter-node-http" "^2.0.0"
     "@types/pollyjs__core" "^4.0.0"
     "@types/pollyjs__persister" "^2.0.1"
@@ -663,6 +664,11 @@
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@types/eslint-visitor-keys/-/eslint-visitor-keys-1.0.0.tgz#1ee30d79544ca84d68d4b3cdb0af4f205663dd2d"
   integrity sha512-OCutwjDZ4aFS6PB1UZ988C4YgwlBHJd6wCeQqaLdmadZ/7e+w79+hbMUFC1QXDNCmdyoRfAFdm0RypzwR+Qpag==
+
+"@types/har-format@^1.2.4":
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/@types/har-format/-/har-format-1.2.4.tgz#3275842095abb60d14b47fa798cc9ff708dab6d4"
+  integrity sha512-iUxzm1meBm3stxUMzRqgOVHjj4Kgpgu5w9fm4X7kPRfSgVRzythsucEN7/jtOo8SQzm+HfcxWWzJS0mJDH/3DQ==
 
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.1"

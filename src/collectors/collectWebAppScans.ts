@@ -14,6 +14,7 @@ import {
 import toArray from '../util/toArray';
 import QualysVulnEntityManager from './QualysVulnEntityManager';
 import pMap from 'p-map';
+import { wrapMapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
 
 export default async function collectWebAppScans(
   context: IntegrationStepExecutionContext,
@@ -28,9 +29,13 @@ export default async function collectWebAppScans(
   logger.info('Collecting web app scans...');
 
   const { qualysClient, webAppScanIdSet, qualysVulnEntityManager } = options;
-  await pMap(
-    webAppScanIdSet,
-    async (webAppScanId) => {
+
+  const collectWebAppScan = wrapMapFunctionWithInvokeSafely(
+    context,
+    {
+      operationName: 'collectWebAppScan',
+    },
+    async (webAppScanId: number) => {
       const {
         responseData,
       } = await qualysClient.webApplicationScanning.fetchScanResults({
@@ -85,15 +90,19 @@ export default async function collectWebAppScans(
           }
         }
       } else {
-        logger.info({
-          responseData
-        }, 'No data in fetchScanResults');
+        logger.info(
+          {
+            responseData,
+          },
+          'No data in fetchScanResults',
+        );
       }
     },
-    {
-      concurrency: 5,
-    },
   );
+
+  await pMap(webAppScanIdSet, collectWebAppScan, {
+    concurrency: 5,
+  });
 
   logger.info('Finished collecting web app scans');
 }

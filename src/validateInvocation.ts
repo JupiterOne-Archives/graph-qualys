@@ -1,5 +1,6 @@
 import { IntegrationExecutionContext } from '@jupiterone/integration-sdk';
 import { URL } from 'url';
+import { QualysIntegrationConfig } from './types';
 
 const REQUIRED_PROPERTIES = [
   'qualysUsername',
@@ -8,7 +9,7 @@ const REQUIRED_PROPERTIES = [
 ];
 
 export default async function validateInvocation(
-  context: IntegrationExecutionContext,
+  context: IntegrationExecutionContext<QualysIntegrationConfig>,
 ) {
   context.logger.info(
     {
