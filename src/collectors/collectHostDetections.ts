@@ -42,6 +42,8 @@ export default async function collectHostDetections(
 
   let pageIndex = 0;
 
+  const seenFindingEntityKeys = new Set<string>();
+
   do {
     const { responseData } = await hostDetectionsPaginator.nextPage();
     const hosts = toArray(
@@ -77,6 +79,14 @@ export default async function collectHostDetections(
             hostId,
             vulnFromKnowledgeBase,
           });
+
+          // Avoid duplicates by checking to see if we already have a Finding
+          // for this webapp that is basically identical.
+          if (seenFindingEntityKeys.has(findingEntity._key)) {
+            continue;
+          }
+
+          seenFindingEntityKeys.add(findingEntity._key);
 
           // Create the Finding
           context.jobState.addEntities([findingEntity]);

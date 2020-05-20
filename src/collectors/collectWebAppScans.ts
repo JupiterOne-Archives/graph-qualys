@@ -30,6 +30,8 @@ export default async function collectWebAppScans(
 
   const { qualysClient, webAppScanIdSet, qualysVulnEntityManager } = options;
 
+  const seenFindingEntityKeys = new Set<string>();
+
   const collectWebAppScan = wrapMapFunctionWithInvokeSafely(
     context,
     {
@@ -61,6 +63,14 @@ export default async function collectWebAppScans(
               ),
             });
 
+            // Avoid duplicates by checking to see if we already have a Finding
+            // for this webapp that is basically identical.
+            if (seenFindingEntityKeys.has(webAppFindingEntity._key)) {
+              continue;
+            }
+
+            seenFindingEntityKeys.add(webAppFindingEntity._key);
+
             // Create the Finding
             await context.jobState.addEntities([webAppFindingEntity]);
 
@@ -74,6 +84,7 @@ export default async function collectWebAppScans(
               toType: TYPE_QUALYS_WEB_APP_FINDING,
               _class: 'HAS',
             });
+
             await context.jobState.addRelationships([webAppHasFinding]);
 
             // Relate the Finding to the Vulnerability
