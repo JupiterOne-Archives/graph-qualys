@@ -1,4 +1,5 @@
 module.exports = {
+  setupFilesAfterEnv: ['./jest.env.js'],
   clearMocks: true,
   restoreMocks: true,
   preset: 'ts-jest',

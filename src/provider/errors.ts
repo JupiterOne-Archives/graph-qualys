@@ -1,4 +1,5 @@
 import { QualysApiRequestResponse } from './QualysClient';
+import { IntegrationError } from '@jupiterone/integration-sdk/src/errors';
 
 const QUALYS_CLIENT_API_ERROR = Symbol('QualysClientApiError');
 
@@ -7,11 +8,9 @@ type QualysClientErrorOptions = {
   message: string;
 };
 
-export class QualysClientError extends Error {
-  code: string;
+export class QualysClientError extends IntegrationError {
   constructor(options: QualysClientErrorOptions) {
-    super(options.message);
-    this.code = options.code;
+    super(options);
   }
 }
 
@@ -32,7 +31,7 @@ export class QualysClientApiError extends QualysClientError {
     const { code, message, requestResponse } = options;
     super({
       code: code,
-      message: `${message} (code=${code}, url: ${requestResponse.request.url}, responseStatus=${requestResponse.response.status})`,
+      message: message,
     });
     this.requestResponse = requestResponse;
   }

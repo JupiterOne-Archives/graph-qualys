@@ -1,7 +1,7 @@
 # Development
 
-The Qualys integration uses various endpoints within the collection of
-Qualys APIs to ingest data.
+The Qualys integration uses various endpoints within the collection of Qualys
+APIs to ingest data.
 
 ## Provider account setup
 
@@ -19,8 +19,8 @@ app.
 
 ## Configure your .env
 
-By default, a Qualys trial does not allow access to knowledge base so
-a fake Qualys knowledge base is provided as a tool in this integration.
+By default, a Qualys trial does not allow access to knowledge base so a fake
+Qualys knowledge base is provided as a tool in this integration.
 
 Here's the recommended `.env` for this project:
 
@@ -48,8 +48,8 @@ JUPITERONE_API_KEY=
 
 ## Running integration
 
-First, start fake Qualys Knowledge Base server if your license does not
-allow knowledge base requests.
+First, start fake Qualys Knowledge Base server if your license does not allow
+knowledge base requests.
 
 ```sh
 yarn start:fake-knowledge-base-server

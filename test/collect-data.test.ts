@@ -11,6 +11,8 @@ import {
   TYPE_QUALYS_HOST_FINDING,
   TYPE_QUALYS_VULN,
 } from '../src/converters';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
+import { QualysIntegrationConfig } from '../src/types';
 
 jest.setTimeout(60000);
 
@@ -54,7 +56,7 @@ test('should be able to collect all data', async () => {
     instanceConfig: {
       qualysApiUrl: 'https://BLAH.qg3.apps.qualys.com',
     },
-  });
+  }) as IntegrationStepExecutionContext<QualysIntegrationConfig>;
 
   await collectDataStep.executionHandler(context);
 

@@ -1,7 +1,4 @@
-import {
-  IntegrationStep,
-  IntegrationStepExecutionContext,
-} from '@jupiterone/integration-sdk';
+import { IntegrationStep } from '@jupiterone/integration-sdk';
 import QualysClient from '../provider/QualysClient';
 import { QualysIntegrationConfig } from '../types';
 import {
@@ -18,8 +15,9 @@ import collectWebApps from '../collectors/collectWebApps';
 import collectVulnerabilities from '../collectors/collectVulnerabilities';
 import QualysVulnEntityManager from '../collectors/QualysVulnEntityManager';
 import { QualysHttpRecorder } from '../provider/QualysHttpRecorder';
+import { invokeSafely } from '../util/errorHandlerUtil';
 
-const step: IntegrationStep = {
+const step: IntegrationStep<QualysIntegrationConfig> = {
   id: 'collect-data',
   name: 'Collect Data',
 
@@ -31,7 +29,7 @@ const step: IntegrationStep = {
     TYPE_QUALYS_HOST,
   ],
 
-  async executionHandler(context: IntegrationStepExecutionContext) {
+  async executionHandler(context) {
     const config: QualysIntegrationConfig = context.instance.config;
 
     const httpRecorder =
@@ -61,29 +59,59 @@ const step: IntegrationStep = {
         qualysClient,
       });
 
-      const { webAppScanIdSet } = await collectWebApps(context, {
-        qualysClient,
-      });
+      const collectWebAppsResult = await invokeSafely(
+        context,
+        { operationName: 'collectWebApps' },
+        async () => {
+          return collectWebApps(context, {
+            qualysClient,
+          });
+        },
+      );
 
-      await collectWebAppScans(context, {
-        qualysClient,
-        qualysVulnEntityManager,
-        webAppScanIdSet,
-      });
+      await invokeSafely(
+        context,
+        { operationName: 'collectWebAppScans' },
+        async () => {
+          await collectWebAppScans(context, {
+            qualysClient,
+            qualysVulnEntityManager,
+            webAppScanIdSet: collectWebAppsResult?.webAppScanIdSet || new Set(),
+          });
+        },
+      );
 
-      const { hostEntityLookup } = await collectHostAssets(context, {
-        qualysClient,
-      });
+      const collectHostAssetsResult = await invokeSafely(
+        context,
+        { operationName: 'collectHostAssets' },
+        async () => {
+          return collectHostAssets(context, {
+            qualysClient,
+          });
+        },
+      );
 
-      await collectHostDetections(context, {
-        qualysClient,
-        qualysVulnEntityManager,
-        hostEntityLookup,
-      });
+      await invokeSafely(
+        context,
+        { operationName: 'collectHostDetections' },
+        async () => {
+          await collectHostDetections(context, {
+            qualysClient,
+            qualysVulnEntityManager,
+            hostEntityLookup: collectHostAssetsResult?.hostEntityLookup || {},
+          });
+        },
+      );
 
-      await collectVulnerabilities(context, {
-        qualysVulnEntityManager,
-      });
+      await invokeSafely(
+        context,
+        { operationName: 'collectVulnerabilities' },
+        async () => {
+          await collectVulnerabilities(context, {
+            qualysVulnEntityManager,
+          });
+        },
+      );
     } finally {
       httpRecorder?.close();
     }
