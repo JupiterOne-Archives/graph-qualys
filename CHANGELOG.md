@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## 1.2.1 2020-05-20
+
+- Better error handling
+
 ## 1.0.2 2020-05-05
 
 ### Added
