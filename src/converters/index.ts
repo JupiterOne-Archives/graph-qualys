@@ -31,6 +31,24 @@ export function buildHostKey(options: {
   return `qualys-host:${options.qwebHostId}`;
 }
 
+export function buildKey(
+  data: Record<string, string | boolean | number | undefined>,
+) {
+  const keys = Object.keys(data);
+  keys.sort();
+
+  const parts: string[] = [];
+
+  for (const key of keys) {
+    const value = data[key];
+    if (value != null) {
+      parts.push(`${key}:${value}`);
+    }
+  }
+
+  return parts.join('|');
+}
+
 export const TYPE_QUALYS_WEB_APP = 'qualys_web_app';
 export const TYPE_QUALYS_WEB_APP_FINDING = 'qualys_web_app_finding';
 export const TYPE_QUALYS_HOST = 'qualys_host';
@@ -95,7 +113,14 @@ export function convertWebAppVulnerabilityToFinding(options: {
   vulnFromKnowledgeBase: QualysVulnerabilityEntity | undefined;
 }) {
   const { vuln, webApp, vulnFromKnowledgeBase } = options;
-  const findingKey = `qid:${vuln.qid}|uri:${vuln.uri}|${vuln.param}-on-webapp:${webApp.id}`;
+  const findingKey = buildKey({
+    qid: vuln.qid,
+    uri: vuln.uri,
+    param: vuln.param,
+    title: vuln.title,
+    webAppId: webApp.id,
+  });
+
   const findingDisplayName = `${vuln.title} (QID ${vuln.qid})`;
 
   const entity: WebAppFindingEntity = {
@@ -285,7 +310,13 @@ export function convertHostDetectionToEntity(options: {
   vulnFromKnowledgeBase: QualysVulnerabilityEntity | undefined;
 }) {
   const { detection, vulnFromKnowledgeBase } = options;
-  const findingKey = `qid:${detection.QID}|port:${detection.PORT}|protocol:${detection.PROTOCOL}-on-host:${options.hostId}`;
+  const findingKey = buildKey({
+    qid: detection.QID,
+    port: detection.PORT,
+    protocol: detection.PROTOCOL,
+    ssl: detection.SSL,
+    hostId: options.hostId,
+  });
   const findingDisplayName =
     vulnFromKnowledgeBase?.name || `QID ${detection.QID}`;
   const entity: HostFindingEntity = {
