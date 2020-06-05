@@ -2,7 +2,7 @@ import {
   createMockStepExecutionContext,
   Recording,
   setupRecording,
-} from '@jupiterone/integration-sdk/testing';
+} from '@jupiterone/integration-sdk-testing';
 import collectDataStep from '../src/steps/collect-data';
 import {
   TYPE_QUALYS_WEB_APP,
@@ -11,7 +11,7 @@ import {
   TYPE_QUALYS_HOST_FINDING,
   TYPE_QUALYS_VULN,
 } from '../src/converters';
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
 import { QualysIntegrationConfig } from '../src/types';
 
 jest.setTimeout(60000);
@@ -50,11 +50,13 @@ test('should be able to collect all data', async () => {
     },
   });
 
-  const context = createMockStepExecutionContext({
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
     entities: [],
     relationships: [],
     instanceConfig: {
       qualysApiUrl: 'https://BLAH.qg3.apps.qualys.com',
+      qualysPassword: 'password',
+      qualysUsername: 'username'
     },
   }) as IntegrationStepExecutionContext<QualysIntegrationConfig>;
 

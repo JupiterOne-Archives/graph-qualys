@@ -3,7 +3,7 @@ import {
   wrapFunctionWithInvokeSafely,
   invokeSafely,
 } from './errorHandlerUtil';
-import { createMockStepExecutionContext } from '@jupiterone/integration-sdk/testing';
+import { createMockStepExecutionContext } from '@jupiterone/integration-sdk-testing';
 
 describe('error events should be published', () => {
   test('wrapMapFunctionWithInvokeSafely() should return undefined if error is thrown but publish error event', async () => {

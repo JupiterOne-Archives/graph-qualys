@@ -1,5 +1,5 @@
 import { QualysApiRequestResponse } from './QualysClient';
-import { IntegrationError } from '@jupiterone/integration-sdk/src/errors';
+import { IntegrationError } from '@jupiterone/integration-sdk-core';
 
 const QUALYS_CLIENT_API_ERROR = Symbol('QualysClientApiError');
 

@@ -2,7 +2,7 @@ import QualysClient from '../provider/QualysClient';
 import {
   IntegrationStepExecutionContext,
   createIntegrationRelationship,
-} from '@jupiterone/integration-sdk';
+} from '@jupiterone/integration-sdk-core';
 import {
   convertWebAppVulnerabilityToFinding,
   TYPE_QUALYS_WEB_APP,

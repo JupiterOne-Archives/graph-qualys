@@ -16,7 +16,7 @@ import {
   Relationship,
   RelationshipDirection,
   createIntegrationRelationship,
-} from '@jupiterone/integration-sdk';
+} from '@jupiterone/integration-sdk-core';
 
 export default async function collectHostDetections(
   context: IntegrationStepExecutionContext,

@@ -1,4 +1,4 @@
-import { IntegrationStep } from '@jupiterone/integration-sdk';
+import { IntegrationStep } from '@jupiterone/integration-sdk-core';
 import QualysClient from '../provider/QualysClient';
 import { QualysIntegrationConfig } from '../types';
 import {
