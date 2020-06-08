@@ -1,4 +1,4 @@
-import { IntegrationExecutionContext } from '@jupiterone/integration-sdk';
+import { IntegrationExecutionContext } from '@jupiterone/integration-sdk-core';
 import { URL } from 'url';
 import { QualysIntegrationConfig } from './types';
 

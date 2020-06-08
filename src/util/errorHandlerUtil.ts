@@ -1,4 +1,4 @@
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
 import { toPossibleQualysClientApiError } from '../provider/errors';
 
 export type ErrorLogData = {

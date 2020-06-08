@@ -1,7 +1,7 @@
 import {
   IntegrationStepExecutionContext,
   createIntegrationEntity,
-} from '@jupiterone/integration-sdk';
+} from '@jupiterone/integration-sdk-core';
 import QualysVulnEntityManager from './QualysVulnEntityManager';
 
 export default async function collectVulnerabilities(

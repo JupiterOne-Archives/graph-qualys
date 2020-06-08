@@ -1,6 +1,6 @@
 import QualysClient from '../provider/QualysClient';
 import toArray from '../util/toArray';
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
 import { convertWebAppToEntity } from '../converters';
 import { wrapMapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
 import pMap from 'p-map';

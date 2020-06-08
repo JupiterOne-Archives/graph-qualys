@@ -1,4 +1,4 @@
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
 import QualysClient from '../provider/QualysClient';
 import toArray from '../util/toArray';
 import { HostEntity } from '../converters/types';

@@ -1,4 +1,4 @@
-import { createIntegrationEntity } from '@jupiterone/integration-sdk';
+import { createIntegrationEntity } from '@jupiterone/integration-sdk-core';
 import { convertISODateStringToTimestamp } from '../util/converterUtl';
 import * as listWebAppsTypes from '../provider/webApplicationScanning/types.listWebApps';
 import * as fetchScanResultsTypes from '../provider/webApplicationScanning/types.fetchScanResults';

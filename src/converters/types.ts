@@ -1,4 +1,4 @@
-import { Entity } from '@jupiterone/integration-sdk';
+import { Entity } from '@jupiterone/integration-sdk-core';
 import { Ec2AssetSourceSimple } from '../provider/assetManagement/types.listHostAssets';
 
 export interface QualysVulnerabilityEntity extends Entity {

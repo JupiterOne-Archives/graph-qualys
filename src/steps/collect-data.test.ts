@@ -5,8 +5,8 @@ import collectWebApps from '../collectors/collectWebApps';
 import collectVulnerabilities from '../collectors/collectVulnerabilities';
 
 import collectDataStep from './collect-data';
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
-import { createMockStepExecutionContext } from '@jupiterone/integration-sdk/testing';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
+import { createMockStepExecutionContext } from '@jupiterone/integration-sdk-testing';
 import { QualysIntegrationConfig } from '../types';
 import { QualysClientApiError } from '../provider/errors';
 

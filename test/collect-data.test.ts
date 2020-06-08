@@ -2,7 +2,7 @@ import {
   createMockStepExecutionContext,
   Recording,
   setupRecording,
-} from '@jupiterone/integration-sdk/testing';
+} from '@jupiterone/integration-sdk-testing';
 import collectDataStep from '../src/steps/collect-data';
 import {
   TYPE_QUALYS_WEB_APP,
@@ -11,7 +11,7 @@ import {
   TYPE_QUALYS_HOST_FINDING,
   TYPE_QUALYS_VULN,
 } from '../src/converters';
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk';
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
 import { QualysIntegrationConfig } from '../src/types';
 
 jest.setTimeout(60000);
@@ -50,11 +50,13 @@ test('should be able to collect all data', async () => {
     },
   });
 
-  const context = createMockStepExecutionContext({
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
     entities: [],
     relationships: [],
     instanceConfig: {
       qualysApiUrl: 'https://BLAH.qg3.apps.qualys.com',
+      qualysPassword: 'password',
+      qualysUsername: 'username',
     },
   }) as IntegrationStepExecutionContext<QualysIntegrationConfig>;
 
@@ -481,28 +483,28 @@ test('should be able to collect all data', async () => {
   ec2InstanceHasFindingKeys.sort();
 
   expect(ec2InstanceHasFindingKeys).toEqual([
-    'hostId:93010479|qid:197595|ssl:0|has|qualys-host:93010479_HAS_hostId:93010479|qid:197595|ssl:0',
-    'hostId:93010479|qid:197617|ssl:0|has|qualys-host:93010479_HAS_hostId:93010479|qid:197617|ssl:0',
-    'hostId:93010479|qid:197652|ssl:0|has|qualys-host:93010479_HAS_hostId:93010479|qid:197652|ssl:0',
-    'hostId:93010480|qid:197595|ssl:0|has|qualys-host:93010480_HAS_hostId:93010480|qid:197595|ssl:0',
-    'hostId:93010480|qid:197617|ssl:0|has|qualys-host:93010480_HAS_hostId:93010480|qid:197617|ssl:0',
-    'hostId:93010480|qid:197652|ssl:0|has|qualys-host:93010480_HAS_hostId:93010480|qid:197652|ssl:0',
-    'hostId:93011161|qid:197146|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197146|ssl:0',
-    'hostId:93011161|qid:197234|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197234|ssl:0',
-    'hostId:93011161|qid:197236|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197236|ssl:0',
-    'hostId:93011161|qid:197246|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197246|ssl:0',
-    'hostId:93011161|qid:197291|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197291|ssl:0',
-    'hostId:93011161|qid:197301|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197301|ssl:0',
-    'hostId:93011161|qid:197339|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197339|ssl:0',
-    'hostId:93011161|qid:197347|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197347|ssl:0',
-    'hostId:93011161|qid:197371|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197371|ssl:0',
-    'hostId:93011161|qid:197375|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197375|ssl:0',
-    'hostId:93011161|qid:197401|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197401|ssl:0',
-    'hostId:93011161|qid:197424|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197424|ssl:0',
-    'hostId:93011161|qid:197553|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197553|ssl:0',
-    'hostId:93011161|qid:197599|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197599|ssl:0',
-    'hostId:93011161|qid:197608|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197608|ssl:0',
-    'hostId:93011161|qid:197760|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197760|ssl:0',
-    'hostId:93011161|qid:197784|ssl:0|has|qualys-host:93011161_HAS_hostId:93011161|qid:197784|ssl:0',
+    'hostId:93010479|qid:197595|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0359e3c54d4e8b8b3',
+    'hostId:93010479|qid:197617|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0359e3c54d4e8b8b3',
+    'hostId:93010479|qid:197652|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0359e3c54d4e8b8b3',
+    'hostId:93010480|qid:197595|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0b1efb981b7412855',
+    'hostId:93010480|qid:197617|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0b1efb981b7412855',
+    'hostId:93010480|qid:197652|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0b1efb981b7412855',
+    'hostId:93011161|qid:197146|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197234|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197236|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197246|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197291|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197301|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197339|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197347|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197371|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197375|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197401|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197424|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197553|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197599|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197608|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197760|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
+    'hostId:93011161|qid:197784|ssl:0|has|FORWARD:_type=aws_instance:instanceId=i-0a04bac6b7008be94',
   ]);
 });
