@@ -97,7 +97,6 @@ export default async function collectHostDetections(
           if (isHostEC2Instance(hostEntity)) {
             hostHasFindingRelationship = createIntegrationRelationship({
               _class: 'HAS',
-              _key: `${hostEntity._key}_HAS_${findingEntity._key}`,
               _mapping: {
                 relationshipDirection: RelationshipDirection.FORWARD,
                 sourceEntityKey: findingEntity._key,
