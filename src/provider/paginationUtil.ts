@@ -1,8 +1,10 @@
 import QualysClient, {
-  QualysApiResponse,
   buildPaginatedResponse,
-  QualysClientResponseType,
   QualysApiMakeRequestWithFullUrlOptions,
+  QualysApiNextRequest,
+  QualysApiResponse,
+  QualysApiResponsePaginator,
+  QualysClientResponseType,
 } from './QualysClient';
 
 export type PaginationOptions = {
@@ -13,7 +15,7 @@ export type PaginationOptions = {
 export function buildRestApiPaginatedRequestBody(options: {
   lastId?: string;
   paginationOptions: PaginationOptions;
-}) {
+}): string {
   const { lastId, paginationOptions } = options;
   const { limit, filters } = paginationOptions;
   const criteriaList: string[] = [];
@@ -47,8 +49,8 @@ export function buildRestApiNextPageRequest(options: {
     headers?: Record<string, string>;
   };
   paginationOptions: PaginationOptions;
-  result: QualysApiResponse<object>;
-}) {
+  result: QualysApiResponse<any>;
+}): QualysApiNextRequest | null {
   const { requestOptions, paginationOptions, result } = options;
   const responseData: any = result.responseData;
   const hasMoreRecords = responseData.ServiceResponse?.hasMoreRecords;
@@ -64,7 +66,7 @@ export function buildRestApiNextPageRequest(options: {
     : null;
 }
 
-export function buildRestApiPaginator<T extends object>(
+export function buildRestApiPaginator<T>(
   qualysClient: QualysClient,
   options: {
     requestOptions: {
@@ -74,7 +76,7 @@ export function buildRestApiPaginator<T extends object>(
     };
     paginationOptions: PaginationOptions;
   },
-) {
+): QualysApiResponsePaginator<T> {
   const { paginationOptions } = options;
   const headers = {
     ...options.requestOptions.headers,

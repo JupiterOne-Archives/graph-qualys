@@ -1,22 +1,23 @@
-import toArray from '../util/toArray';
 import {
-  TYPE_QUALYS_HOST,
-  TYPE_QUALYS_HOST_FINDING,
-  TYPE_QUALYS_VULN,
-  buildQualysVulnKey,
-  convertHostToEntity,
-  convertHostDetectionToEntity,
-  isHostEC2Instance,
-} from '../converters';
-import QualysClient from '../provider/QualysClient';
-import QualysVulnEntityManager from './QualysVulnEntityManager';
-import { HostEntity } from '../converters/types';
-import {
+  createIntegrationRelationship,
   IntegrationStepExecutionContext,
   Relationship,
   RelationshipDirection,
-  createIntegrationRelationship,
 } from '@jupiterone/integration-sdk-core';
+
+import {
+  buildQualysVulnKey,
+  convertHostDetectionToEntity,
+  convertHostToEntity,
+  isHostEC2Instance,
+  TYPE_QUALYS_HOST,
+  TYPE_QUALYS_HOST_FINDING,
+  TYPE_QUALYS_VULN,
+} from '../converters';
+import { HostEntity } from '../converters/types';
+import QualysClient from '../provider/QualysClient';
+import toArray from '../util/toArray';
+import QualysVulnEntityManager from './QualysVulnEntityManager';
 
 export default async function collectHostDetections(
   context: IntegrationStepExecutionContext,
@@ -25,7 +26,7 @@ export default async function collectHostDetections(
     qualysVulnEntityManager: QualysVulnEntityManager;
     hostEntityLookup: Record<string, HostEntity>;
   },
-) {
+): Promise<void> {
   const { logger } = context;
 
   logger.info('Collecting host detections...');

@@ -1,5 +1,6 @@
-import { QualysApiRequestResponse } from './QualysClient';
 import { IntegrationError } from '@jupiterone/integration-sdk-core';
+
+import { QualysApiRequestResponse } from './QualysClient';
 
 const QUALYS_CLIENT_API_ERROR = Symbol('QualysClientApiError');
 
@@ -47,8 +48,10 @@ Object.defineProperty(
   },
 );
 
-export function toPossibleQualysClientApiError(err: any) {
-  return err.QUALYS_CLIENT_API_ERROR === QUALYS_CLIENT_API_ERROR
+export function toPossibleQualysClientApiError(
+  err: Error,
+): QualysClientApiError | undefined {
+  return (err as any).QUALYS_CLIENT_API_ERROR === QUALYS_CLIENT_API_ERROR
     ? (err as QualysClientApiError)
     : undefined;
 }

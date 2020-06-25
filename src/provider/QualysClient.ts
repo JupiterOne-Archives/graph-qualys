@@ -1,11 +1,12 @@
-import fetch, { Response, Headers, Request } from 'node-fetch';
-import { QualysClientError, QualysClientApiError } from './errors';
 import xmlParser from 'fast-xml-parser';
+import fetch, { Headers, Request, Response } from 'node-fetch';
 import querystring from 'querystring';
-import { QualysWebApplicationScanningClient } from './webApplicationScanning';
+
+import { QualysAssetManagementClient } from './assetManagement';
+import { QualysClientApiError, QualysClientError } from './errors';
 import { QualysKnowledgeBaseClient } from './knowledgeBase';
 import { QualysVmClient } from './vulnerabilityManagement';
-import { QualysAssetManagementClient } from './assetManagement';
+import { QualysWebApplicationScanningClient } from './webApplicationScanning';
 
 export type QualysApiRequestWithPathOptions = {
   path: string;
@@ -61,14 +62,17 @@ const TEXT_CONVERTER: QualysClientResponseType<string> = (text, response) => {
   return text;
 };
 
-const JSON_CONVERTER: QualysClientResponseType<object> = (text, response) => {
-  return JSON.parse(text);
-};
-
-const XML_TO_JSON_CONVERTER: QualysClientResponseType<object> = (
+const JSON_CONVERTER: QualysClientResponseType<Record<string, unknown>> = (
   text,
   response,
 ) => {
+  return JSON.parse(text);
+};
+
+const XML_TO_JSON_CONVERTER: QualysClientResponseType<Record<
+  string,
+  unknown
+>> = (text, response) => {
   return xmlParser.parse(text);
 };
 
@@ -93,7 +97,7 @@ export type QualysApiResponsePaginator<T> = {
   nextPage: () => Promise<QualysApiResponse<T>>;
 };
 
-type QualysApiNextRequest = {
+export type QualysApiNextRequest = {
   url: string;
   headers?: Record<string, string>;
   body?: string;
@@ -103,7 +107,7 @@ export type BuildNextRequestFunction<T> = (
   response: QualysApiResponse<T>,
 ) => QualysApiNextRequest | null;
 
-export function buildPaginatedResponse<T extends object>(
+export function buildPaginatedResponse<T>(
   qualysClient: QualysClient,
   options: {
     requestOptions: QualysApiMakeRequestWithFullUrlOptions<T>;
@@ -177,7 +181,7 @@ export default class QualysClient {
     apiUrl?: string;
     path: string;
     query?: querystring.ParsedUrlQueryInput;
-  }) {
+  }): string {
     let path = requestOptions.path;
     if (requestOptions.query) {
       path += '?' + querystring.stringify(requestOptions.query);
@@ -232,7 +236,11 @@ export default class QualysClient {
       responseData = (undefined as unknown) as T;
     } else {
       responseText = await response.text();
-      responseData = requestOptions.responseType(responseText, response);
+      if (responseText) {
+        responseData = requestOptions.responseType(responseText, response);
+      } else {
+        responseData = (undefined as unknown) as T;
+      }
     }
 
     const requestResponse: QualysApiRequestResponse<T> = {
