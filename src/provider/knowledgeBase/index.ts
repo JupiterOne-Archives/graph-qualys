@@ -1,6 +1,7 @@
 import QualysClient, {
-  QualysClientResponseType,
   buildPaginatedResponse,
+  QualysApiResponsePaginator,
+  QualysClientResponseType,
 } from '../QualysClient';
 import { ListQualysVulnerabilitiesReply } from './types.listQualysVulnerabilities';
 
@@ -10,7 +11,7 @@ export class QualysKnowledgeBaseClient {
   async listQualysVulnerabilities(options: {
     qidList: number[];
     limit: number;
-  }) {
+  }): Promise<QualysApiResponsePaginator<ListQualysVulnerabilitiesReply>> {
     let index = 0;
 
     const buildUrl = (startIndex: number) => {

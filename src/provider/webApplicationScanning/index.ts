@@ -1,14 +1,17 @@
-import type QualysClient from '../QualysClient';
-import { QualysClientResponseType } from '../QualysClient';
+import QualysClient, {
+  QualysApiResponsePaginator,
+  QualysApiRequestResponse,
+} from '../QualysClient';
 import { buildRestApiPaginator } from '../paginationUtil';
-import { ListWebAppsReply } from './types.listWebApps';
-import { FetchWebAppReply } from './types.fetchWebApp';
+import { QualysClientResponseType } from '../QualysClient';
 import { FetchScanResultsReply } from './types.fetchScanResults';
+import { FetchWebAppReply } from './types.fetchWebApp';
+import { ListWebAppsReply } from './types.listWebApps';
 
 export class QualysWebApplicationScanningClient {
   constructor(private qualysClient: QualysClient) {}
 
-  listScans(options: { limit: number }) {
+  listScans(options: { limit: number }): QualysApiResponsePaginator<any> {
     const { limit } = options;
     const url = this.qualysClient.buildRequestUrl({
       path: '/qps/rest/3.0/search/was/wasscan',
@@ -25,7 +28,10 @@ export class QualysWebApplicationScanningClient {
     });
   }
 
-  listWebApps(options: { limit: number; isScanned: true }) {
+  listWebApps(options: {
+    limit: number;
+    isScanned: true;
+  }): QualysApiResponsePaginator<ListWebAppsReply> {
     const { limit, isScanned } = options;
     const url = this.qualysClient.buildRequestUrl({
       path: '/qps/rest/3.0/search/was/webapp',
@@ -47,7 +53,9 @@ export class QualysWebApplicationScanningClient {
     });
   }
 
-  async fetchWebApp(options: { webAppId: number }) {
+  async fetchWebApp(options: {
+    webAppId: number;
+  }): Promise<QualysApiRequestResponse<FetchWebAppReply>> {
     return this.qualysClient.makeRequest<FetchWebAppReply>({
       requestName: 'webApplicationScanning.fetchWebApp',
       path: `/qps/rest/3.0/get/was/webapp/${options.webAppId}`,
@@ -61,7 +69,7 @@ export class QualysWebApplicationScanningClient {
 
   // async fetchScanDetails(options: {
   //   webAppScanId: number
-  // }) {
+  // }): Promise<QualysApiRequestResponse<any>> {
   //   return this.qualysClient.makeRequest({
   //     requestName: 'webApplicationScanning.fetchScanDetails',
   //     path: `/qps/rest/3.0/get/was/wasscan/${options.webAppScanId}`,
@@ -73,7 +81,9 @@ export class QualysWebApplicationScanningClient {
   //   });
   // }
 
-  async fetchScanResults(options: { webAppScanId: number }) {
+  async fetchScanResults(options: {
+    webAppScanId: number;
+  }): Promise<QualysApiRequestResponse<FetchScanResultsReply>> {
     return this.qualysClient.makeRequest<FetchScanResultsReply>({
       requestName: 'webApplicationScanning.fetchScanResults',
       path: `/qps/rest/3.0/download/was/wasscan/${options.webAppScanId}`,

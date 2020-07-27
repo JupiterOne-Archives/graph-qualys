@@ -1,16 +1,18 @@
-import QualysClient from '../provider/QualysClient';
-import toArray from '../util/toArray';
-import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
-import { convertWebAppToEntity } from '../converters';
-import { wrapMapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
 import pMap from 'p-map';
+
+import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
+
+import { convertWebAppToEntity } from '../converters';
+import QualysClient from '../provider/QualysClient';
+import { wrapMapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
+import toArray from '../util/toArray';
 
 export default async function collectWebApps(
   context: IntegrationStepExecutionContext,
   options: {
     qualysClient: QualysClient;
   },
-) {
+): Promise<{ webAppScanIdSet: Set<number> }> {
   const { logger } = context;
 
   logger.info('Collecting web apps...');

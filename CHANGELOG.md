@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Fix a bunch of lint warnings and errors
+
 ## 1.2.1 2020-05-20
 
 - Better error handling

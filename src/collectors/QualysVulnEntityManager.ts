@@ -1,10 +1,11 @@
 import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
-import { QualysVulnerabilityEntity } from '../converters/types';
-import QualysClient from '../provider/QualysClient';
-import toArray from '../util/toArray';
+
 import { convertQualysVulnerabilityToEntity } from '../converters';
+import { QualysVulnerabilityEntity } from '../converters/types';
 import { QualysVulnerabilitiesErrorResponse } from '../provider/knowledgeBase/types.listQualysVulnerabilities';
+import QualysClient from '../provider/QualysClient';
 import { wrapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
+import toArray from '../util/toArray';
 
 export default class QualysVulnEntityManager {
   context: IntegrationStepExecutionContext;
@@ -94,7 +95,7 @@ export default class QualysVulnEntityManager {
     );
   }
 
-  addQID(qid: number) {
+  addQID(qid: number): void {
     // safety check because we're dealing with some inconsistent APIs
     if (qid == null || this.fetchNotAllowed) {
       return;
@@ -105,7 +106,9 @@ export default class QualysVulnEntityManager {
     }
   }
 
-  async getVulnerabilityByQID(qid: number) {
+  async getVulnerabilityByQID(
+    qid: number,
+  ): Promise<QualysVulnerabilityEntity | undefined> {
     const existing = this.fetchedVulnMap.get(qid);
     if (existing) {
       return existing;
@@ -118,7 +121,7 @@ export default class QualysVulnEntityManager {
     return this.fetchedVulnMap.get(qid);
   }
 
-  async getCollectedVulnerabilities() {
+  async getCollectedVulnerabilities(): Promise<QualysVulnerabilityEntity[]> {
     await this.fetchMissingVulnerabilities();
     return [...this.fetchedVulnMap.values()];
   }

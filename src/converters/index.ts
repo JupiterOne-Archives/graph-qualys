@@ -1,39 +1,39 @@
 import { createIntegrationEntity } from '@jupiterone/integration-sdk-core';
-import { convertISODateStringToTimestamp } from '../util/converterUtl';
-import * as listWebAppsTypes from '../provider/webApplicationScanning/types.listWebApps';
-import * as fetchScanResultsTypes from '../provider/webApplicationScanning/types.fetchScanResults';
-import * as listQualysVulnerabilitiesTypes from '../provider/knowledgeBase/types.listQualysVulnerabilities';
-import * as listHostAssetsTypes from '../provider/assetManagement/types.listHostAssets';
-import * as listHostDetectionsTypes from '../provider/vulnerabilityManagement/types.listHostDetections';
 
+import * as listHostAssetsTypes from '../provider/assetManagement/types.listHostAssets';
+import * as listQualysVulnerabilitiesTypes from '../provider/knowledgeBase/types.listQualysVulnerabilities';
+import * as listHostDetectionsTypes from '../provider/vulnerabilityManagement/types.listHostDetections';
+import * as fetchScanResultsTypes from '../provider/webApplicationScanning/types.fetchScanResults';
+import * as listWebAppsTypes from '../provider/webApplicationScanning/types.listWebApps';
+import { convertISODateStringToTimestamp } from '../util/converterUtl';
+import toArray from '../util/toArray';
 import {
+  HostEntity,
+  HostEntityEC2Metadata,
+  HostFindingEntity,
+  QualysVulnerabilityEntity,
   WebAppEntity,
   WebAppFindingEntity,
-  QualysVulnerabilityEntity,
-  HostEntity,
-  HostFindingEntity,
-  HostEntityEC2Metadata,
 } from './types';
-import toArray from '../util/toArray';
 
-export function buildWebAppKey(options: { webAppId: number }) {
+export function buildWebAppKey(options: { webAppId: number }): string {
   return `web_app:${options.webAppId.toString()}`;
 }
 
-export function buildQualysVulnKey(options: { qid: number }) {
+export function buildQualysVulnKey(options: { qid: number }): string {
   return `vuln-qid:${options.qid}`;
 }
 
 export function buildHostKey(options: {
   // Use the _host_ ID and not the _host asset_ ID (there's a difference...)
   qwebHostId: number;
-}) {
+}): string {
   return `qualys-host:${options.qwebHostId}`;
 }
 
 export function buildKey(
   data: Record<string, string | boolean | number | undefined>,
-) {
+): string {
   const keys = Object.keys(data);
   keys.sort();
 
@@ -59,14 +59,16 @@ const SEVERITY_MAPPINGS = ['none', 'info', 'low', 'medium', 'high', 'critical'];
 
 export function convertNumericSeverityToString(
   numericSeverity: number | undefined,
-) {
+): string {
   if (numericSeverity === undefined || numericSeverity < 0) {
     return 'unknown';
   }
   return numericSeverity <= 5 ? SEVERITY_MAPPINGS[numericSeverity] : 'critical';
 }
 
-export function determinePlatform(hostAsset: listHostAssetsTypes.HostAsset) {
+export function determinePlatform(
+  hostAsset: listHostAssetsTypes.HostAsset,
+): string | undefined {
   let os = hostAsset.os;
   if (!os) {
     return undefined;
@@ -85,7 +87,7 @@ export function determinePlatform(hostAsset: listHostAssetsTypes.HostAsset) {
 
 export function convertWebAppToEntity(options: {
   webApp: listWebAppsTypes.WebApp;
-}) {
+}): WebAppEntity {
   const { webApp } = options;
   const entity: WebAppEntity = {
     createdOn: convertISODateStringToTimestamp(webApp.createdDate),
@@ -111,7 +113,7 @@ export function convertWebAppVulnerabilityToFinding(options: {
   vuln: fetchScanResultsTypes.WasScanVuln;
   webApp: fetchScanResultsTypes.WebApp;
   vulnFromKnowledgeBase: QualysVulnerabilityEntity | undefined;
-}) {
+}): WebAppFindingEntity {
   const { vuln, webApp, vulnFromKnowledgeBase } = options;
   const findingKey = buildKey({
     qid: vuln.qid,
@@ -154,10 +156,10 @@ export function convertWebAppVulnerabilityToFinding(options: {
 
 export function convertQualysVulnerabilityToEntity(options: {
   vuln: listQualysVulnerabilitiesTypes.Vuln;
-}) {
+}): QualysVulnerabilityEntity {
   const { vuln } = options;
   const cveList = toArray(vuln.CVE_LIST?.CVE);
-  const webLink = cveList[0]?.URL!;
+  const webLink = cveList[0]?.URL as string;
 
   const entity: QualysVulnerabilityEntity = {
     qid: vuln.QID!,
@@ -220,7 +222,7 @@ export function convertQualysVulnerabilityToEntity(options: {
 
 export function convertHostAssetToEntity(options: {
   hostAsset: listHostAssetsTypes.HostAsset;
-}) {
+}): HostEntity {
   const { hostAsset } = options;
   const qwebHostId = hostAsset.qwebHostId!;
   const hostKey = buildHostKey({
@@ -266,13 +268,13 @@ export function convertHostAssetToEntity(options: {
   }) as unknown) as HostEntity;
 }
 
-export function isHostEC2Instance(hostEntity: HostEntity) {
-  return hostEntity.type === 'EC_2' && hostEntity.instanceId;
+export function isHostEC2Instance(hostEntity: HostEntity): boolean {
+  return !!(hostEntity.type === 'EC_2' && hostEntity.instanceId);
 }
 
 export function convertHostToEntity(options: {
   host: listHostDetectionsTypes.Host;
-}) {
+}): HostEntity {
   const { host } = options;
   const hostId = host.ID!;
   const hostKey = buildHostKey({
@@ -308,7 +310,7 @@ export function convertHostDetectionToEntity(options: {
   detection: listHostDetectionsTypes.Detection;
   hostId: number;
   vulnFromKnowledgeBase: QualysVulnerabilityEntity | undefined;
-}) {
+}): HostFindingEntity {
   const { detection, vulnFromKnowledgeBase } = options;
   const findingKey = buildKey({
     qid: detection.QID,

@@ -1,7 +1,8 @@
 import {
-  IntegrationStepExecutionContext,
   createIntegrationEntity,
+  IntegrationStepExecutionContext,
 } from '@jupiterone/integration-sdk-core';
+
 import QualysVulnEntityManager from './QualysVulnEntityManager';
 
 export default async function collectVulnerabilities(
@@ -9,7 +10,7 @@ export default async function collectVulnerabilities(
   options: {
     qualysVulnEntityManager: QualysVulnEntityManager;
   },
-) {
+): Promise<void> {
   const { logger } = context;
   const { qualysVulnEntityManager } = options;
 

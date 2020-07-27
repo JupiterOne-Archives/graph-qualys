@@ -1,15 +1,16 @@
 import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
+
+import { convertHostAssetToEntity, isHostEC2Instance } from '../converters';
+import { HostEntity } from '../converters/types';
 import QualysClient from '../provider/QualysClient';
 import toArray from '../util/toArray';
-import { HostEntity } from '../converters/types';
-import { convertHostAssetToEntity, isHostEC2Instance } from '../converters';
 
 export default async function collectHostAssets(
   context: IntegrationStepExecutionContext,
   options: {
     qualysClient: QualysClient;
   },
-) {
+): Promise<{ hostEntityLookup: Record<string, HostEntity> }> {
   const { logger } = context;
 
   logger.info('Collecting host assets...');

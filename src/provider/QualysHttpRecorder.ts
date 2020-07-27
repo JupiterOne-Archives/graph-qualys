@@ -1,9 +1,10 @@
-import { QualysApiRequestResponse } from './QualysClient';
-import path from 'path';
-import fs from 'fs';
-import { Writable } from 'stream';
 import colors from 'colors';
+import fs from 'fs';
 import mkdirp from 'mkdirp';
+import path from 'path';
+import { Writable } from 'stream';
+
+import { QualysApiRequestResponse } from './QualysClient';
 
 type Formatter = (str: string) => string;
 
@@ -49,7 +50,7 @@ export class QualysHttpRecorder {
     return subdir;
   }
 
-  close() {
+  close(): void {
     for (const key of Object.keys(this.streams)) {
       this.streams[key]?.end();
     }
@@ -79,7 +80,7 @@ export class QualysHttpRecorder {
     stream.write(str);
   }
 
-  logRequest(requestResponse: QualysApiRequestResponse<any>) {
+  logRequest(requestResponse: QualysApiRequestResponse<any>): void {
     const requestMethod = requestResponse.request.method;
     const requestUrl = requestResponse.request.url;
     const requestHeaders = requestResponse.request.headers;

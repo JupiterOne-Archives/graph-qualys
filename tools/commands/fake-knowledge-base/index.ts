@@ -328,7 +328,7 @@ async function startServer(options: RunOptions) {
   });
 }
 
-export async function run() {
+export async function run(): Promise<void> {
   const port = process.env.FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT
     ? parseInt(process.env.FAKE_QUALYS_KNOWLEDGE_BASE_SERVER_PORT, 10)
     : 8080;

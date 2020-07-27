@@ -23,7 +23,7 @@ export default async function collectWebAppScans(
     webAppScanIdSet: Set<number>;
     qualysVulnEntityManager: QualysVulnEntityManager;
   },
-) {
+): Promise<void> {
   const { logger } = context;
 
   logger.info('Collecting web app scans...');
