@@ -1,20 +1,23 @@
-import QualysClient from '../provider/QualysClient';
+import pMap from 'p-map';
+
 import {
+  createDirectRelationship,
   IntegrationStepExecutionContext,
-  createIntegrationRelationship,
+  RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
+
 import {
-  convertWebAppVulnerabilityToFinding,
-  TYPE_QUALYS_WEB_APP,
-  TYPE_QUALYS_WEB_APP_FINDING,
-  TYPE_QUALYS_VULN,
   buildQualysVulnKey,
   buildWebAppKey,
+  convertWebAppVulnerabilityToFinding,
+  TYPE_QUALYS_VULN,
+  TYPE_QUALYS_WEB_APP,
+  TYPE_QUALYS_WEB_APP_FINDING,
 } from '../converters';
+import QualysClient from '../provider/QualysClient';
+import { wrapMapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
 import toArray from '../util/toArray';
 import QualysVulnEntityManager from './QualysVulnEntityManager';
-import pMap from 'p-map';
-import { wrapMapFunctionWithInvokeSafely } from '../util/errorHandlerUtil';
 
 export default async function collectWebAppScans(
   context: IntegrationStepExecutionContext,
@@ -75,27 +78,27 @@ export default async function collectWebAppScans(
             await context.jobState.addEntities([webAppFindingEntity]);
 
             // Relate the Web App to the Finding
-            const webAppHasFinding = createIntegrationRelationship({
+            const webAppHasFinding = createDirectRelationship({
               fromKey: buildWebAppKey({
                 webAppId: targetWebApp.id!,
               }),
               toKey: webAppFindingEntity._key,
               fromType: TYPE_QUALYS_WEB_APP,
               toType: TYPE_QUALYS_WEB_APP_FINDING,
-              _class: 'HAS',
+              _class: RelationshipClass.HAS,
             });
 
             await context.jobState.addRelationships([webAppHasFinding]);
 
             // Relate the Finding to the Vulnerability
-            const webAppFindingIsVuln = createIntegrationRelationship({
+            const webAppFindingIsVuln = createDirectRelationship({
               fromKey: webAppFindingEntity._key,
               toKey: buildQualysVulnKey({
                 qid: vuln.qid,
               }),
               fromType: TYPE_QUALYS_WEB_APP_FINDING,
               toType: TYPE_QUALYS_VULN,
-              _class: 'IS',
+              _class: RelationshipClass.IS,
             });
             await context.jobState.addRelationships([webAppFindingIsVuln]);
           }

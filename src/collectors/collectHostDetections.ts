@@ -1,7 +1,9 @@
 import {
-  createIntegrationRelationship,
+  createDirectRelationship,
+  createMappedRelationship,
   IntegrationStepExecutionContext,
   Relationship,
+  RelationshipClass,
   RelationshipDirection,
 } from '@jupiterone/integration-sdk-core';
 
@@ -96,8 +98,8 @@ export default async function collectHostDetections(
 
           // Relate the Host to the Finding
           if (isHostEC2Instance(hostEntity)) {
-            hostHasFindingRelationship = createIntegrationRelationship({
-              _class: 'HAS',
+            hostHasFindingRelationship = createMappedRelationship({
+              _class: RelationshipClass.HAS,
               _mapping: {
                 relationshipDirection: RelationshipDirection.FORWARD,
                 sourceEntityKey: findingEntity._key,
@@ -110,29 +112,27 @@ export default async function collectHostDetections(
               },
             });
           } else {
-            hostHasFindingRelationship = createIntegrationRelationship({
+            hostHasFindingRelationship = createDirectRelationship({
               fromKey: hostEntity._key,
               toKey: findingEntity._key,
               fromType: TYPE_QUALYS_HOST,
               toType: TYPE_QUALYS_HOST_FINDING,
-              _class: 'HAS',
+              _class: RelationshipClass.HAS,
             });
           }
 
           await context.jobState.addRelationships([hostHasFindingRelationship]);
 
           // Relate the Finding to the Vulnerability
-          const findingIsVulnerabilityRelationship = createIntegrationRelationship(
-            {
-              fromKey: findingEntity._key,
-              toKey: buildQualysVulnKey({
-                qid: detection.QID!,
-              }),
-              fromType: TYPE_QUALYS_HOST_FINDING,
-              toType: TYPE_QUALYS_VULN,
-              _class: 'IS',
-            },
-          );
+          const findingIsVulnerabilityRelationship = createDirectRelationship({
+            fromKey: findingEntity._key,
+            toKey: buildQualysVulnKey({
+              qid: detection.QID!,
+            }),
+            fromType: TYPE_QUALYS_HOST_FINDING,
+            toType: TYPE_QUALYS_VULN,
+            _class: RelationshipClass.IS,
+          });
 
           await context.jobState.addRelationships([
             findingIsVulnerabilityRelationship,
