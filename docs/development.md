@@ -9,10 +9,7 @@ APIs to ingest data.
    receive an email with your username and a link to access and reset your
    password.
 2. Create a Web Application and a Vulnerabilty Scan of the application.
-3. Send an email to your Account Manager (found in the username/password
-   introduction email) requesting access to the API. Without this step, the API
-   will respond with `404`.
-4. Find your API URL from the **Help** -> **About** link in the web app.
+3. Find your API URL from the **Help** -> **About** link in the web app.
 
 ![API URL from About Page](./images/qualys-help-about-api-url.png)
 
