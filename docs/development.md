@@ -5,15 +5,14 @@ APIs to ingest data.
 
 ## Provider account setup
 
-Qualys offers a free trial via the following link:
-
-<https://www.qualys.com/free-trial/>
-
-After activating trial, you'll receive a username and instructions for resetting
-password.
-
-You can then find your API URL from the **Help** -> **About** link in the web
-app.
+1. Request a [free trial of Qualys](https://www.qualys.com/free-trial/). You'll
+   receive an email with your username and a link to access and reset your
+   password.
+2. Create a Web Application and a Vulnerabilty Scan of the application.
+3. Send an email to your Account Manager (found in the username/password
+   introduction email) requesting access to the API. Without this step, the API
+   will respond with `404`.
+4. Find your API URL from the **Help** -> **About** link in the web app.
 
 ![API URL from About Page](./images/qualys-help-about-api-url.png)
 
@@ -22,7 +21,7 @@ app.
 By default, a Qualys trial does not allow access to knowledge base so a fake
 Qualys knowledge base is provided as a tool in this integration.
 
-Here's the recommended `.env` for this project:
+Here's the recommended `.env` for this project (filling in your credentials):
 
 ```ini
 QUALYS_USERNAME=
