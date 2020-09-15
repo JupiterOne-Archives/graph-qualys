@@ -2,6 +2,8 @@ import xmlParser from 'fast-xml-parser';
 import fetch, { Headers, Request, Response } from 'node-fetch';
 import querystring from 'querystring';
 
+import { retry } from '@lifeomic/attempt';
+
 import { QualysAssetManagementClient } from './assetManagement';
 import { QualysClientApiError, QualysClientError } from './errors';
 import { QualysKnowledgeBaseClient } from './knowledgeBase';
@@ -223,7 +225,14 @@ export default class QualysClient {
       timeout: 1000 * 30,
     });
 
-    const response = await fetch(request);
+    const response = await retry(async () => await fetch(request), {
+      maxAttempts: 10,
+      handleError: (err, context, options) => {
+        if (err.name != 'FetchError') {
+          throw err;
+        }
+      },
+    });
 
     let responseText: string | undefined;
     let responseData: T;
