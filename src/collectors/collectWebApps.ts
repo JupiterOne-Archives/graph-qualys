@@ -82,7 +82,7 @@ export default async function collectWebApps(
   );
 
   await pMap(webAppIds, collectWebAppScanIds, {
-    concurrency: 1,
+    concurrency: 3,
   });
 
   logger.info('Finished collecting web apps');

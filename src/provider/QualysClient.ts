@@ -222,7 +222,7 @@ export default class QualysClient {
       method: requestOptions.method,
       headers,
       body: requestOptions.body,
-      timeout: 1000 * 30,
+      timeout: 1000 * 60,
     });
 
     const response = await retry(async () => await fetch(request), {
