@@ -1,6 +1,6 @@
 {
   "name": "@jupiterone/graph-qualys",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Qualys integration for JupiterOne",
   "license": "MPL-2.0",
   "main": "dist/index.js",

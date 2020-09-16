@@ -47,6 +47,8 @@ export default class QualysVulnEntityManager {
           },
         );
 
+        let pageIndex = 0;
+
         do {
           const { responseData } = await qualysVulnPaginator.nextPage();
 
@@ -77,6 +79,14 @@ export default class QualysVulnEntityManager {
               ?.VULN,
           );
 
+          logger.info(
+            {
+              numVulns: vulnList.length,
+              pageIndex,
+            },
+            'Fetched page of vulnerabilities',
+          );
+
           const entities: QualysVulnerabilityEntity[] = [];
 
           for (const vuln of vulnList) {
@@ -88,6 +98,8 @@ export default class QualysVulnEntityManager {
 
             entities.push(entity);
           }
+
+          pageIndex++;
         } while (qualysVulnPaginator.hasNextPage());
 
         logger.info('Finished fetching vulnerabilities from knowledge base');

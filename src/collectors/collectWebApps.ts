@@ -41,6 +41,7 @@ export default async function collectWebApps(
       logger.info(
         {
           numWebApps: webApps.length,
+          pageIndex,
         },
         'Fetched page of web apps',
       );

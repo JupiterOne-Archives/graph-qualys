@@ -55,7 +55,7 @@ export function buildRestApiNextPageRequest(options: {
   const responseData: any = result.responseData;
   const hasMoreRecords = responseData.ServiceResponse?.hasMoreRecords;
   const lastId = responseData.ServiceResponse?.lastId;
-  return hasMoreRecords
+  return lastId && hasMoreRecords
     ? {
         ...requestOptions,
         body: buildRestApiPaginatedRequestBody({
