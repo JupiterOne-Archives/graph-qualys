@@ -107,6 +107,7 @@ export default async function collectWebAppScans(
         logger.info(
           {
             responseData,
+            webAppScanId,
           },
           'No data in fetchScanResults',
         );

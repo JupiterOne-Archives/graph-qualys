@@ -48,12 +48,22 @@ export default async function collectHostDetections(
   const seenFindingEntityKeys = new Set<string>();
 
   do {
+    logger.info('Fetching page of host detections...');
+
     const { responseData } = await hostDetectionsPaginator.nextPage();
     const hosts = toArray(
       responseData.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
     );
 
     if (hosts.length) {
+      logger.info(
+        {
+          numHostDetections: hosts.length,
+          pageIndex,
+        },
+        'Fetched page of host detections',
+      );
+
       for (const host of hosts) {
         const hostId = host.ID!;
         let hostEntity: HostEntity = hostEntityLookup[hostId];

@@ -24,10 +24,19 @@ export default async function collectHostAssets(
   let pageIndex = 0;
 
   do {
+    logger.info('Fetching page of host assets...');
+
     const { responseData } = await hostAssetsPaginator.nextPage();
     const hostAssets = toArray(responseData?.ServiceResponse?.data?.HostAsset);
     const hostEntities: HostEntity[] = [];
     if (hostAssets.length) {
+      logger.info(
+        {
+          numHostAssets: hostAssets.length,
+          pageIndex,
+        },
+        'Fetched page of host assets',
+      );
       for (const hostAsset of hostAssets) {
         const qwebHostId = hostAsset.qwebHostId;
         if (qwebHostId) {
