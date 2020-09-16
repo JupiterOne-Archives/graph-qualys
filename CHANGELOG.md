@@ -4,6 +4,13 @@
 
 ### Changed
 
+- Added logging
+- Checked for no `lastId` in determining whether there is another page
+
+## ??
+
+### Changed
+
 - Fix a bunch of lint warnings and errors
 
 ## 1.2.1 2020-05-20
