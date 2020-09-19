@@ -5,7 +5,6 @@ import {
 
 import collectHostAssets from '../collectors/collectHostAssets';
 import collectHostDetections from '../collectors/collectHostDetections';
-import collectVulnerabilities from '../collectors/collectVulnerabilities';
 import collectWebApps from '../collectors/collectWebApps';
 import collectWebAppScans from '../collectors/collectWebAppScans';
 import QualysVulnEntityManager from '../collectors/QualysVulnEntityManager';
@@ -110,59 +109,64 @@ const step: IntegrationStep<QualysIntegrationConfig> = {
         qualysClient,
       });
 
-      const collectWebAppsResult = await invokeSafely(
-        context,
-        { operationName: 'collectWebApps' },
-        async () => {
-          return collectWebApps(context, {
-            qualysClient,
-          });
-        },
-      );
+      /**
+       * Collect all web apps and their associated scans as determined
+       * by "lastScanId" property of each web app
+       */
+      const ingestWebAppsAndScans = async () => {
+        const collectWebAppsResult = await invokeSafely(
+          context,
+          { operationName: 'collectWebApps' },
+          async () => {
+            return collectWebApps(context, {
+              qualysClient,
+            });
+          },
+        );
 
-      await invokeSafely(
-        context,
-        { operationName: 'collectWebAppScans' },
-        async () => {
-          await collectWebAppScans(context, {
-            qualysClient,
-            qualysVulnEntityManager,
-            webAppScanIdSet: collectWebAppsResult?.webAppScanIdSet || new Set(),
-          });
-        },
-      );
+        await invokeSafely(
+          context,
+          { operationName: 'collectWebAppScans' },
+          async () => {
+            await collectWebAppScans(context, {
+              qualysClient,
+              qualysVulnEntityManager,
+              webAppScanIdSet:
+                collectWebAppsResult?.webAppScanIdSet || new Set(),
+            });
+          },
+        );
+      };
 
-      const collectHostAssetsResult = await invokeSafely(
-        context,
-        { operationName: 'collectHostAssets' },
-        async () => {
-          return collectHostAssets(context, {
-            qualysClient,
-          });
-        },
-      );
+      /**
+       * Collect all host assets and then collect the host detections
+       * associated with these hosts
+       */
+      const ingestHostsAndScans = async () => {
+        const collectHostAssetsResult = await invokeSafely(
+          context,
+          { operationName: 'collectHostAssets' },
+          async () => {
+            return collectHostAssets(context, {
+              qualysClient,
+            });
+          },
+        );
 
-      await invokeSafely(
-        context,
-        { operationName: 'collectHostDetections' },
-        async () => {
-          await collectHostDetections(context, {
-            qualysClient,
-            qualysVulnEntityManager,
-            hostEntityLookup: collectHostAssetsResult?.hostEntityLookup || {},
-          });
-        },
-      );
+        await invokeSafely(
+          context,
+          { operationName: 'collectHostDetections' },
+          async () => {
+            await collectHostDetections(context, {
+              qualysClient,
+              qualysVulnEntityManager,
+              hostEntityLookup: collectHostAssetsResult?.hostEntityLookup || {},
+            });
+          },
+        );
+      };
 
-      await invokeSafely(
-        context,
-        { operationName: 'collectVulnerabilities' },
-        async () => {
-          await collectVulnerabilities(context, {
-            qualysVulnEntityManager,
-          });
-        },
-      );
+      await Promise.all([ingestWebAppsAndScans(), ingestHostsAndScans()]);
     } finally {
       httpRecorder?.close();
     }

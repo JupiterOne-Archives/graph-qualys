@@ -9,30 +9,33 @@ import { QualysClientApiError, QualysClientError } from './errors';
 import { QualysKnowledgeBaseClient } from './knowledgeBase';
 import { QualysVmClient } from './vulnerabilityManagement';
 import { QualysWebApplicationScanningClient } from './webApplicationScanning';
+import { IntegrationLogger } from '@jupiterone/integration-sdk-core';
 
-export type QualysApiRequestWithPathOptions = {
-  path: string;
-  method: 'get' | 'post';
-  query: querystring.ParsedUrlQueryInput;
+export type LoggerContext = {
+  logger: IntegrationLogger;
 };
 
-export type QualysApiMakeRequestWithFullUrlOptions<T> = {
+export type BaseQualysApiMakeRequestOptions<T> = {
   requestName: string;
   responseType: QualysClientResponseType<T>;
   headers?: Record<string, string>;
-  url: string;
   method: 'get' | 'post';
   body?: string;
+  retryOnTimeout: boolean;
+  maxAttempts: number;
 };
 
-export type QualysApiMakeRequestOptions<T> = {
-  requestName: string;
-  responseType: QualysClientResponseType<T>;
-  headers?: Record<string, string>;
-  method: 'get' | 'post';
+export type QualysApiMakeRequestWithFullUrlOptions<
+  T
+> = BaseQualysApiMakeRequestOptions<T> & {
+  url: string;
+};
+
+export type QualysApiMakeRequestOptions<T> = BaseQualysApiMakeRequestOptions<
+  T
+> & {
   path: string;
   query?: querystring.ParsedUrlQueryInput;
-  body?: string;
 };
 
 export type QualysApiResponse<T> = {
@@ -43,7 +46,7 @@ export type QualysApiResponse<T> = {
 
 export type QualysApiPaginatedResponse<T> = QualysApiResponse<T> & {
   hasNextPage: boolean;
-  nextPage: () => QualysApiResponse<T> | null;
+  nextPage: (context: LoggerContext) => QualysApiResponse<T> | null;
 };
 
 export type QualysApiRequestResponse<T> = QualysApiResponse<T> & {
@@ -96,40 +99,86 @@ const REQUESTED_WITH = '@jupiterone/graph-qualys';
 
 export type QualysApiResponsePaginator<T> = {
   hasNextPage: () => boolean;
-  nextPage: () => Promise<QualysApiResponse<T>>;
+  nextPage: (context: LoggerContext) => Promise<QualysApiResponse<T>>;
+  getNextRequest: () => QualysApiNextRequestWithPageIndex<T> | null;
 };
 
-export type QualysApiNextRequest = {
+/**
+ * The `QualysApiNextRequest` type describes the parameters that are needed
+ * to make another request when paginating.
+ * The `lastId` property will be undefined for the initial request.
+ */
+export type QualysApiNextRequest<T> = {
   url: string;
   headers?: Record<string, string>;
   body?: string;
+  /**
+   * `cursor` is used for logging purposes
+   */
+  cursor: string | undefined;
+  lastResponse: QualysApiResponse<T> | null;
+  logData: Record<string, unknown>;
 };
 
-export type BuildNextRequestFunction<T> = (
-  response: QualysApiResponse<T>,
-) => QualysApiNextRequest | null;
+export type QualysApiNextRequestWithPageIndex<T> = QualysApiNextRequest<T> & {
+  pageIndex: number;
+};
 
-export function buildPaginatedResponse<T>(
+export type BuildNextPageRequestFunction<T> = (
+  context: LoggerContext,
+  lastResponse: QualysApiResponse<T>,
+) => QualysApiNextRequest<T> | null;
+
+export type BuildPageRequestToRetryAfterTimeout<T> = (
+  context: LoggerContext,
+  lastResponse: QualysApiResponse<T> | null,
+) => QualysApiNextRequest<T> | null;
+
+export function buildQualysClientPaginator<T>(
   qualysClient: QualysClient,
   options: {
-    requestOptions: QualysApiMakeRequestWithFullUrlOptions<T>;
-    buildNextRequest: BuildNextRequestFunction<T>;
+    requestName: string;
+    url: string;
+    method: 'get' | 'post';
+    headers?: Record<string, string>;
+    body?: string;
+    maxAttempts: number;
+    logData: Record<string, unknown>;
+    responseType: QualysClientResponseType<T>;
+    buildNextPageRequest: BuildNextPageRequestFunction<T>;
+    buildPageRequestToRetryAfterTimeout: BuildPageRequestToRetryAfterTimeout<T>;
   },
 ): QualysApiResponsePaginator<T> {
-  const { requestOptions, buildNextRequest } = options;
+  const { buildNextPageRequest, buildPageRequestToRetryAfterTimeout } = options;
 
-  let nextRequest: QualysApiNextRequest | null = {
-    url: requestOptions.url,
-    body: requestOptions.body,
-    headers: requestOptions.headers,
+  // Build the initial request
+  let nextRequest: QualysApiNextRequestWithPageIndex<T> | null = {
+    url: options.url,
+    body: options.body,
+    headers: options.headers,
+
+    // No `cursor` for initial request
+    cursor: undefined,
+
+    pageIndex: 0,
+
+    lastResponse: null,
+
+    logData: options.logData,
   };
 
-  return {
+  const seenCursors = new Set<string>();
+
+  const paginator: QualysApiResponsePaginator<T> = {
     hasNextPage: () => {
       return !!nextRequest;
     },
 
-    nextPage: async () => {
+    getNextRequest: () => {
+      return nextRequest;
+    },
+
+    nextPage: async (context) => {
       if (!nextRequest) {
         throw new QualysClientError({
           code: 'NO_NEXT_PAGE',
@@ -137,20 +186,112 @@ export function buildPaginatedResponse<T>(
         });
       }
 
-      const result = await qualysClient.makeRequestWithFullUrl({
-        requestName: requestOptions.requestName,
-        responseType: requestOptions.responseType,
-        method: requestOptions.method,
-        url: nextRequest.url,
-        headers: nextRequest.headers,
-        body: nextRequest.body,
-      });
+      let currentRequest = nextRequest;
+      let currentResponse: QualysApiRequestResponse<T> | undefined;
+      let attemptsRemaining = options.maxAttempts;
 
-      nextRequest = buildNextRequest(result);
+      let logger = context.logger;
 
-      return result;
+      do {
+        attemptsRemaining--;
+
+        logger = context.logger.child({
+          ...currentRequest.logData,
+          requestName: options.requestName,
+          pageIndex: currentRequest.pageIndex,
+          cursor: currentRequest.cursor,
+          url: currentRequest.url,
+        });
+
+        try {
+          logger.info('Fetching page...');
+          currentResponse = await qualysClient.makeRequestWithFullUrl<T>({
+            requestName: options.requestName,
+            responseType: options.responseType,
+            method: options.method,
+            url: currentRequest!.url,
+            headers: currentRequest!.headers,
+            body: currentRequest!.body,
+
+            // Do not retry on timeout
+            retryOnTimeout: false,
+
+            // We have our own retry logic in this function
+            // so only make one attempt
+            maxAttempts: 1,
+          });
+          logger.info('Fetched page');
+        } catch (err) {
+          if (attemptsRemaining === 0) {
+            logger.warn(
+              {
+                maxAttempts: options.maxAttempts,
+                err,
+              },
+              'Qualys API failed to get next page within max number of attempts',
+            );
+            throw err;
+          }
+
+          if (err.code === 'ATTEMPT_TIMEOUT') {
+            const requestForRetry = buildPageRequestToRetryAfterTimeout(
+              { logger },
+              nextRequest.lastResponse,
+            ) as QualysApiNextRequestWithPageIndex<T> | null;
+            if (requestForRetry) {
+              logger.warn(
+                {
+                  err,
+                },
+                'Qualys API request timed out (will retry)',
+              );
+              requestForRetry.pageIndex = currentRequest.pageIndex;
+              currentRequest = requestForRetry;
+            } else {
+              logger.warn(
+                {
+                  err,
+                },
+                'Qualys API request timed out (will not retry)',
+              );
+              throw err;
+            }
+          } else {
+            logger.warn(
+              {
+                err,
+              },
+              'Qualys API request failed (will retry)',
+            );
+          }
+        }
+      } while (!currentResponse);
+
+      nextRequest = buildNextPageRequest(
+        { logger },
+        currentResponse,
+      ) as QualysApiNextRequestWithPageIndex<T> | null;
+
+      if (nextRequest) {
+        nextRequest.pageIndex = currentRequest.pageIndex + 1;
+        if (nextRequest.cursor) {
+          if (seenCursors.has(nextRequest.cursor)) {
+            throw new QualysClientError({
+              code: 'DUPLICATE_CURSOR_WHILE_PAGINATING',
+              message: 'Next page cursor matches a previously returned cursor',
+            });
+          }
+
+          // Remember this cursor so that we can check for duplicate in future
+          seenCursors.add(nextRequest.cursor);
+        }
+      }
+
+      return currentResponse;
     },
   };
+
+  return paginator;
 }
 
 export default class QualysClient {
@@ -201,6 +342,8 @@ export default class QualysClient {
       url: this.buildRequestUrl(requestOptions),
       method: requestOptions.method,
       body: requestOptions.body,
+      retryOnTimeout: requestOptions.retryOnTimeout,
+      maxAttempts: requestOptions.maxAttempts,
     });
   }
 
@@ -222,16 +365,11 @@ export default class QualysClient {
       method: requestOptions.method,
       headers,
       body: requestOptions.body,
-      timeout: 1000 * 60,
     });
 
-    const response = await retry(async () => await fetch(request), {
-      maxAttempts: 10,
-      handleError: (err, context, options) => {
-        if (err.name != 'FetchError') {
-          throw err;
-        }
-      },
+    const response: Response = await retry(async () => await fetch(request), {
+      maxAttempts: requestOptions.maxAttempts,
+      timeout: 1000 * 60 * 2,
     });
 
     let responseText: string | undefined;

@@ -6,3 +6,4 @@ dist/
 temp/
 .http-recordings/
 *.log
+*.bak

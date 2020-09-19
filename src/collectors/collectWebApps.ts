@@ -20,6 +20,7 @@ export default async function collectWebApps(
   const { qualysClient } = options;
 
   const paginator = await qualysClient.webApplicationScanning.listWebApps({
+    // limit is automatically reduced when timeout occurs
     limit: 1000,
     isScanned: true,
   });
@@ -28,12 +29,19 @@ export default async function collectWebApps(
   // const webAppWork: PromiseFactory<void>[] = [];
   const webAppIds: number[] = [];
 
-  let pageIndex = 0;
-
   do {
-    logger.info('Fetching page of web apps...');
+    const nextRequest = paginator.getNextRequest()!;
+    const { pageIndex, cursor, logData } = nextRequest;
+    logger.info(
+      {
+        ...logData,
+        pageIndex,
+        cursor,
+      },
+      'Fetching page of web apps...',
+    );
 
-    const { responseData } = await paginator.nextPage();
+    const { responseData } = await paginator.nextPage(context);
 
     const webApps = toArray(responseData.ServiceResponse?.data?.WebApp);
 
@@ -58,9 +66,18 @@ export default async function collectWebApps(
         'No data in listWebApps',
       );
     }
-
-    pageIndex++;
   } while (paginator.hasNextPage());
+
+  logger.info(
+    {
+      numWebApps: webAppIds.length,
+    },
+    'Finished fetching all web apps.',
+  );
+
+  logger.info(
+    'Fetching each web app individually to collect "lastScanId" values...',
+  );
 
   const collectWebAppScanIds = wrapMapFunctionWithInvokeSafely(
     context,
@@ -68,6 +85,12 @@ export default async function collectWebApps(
       operationName: 'collectWebAppScanIds',
     },
     async (webAppId: number) => {
+      logger.trace(
+        {
+          webAppId,
+        },
+        'Fetching web app to get "lastScanId"...',
+      );
       const {
         responseData,
       } = await qualysClient.webApplicationScanning.fetchWebApp({
@@ -76,17 +99,37 @@ export default async function collectWebApps(
 
       const lastScanId =
         responseData.ServiceResponse?.data?.WebApp?.lastScan?.id;
-      if (lastScanId !== undefined) {
+      if (lastScanId === undefined) {
+        logger.trace(
+          {
+            webAppId,
+          },
+          'Web app does not have "lastScanId" (ignoring)',
+        );
+      } else {
+        logger.trace(
+          {
+            webAppId,
+            lastScanId,
+          },
+          'Fetched web app to get "lastScanId" and found a value',
+        );
         webAppScanIdSet.add(lastScanId);
       }
     },
   );
 
   await pMap(webAppIds, collectWebAppScanIds, {
-    concurrency: 3,
+    concurrency: 10,
   });
 
-  logger.info('Finished collecting web apps');
+  logger.info(
+    {
+      numWebApps: webAppIds.length,
+      numWebAppScanIds: webAppScanIdSet.size,
+    },
+    'Finished collecting web apps and their "lastScanId" values',
+  );
 
   return {
     webAppScanIdSet,

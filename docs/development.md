@@ -84,6 +84,6 @@ following:
 ```typescript
 const paginator = qualysClient.assetManagement.listHostAssets(options);
 do {
-  const { responseData } = await paginator.next();
+  const { responseData } = await paginator.nextPage(context);
 } while (paginator.hasNextPage());
 ```
