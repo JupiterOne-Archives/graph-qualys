@@ -11,22 +11,24 @@ import {
   buildQualysVulnKey,
   convertHostDetectionToEntity,
   convertHostToEntity,
-  isHostEC2Instance,
   TYPE_QUALYS_HOST,
   TYPE_QUALYS_HOST_FINDING,
   TYPE_QUALYS_VULN,
 } from '../converters';
-import { HostEntity } from '../converters/types';
 import QualysClient from '../provider/QualysClient';
 import toArray from '../util/toArray';
 import QualysVulnEntityManager from './QualysVulnEntityManager';
+import {
+  HostEntityLookupEntry,
+  convertHostEntityForLookup,
+} from './collectHostAssets';
 
 export default async function collectHostDetections(
   context: IntegrationStepExecutionContext,
   options: {
     qualysClient: QualysClient;
     qualysVulnEntityManager: QualysVulnEntityManager;
-    hostEntityLookup: Record<string, HostEntity>;
+    hostEntityLookup: Record<string, HostEntityLookupEntry>;
   },
 ): Promise<void> {
   const { logger } = context;
@@ -36,21 +38,36 @@ export default async function collectHostDetections(
   const { qualysClient, qualysVulnEntityManager, hostEntityLookup } = options;
   const hostDetectionsPaginator = qualysClient.vulnerabilityManagement.listHostDetections(
     {
-      truncation_limit: 1000,
+      // limit is automatically reduced when timeout occurs
+      truncation_limit: 750,
       show_igs: 1,
       show_results: 1,
-      severities: '1-5',
+
+      // High vulnerabilities are those of Severity levels 4 or 5.
+      // Vulnerabilities of this group are those that give an attacker the
+      // possibility to execute code on the target; easily with a level 5, or
+      // less so, with a level 4.
+      // Medium vulnerabilities are those of Severity
+      // level 3. Low vulnerabilities are those of levels 2 or 1.
+      severities: '3-5',
     },
   );
-
-  let pageIndex = 0;
 
   const seenFindingEntityKeys = new Set<string>();
 
   do {
-    logger.info('Fetching page of host detections...');
+    const nextRequest = hostDetectionsPaginator.getNextRequest()!;
+    const { pageIndex, cursor, logData } = nextRequest;
+    logger.info(
+      {
+        ...logData,
+        pageIndex,
+        cursor,
+      },
+      'Fetching page of host detections...',
+    );
 
-    const { responseData } = await hostDetectionsPaginator.nextPage();
+    const { responseData } = await hostDetectionsPaginator.nextPage(context);
     const hosts = toArray(
       responseData.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
     );
@@ -66,13 +83,14 @@ export default async function collectHostDetections(
 
       for (const host of hosts) {
         const hostId = host.ID!;
-        let hostEntity: HostEntity = hostEntityLookup[hostId];
+        let hostEntityLookupEntry = hostEntityLookup[hostId];
 
-        if (!hostEntity) {
-          hostEntity = convertHostToEntity({
+        if (!hostEntityLookupEntry) {
+          const hostEntity = convertHostToEntity({
             host,
           });
-          if (!isHostEC2Instance(hostEntity)) {
+          hostEntityLookupEntry = convertHostEntityForLookup(hostEntity);
+          if (!hostEntityLookupEntry.ec2InstanceId) {
             context.jobState.addEntities([hostEntity]);
           }
         }
@@ -106,8 +124,8 @@ export default async function collectHostDetections(
 
           let hostHasFindingRelationship: Relationship;
 
-          // Relate the Host to the Finding
-          if (isHostEC2Instance(hostEntity)) {
+          // Relate the EC2 Instance to the Finding
+          if (hostEntityLookupEntry.ec2InstanceId) {
             hostHasFindingRelationship = createMappedRelationship({
               _class: RelationshipClass.HAS,
               _mapping: {
@@ -117,13 +135,13 @@ export default async function collectHostDetections(
                 targetFilterKeys: [['_type', 'instanceId']],
                 targetEntity: {
                   _type: 'aws_instance',
-                  instanceId: hostEntity.instanceId,
+                  instanceId: hostEntityLookupEntry.ec2InstanceId,
                 },
               },
             });
           } else {
             hostHasFindingRelationship = createDirectRelationship({
-              fromKey: hostEntity._key,
+              fromKey: hostEntityLookupEntry._key,
               toKey: findingEntity._key,
               fromType: TYPE_QUALYS_HOST,
               toType: TYPE_QUALYS_HOST_FINDING,
@@ -149,6 +167,7 @@ export default async function collectHostDetections(
           ]);
         }
       }
+      await context.jobState.flush();
     } else if (pageIndex === 0) {
       logger.info(
         {
@@ -157,8 +176,6 @@ export default async function collectHostDetections(
         'No data in listHostDetections',
       );
     }
-
-    pageIndex++;
   } while (hostDetectionsPaginator.hasNextPage());
 
   logger.info('Finished collecting host detections');

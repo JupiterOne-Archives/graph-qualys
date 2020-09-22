@@ -18,13 +18,11 @@ export class QualysWebApplicationScanningClient {
     });
 
     return buildRestApiPaginator(this.qualysClient, {
-      requestOptions: {
-        requestName: 'webApplicationScanning.listScans',
-        url,
-      },
-      paginationOptions: {
-        limit,
-      },
+      requestName: 'webApplicationScanning.listScans',
+      url,
+      limit,
+      maxAttempts: 5,
+      constraints: {},
     });
   }
 
@@ -42,12 +40,11 @@ export class QualysWebApplicationScanningClient {
     };
 
     return buildRestApiPaginator<ListWebAppsReply>(this.qualysClient, {
-      requestOptions: {
-        requestName: 'webApplicationScanning.listWebApps',
-        url,
-      },
-      paginationOptions: {
-        limit,
+      requestName: 'webApplicationScanning.listWebApps',
+      url,
+      limit,
+      maxAttempts: 5,
+      constraints: {
         filters,
       },
     });
@@ -64,6 +61,8 @@ export class QualysWebApplicationScanningClient {
         'Content-Type': 'text/xml',
       },
       responseType: QualysClientResponseType.XML,
+      maxAttempts: 3,
+      retryOnTimeout: true,
     });
   }
 
@@ -92,6 +91,8 @@ export class QualysWebApplicationScanningClient {
         'Content-Type': 'text/xml',
       },
       responseType: QualysClientResponseType.XML,
+      maxAttempts: 3,
+      retryOnTimeout: true,
     });
   }
 }

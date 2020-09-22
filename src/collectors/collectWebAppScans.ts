@@ -50,6 +50,14 @@ export default async function collectWebAppScans(
       const targetWebApp = responseData.WasScan?.target?.webApp;
       if (targetWebApp) {
         const vulns = toArray(responseData.WasScan?.vulns?.list?.WasScanVuln);
+
+        logger.info(
+          {
+            numVulnerabilities: vulns.length,
+          },
+          'Fetched vulnerabilities for web app scan',
+        );
+
         for (const vuln of vulns) {
           if (vuln.qid !== undefined) {
             qualysVulnEntityManager.addQID(vuln.qid);
@@ -58,12 +66,14 @@ export default async function collectWebAppScans(
 
         for (const vuln of vulns) {
           if (vuln.qid) {
+            const kbVuln = await qualysVulnEntityManager.getVulnerabilityByQID(
+              vuln.qid!,
+            );
+
             const webAppFindingEntity = convertWebAppVulnerabilityToFinding({
               vuln,
               webApp: targetWebApp,
-              vulnFromKnowledgeBase: await qualysVulnEntityManager.getVulnerabilityByQID(
-                vuln.qid!,
-              ),
+              vulnFromKnowledgeBase: kbVuln,
             });
 
             // Avoid duplicates by checking to see if we already have a Finding
@@ -109,7 +119,7 @@ export default async function collectWebAppScans(
             responseData,
             webAppScanId,
           },
-          'No data in fetchScanResults',
+          'No data in fetchScanResults for web app scan',
         );
       }
     },

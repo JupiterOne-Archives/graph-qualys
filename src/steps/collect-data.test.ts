@@ -2,7 +2,6 @@ import collectHostAssets from '../collectors/collectHostAssets';
 import collectHostDetections from '../collectors/collectHostDetections';
 import collectWebAppScans from '../collectors/collectWebAppScans';
 import collectWebApps from '../collectors/collectWebApps';
-import collectVulnerabilities from '../collectors/collectVulnerabilities';
 
 import collectDataStep from './collect-data';
 import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
@@ -38,19 +37,11 @@ jest.mock('../collectors/collectWebApps', () => {
   };
 });
 
-jest.mock('../collectors/collectVulnerabilities', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockResolvedValue(undefined),
-  };
-});
-
 for (const testInput of [
   ['collectWebApps', collectWebApps],
   ['collectWebAppScans', collectWebAppScans],
   ['collectHostAssets', collectHostAssets],
   ['collectHostDetections', collectHostDetections],
-  ['collectVulnerabilities', collectVulnerabilities],
 ]) {
   const [operationName, collectFunction] = testInput;
 

@@ -19,7 +19,6 @@
     "type-check": "tsc",
     "test": "jest --passWithNoTests",
     "test:ci": "yarn lint && yarn type-check && yarn test",
-    "prebuild": "yarn test:ci",
     "prepush": "yarn test:ci",
     "build": "tsc -p tsconfig.dist.json --declaration",
     "prepublishOnly": "yarn build",

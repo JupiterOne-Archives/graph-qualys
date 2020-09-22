@@ -8,19 +8,22 @@ export class QualysAssetManagementClient {
 
   listHostAssets(options: {
     limit: number;
+    lastVulnScanAfter: Date;
   }): QualysApiResponsePaginator<ListHostAssetsReply> {
-    const { limit } = options;
+    const { lastVulnScanAfter } = options;
     const url = this.qualysClient.buildRequestUrl({
       path: '/qps/rest/2.0/search/am/hostasset',
     });
 
     return buildRestApiPaginator<ListHostAssetsReply>(this.qualysClient, {
-      requestOptions: {
-        requestName: 'assetManagement.listHostAssets',
-        url,
-      },
-      paginationOptions: {
-        limit,
+      requestName: 'assetManagement.listHostAssets',
+      url,
+      limit: options.limit,
+      maxAttempts: 5,
+      constraints: {
+        dateAfterFilters: {
+          lastVulnScan: lastVulnScanAfter,
+        },
       },
     });
   }
