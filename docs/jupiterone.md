@@ -28,24 +28,10 @@ https://github.com/JupiterOne/sdk/blob/master/docs/integrations/development.md
 
 The following entities are created:
 
-| Resources       | Entity `_type`           | Entity `_class` |
-| --------------- | ------------------------ | --------------- |
-| Host            | `qualys_host`            | `Host`          |
-| Host Finding    | `qualys_host_finding`    | `Finding`       |
-| Vulnerability   | `qualys_vuln`            | `Vulnerability` |
-| Web App         | `qualys_web_app`         | `Application`   |
-| Web App Finding | `qualys_web_app_finding` | `Finding`       |
-
-### Relationships
-
-The following relationships are created/mapped:
-
-| Source Entity `_type` | Relationship `_class` | Target Entity `_type`    |
-| --------------------- | --------------------- | ------------------------ |
-| `qualys_host_finding` | **IS**                | `qualys_vuln`            |
-| `qualys_host`         | **HAS**               | `qualys_host_finding`    |
-| `qualys_host_finding` | **IS**                | `qualys_vuln`            |
-| `qualys_web_app`      | **HAS**               | `qualys_web_app_finding` |
+| Resources | Entity `_type`   | Entity `_class` |
+| --------- | ---------------- | --------------- |
+| Host      | `qualys_host`    | `Host`          |
+| Web App   | `qualys_web_app` | `Application`   |
 
 <!--
 ********************************************************************************
