@@ -23,7 +23,7 @@ describe('error events should be published', () => {
       .spyOn(context.logger, 'publishErrorEvent')
       .mockReturnValue(undefined);
 
-    const wrappedFunction = await wrapMapFunctionWithInvokeSafely(
+    const wrappedFunction = wrapMapFunctionWithInvokeSafely(
       context,
       {
         operationName: 'dummy',
@@ -70,7 +70,7 @@ describe('error events should be published', () => {
       .spyOn(context.logger, 'publishErrorEvent')
       .mockReturnValue(undefined);
 
-    const wrappedFunction = await wrapFunctionWithInvokeSafely(
+    const wrappedFunction = wrapFunctionWithInvokeSafely(
       context,
       {
         operationName: 'dummy',
@@ -163,7 +163,7 @@ describe('should not publish error event if no error is thrown', () => {
       .spyOn(context.logger, 'publishErrorEvent')
       .mockReturnValue(undefined);
 
-    const wrappedFunction = await wrapMapFunctionWithInvokeSafely(
+    const wrappedFunction = wrapMapFunctionWithInvokeSafely(
       context,
       {
         operationName: 'dummy',
@@ -193,7 +193,7 @@ describe('should not publish error event if no error is thrown', () => {
       .spyOn(context.logger, 'publishErrorEvent')
       .mockReturnValue(undefined);
 
-    const wrappedFunction = await wrapFunctionWithInvokeSafely(
+    const wrappedFunction = wrapFunctionWithInvokeSafely(
       context,
       {
         operationName: 'dummy',

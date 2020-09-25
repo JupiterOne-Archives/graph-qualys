@@ -57,7 +57,7 @@ export default class QualysVulnEntityManager {
         await pAll(
           mapChunks(qidListToFetch, chunkSize, (qidListChunk) => {
             return async () => {
-              const qualysVulnPaginator = await this.qualysClient.knowledgeBase.listQualysVulnerabilities(
+              const qualysVulnPaginator = this.qualysClient.knowledgeBase.listQualysVulnerabilities(
                 {
                   limit: chunkSize,
                   qidList: qidListChunk,

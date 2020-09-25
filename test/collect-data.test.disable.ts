@@ -18,8 +18,8 @@ jest.setTimeout(60000);
 
 let recording: Recording | undefined;
 
-afterEach(() => {
-  recording?.stop();
+afterEach(async () => {
+  await recording?.stop();
   recording = undefined;
 });
 

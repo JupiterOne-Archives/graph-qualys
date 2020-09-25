@@ -33,4 +33,6 @@ export default async function validateInvocation(
       'Invalid API URL: ' + config.qualysApiUrl,
     );
   }
+
+  return Promise.resolve();
 }
