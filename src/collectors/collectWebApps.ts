@@ -19,7 +19,7 @@ export default async function collectWebApps(
 
   const { qualysClient } = options;
 
-  const paginator = await qualysClient.webApplicationScanning.listWebApps({
+  const paginator = qualysClient.webApplicationScanning.listWebApps({
     // limit is automatically reduced when timeout occurs
     limit: 1000,
     isScanned: true,

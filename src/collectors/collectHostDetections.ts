@@ -91,7 +91,7 @@ export default async function collectHostDetections(
           });
           hostEntityLookupEntry = convertHostEntityForLookup(hostEntity);
           if (!hostEntityLookupEntry.ec2InstanceId) {
-            context.jobState.addEntities([hostEntity]);
+            await context.jobState.addEntities([hostEntity]);
           }
         }
 
@@ -120,7 +120,7 @@ export default async function collectHostDetections(
           seenFindingEntityKeys.add(findingEntity._key);
 
           // Create the Finding
-          context.jobState.addEntities([findingEntity]);
+          await context.jobState.addEntities([findingEntity]);
 
           let hostHasFindingRelationship: Relationship;
 

@@ -255,7 +255,7 @@ const ROUTES: Record<string, RequestHandler> = {
       </VULN_LIST>
     </RESPONSE>
   </KNOWLEDGE_BASE_VULN_LIST_OUTPUT>`;
-    return { body };
+    return Promise.resolve({ body });
   },
 };
 

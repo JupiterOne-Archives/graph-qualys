@@ -9,10 +9,10 @@ import { buildRetryOptions } from '../paginationUtil';
 export class QualysKnowledgeBaseClient {
   constructor(private qualysClient: QualysClient) {}
 
-  async listQualysVulnerabilities(options: {
+  listQualysVulnerabilities(options: {
     qidList: number[];
     limit: number;
-  }): Promise<QualysApiResponsePaginator<ListQualysVulnerabilitiesReply>> {
+  }): QualysApiResponsePaginator<ListQualysVulnerabilitiesReply> {
     let index = 0;
     let limit = options.limit;
     const { maxAttempts, limitDecrease } = buildRetryOptions({
