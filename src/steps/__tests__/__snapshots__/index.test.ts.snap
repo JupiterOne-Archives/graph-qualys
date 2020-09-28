@@ -1,0 +1,177 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`steps 1`] = `
+Object {
+  "collectedEntities": Array [
+    Object {
+      "_class": Array [
+        "Account",
+      ],
+      "_key": "qualys-account:local-integration-instance",
+      "_rawData": Array [
+        Object {
+          "name": "default",
+          "rawData": Object {
+            "portal": Object {
+              "Portal-Version": Object {
+                "AV2-VERSION": "0.1.0",
+                "CA-VERSION": "2.23.0.0",
+                "CERTVIEW-VERSION": "2.6.0.2-7",
+                "CLOUDVIEW-VERSION": "1.11.0.0-1",
+                "CM-VERSION": "1.30.0.0",
+                "CS-VERSION": "1.6.8.0-36",
+                "FIM-VERSION": "2.3.1.0",
+                "IOC-VERSION": "3.0.0.0-4",
+                "ITAM-VERSION": "1.2.1.0-1",
+                "MDS-VERSION": "2.15.7.0",
+                "PM-VERSION": "1.4.3.0-289",
+                "PS-VERSION": "1.2.0.0-RELEASE",
+                "PortalApplication-VERSION": "3.1.2.0-2 OFFICIAL #597 (2020-09-15T15:54:59Z)",
+                "QGS-VERSION": "1.2.0.0-6",
+                "QUESTIONNAIRE-VERSION": "2.23.1.0",
+                "QUESTIONNAIRE__V2-VERSION": "1.10.1.0",
+                "THREAT__PROTECT-VERSION": "1.2.0.0",
+                "UD-VERSION": "0.0.6",
+                "VM-VERSION": "1.0.3",
+                "WAF-VERSION": "2.12.4.0",
+                "WAS-VERSION": "6.13.1.0",
+              },
+              "QWeb-Version": Object {
+                "SCANNER-VERSION": "12.1.67-1",
+                "VULNSIGS-VERSION": "2.4.993-2",
+                "WEB-VERSION": "10.3.0.2-2",
+              },
+            },
+          },
+        },
+      ],
+      "_type": "qualys_account",
+      "createdOn": undefined,
+      "displayName": "Qualys - Local Integration",
+      "name": "Qualys - Local Integration",
+    },
+    Object {
+      "_class": Array [
+        "Service",
+      ],
+      "_key": "qualys-service:was",
+      "_rawData": Array [],
+      "_type": "qualys_service",
+      "category": Array [
+        "software",
+        "other",
+      ],
+      "createdOn": undefined,
+      "description": "Automated Web Application Security Assessment and Reporting",
+      "displayName": "Qualys Web Application Scanner",
+      "name": "Qualys Web Application Scanner",
+      "updatedOn": undefined,
+      "version": "6.13.1.0",
+    },
+    Object {
+      "_class": Array [
+        "Service",
+      ],
+      "_key": "qualys-service:vmdr",
+      "_rawData": Array [],
+      "_type": "qualys_service",
+      "category": Array [
+        "software",
+        "other",
+      ],
+      "createdOn": undefined,
+      "description": "Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.",
+      "displayName": "Qualys Vulnerability Manager",
+      "name": "Qualys Vulnerability Manager",
+      "updatedOn": undefined,
+      "version": "1.0.3",
+    },
+    Object {
+      "_class": Array [
+        "Application",
+      ],
+      "_key": "web_app:81221901",
+      "_rawData": Array [
+        Object {
+          "name": "default",
+          "rawData": Object {
+            "createdDate": "2020-09-10T00:01:33Z",
+            "id": 81221901,
+            "name": "Ask JupiterOne",
+            "owner": Object {
+              "id": 10748728,
+            },
+            "tags": Object {
+              "count": 0,
+            },
+            "updatedDate": "2020-09-10T00:29:13Z",
+            "url": "http://ask.us.jupiterone.io",
+          },
+        },
+      ],
+      "_type": "qualys_web_app",
+      "createdOn": 1599696093000,
+      "displayName": "Ask JupiterOne",
+      "id": "81221901",
+      "name": "Ask JupiterOne",
+      "updatedOn": 1599697753000,
+    },
+    Object {
+      "_class": Array [
+        "Application",
+      ],
+      "_key": "web_app:83546190",
+      "_rawData": Array [
+        Object {
+          "name": "default",
+          "rawData": Object {
+            "createdDate": "2020-09-27T16:08:36Z",
+            "id": 83546190,
+            "name": "Electric Fire",
+            "owner": Object {
+              "id": 10748728,
+            },
+            "tags": Object {
+              "count": 0,
+            },
+            "updatedDate": "2020-09-27T16:08:36Z",
+            "url": "https://electric-fire-4487.herokuapp.com/",
+          },
+        },
+      ],
+      "_type": "qualys_web_app",
+      "createdOn": 1601222916000,
+      "displayName": "Electric Fire",
+      "id": "83546190",
+      "name": "Electric Fire",
+      "updatedOn": 1601222916000,
+    },
+  ],
+  "collectedRelationships": Array [
+    Object {
+      "_class": "HAS",
+      "_fromEntityKey": "qualys-account:local-integration-instance",
+      "_key": "qualys-account:local-integration-instance|has|qualys-service:was",
+      "_toEntityKey": "qualys-service:was",
+      "_type": "qualys_account_has_service",
+      "displayName": "HAS",
+    },
+    Object {
+      "_class": "HAS",
+      "_fromEntityKey": "qualys-account:local-integration-instance",
+      "_key": "qualys-account:local-integration-instance|has|qualys-service:vmdr",
+      "_toEntityKey": "qualys-service:vmdr",
+      "_type": "qualys_account_has_service",
+      "displayName": "HAS",
+    },
+  ],
+  "encounteredTypes": Array [
+    "qualys_account",
+    "qualys_service",
+    "qualys_account_has_service",
+    "qualys_web_app",
+  ],
+  "numCollectedEntities": 5,
+  "numCollectedRelationships": 2,
+}
+`;

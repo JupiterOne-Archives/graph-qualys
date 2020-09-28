@@ -12,16 +12,8 @@ import {
 
 import { QualysIntegrationConfig } from '../../types';
 import { executeAPIRequest } from './request';
-import {
-  DetectionHost,
-  HostDetection,
-  ListWebAppsFilters,
-  ListWebAppsPagination,
-  ListWebAppsResponse,
-  RateLimitConfig,
-  RateLimitState,
-  WebApp,
-} from './types';
+import { assets, RateLimitConfig, RateLimitState, vmpc, was } from './types';
+import { PortalInfo } from './types/portal';
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
 
@@ -101,7 +93,7 @@ export class QualysAPIClient {
           truncation_limit: 1,
         }),
         {
-          method: 'get',
+          method: 'GET',
         },
       );
     } catch (err) {
@@ -114,15 +106,33 @@ export class QualysAPIClient {
     }
   }
 
+  public async fetchPortalInfo(): Promise<PortalInfo | undefined> {
+    const endpoint = '/qps/rest/portal/version';
+
+    try {
+      const response = await this.executeAuthenticatedAPIRequest(
+        this.qualysUrl(endpoint, {}),
+        {
+          method: 'GET',
+        },
+      );
+
+      const responseText = await response.text();
+      return xmlParser.parse(responseText).ServiceResponse?.data as PortalInfo;
+    } catch (err) {
+      return undefined;
+    }
+  }
+
   /**
    * Iterate web applications. Details are minimal, it is necessary to request
    * details in a separate call.
    */
   public async iterateWebApps(
-    iteratee: ResourceIteratee<WebApp>,
+    iteratee: ResourceIteratee<was.WebApp>,
     options?: {
-      filters?: ListWebAppsFilters;
-      pagination?: ListWebAppsPagination;
+      filters?: was.ListWebAppsFilters;
+      pagination?: was.ListWebAppsPagination;
     },
   ): Promise<void> {
     const endpoint = '/qps/rest/3.0/search/was/webapp';
@@ -159,7 +169,9 @@ export class QualysAPIClient {
       );
 
       const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(responseText) as ListWebAppsResponse;
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as was.ListWebAppsResponse;
 
       const responseCode = jsonFromXml.ServiceResponse?.responseCode;
       if (responseCode && responseCode !== 'SUCCESS') {
@@ -185,7 +197,15 @@ export class QualysAPIClient {
     } while (hasMoreRecords);
   }
 
-  public async fetchHostIds(): Promise<string[]> {
+  /**
+   * Answers the complete set of host IDs.
+   *
+   * There are three IDs in Qualys. These are the VM module ("QWEB") host IDs.
+   *
+   * @see https://qualys-secure.force.com/discussions/s/article/000006216 to
+   * understand the difference.
+   */
+  public async fetchHostIds(): Promise<number[]> {
     const endpoint = '/api/2.0/fo/asset/host/';
 
     const response = await this.executeAuthenticatedAPIRequest(
@@ -196,16 +216,64 @@ export class QualysAPIClient {
         truncation_limit: 0,
       }),
       {
-        method: 'get',
+        method: 'GET',
       },
     );
 
     const responseText = await response.text();
     const jsonFromXml = xmlParser.parse(responseText);
-    const idSet = jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET;
-    return idSet
-      ? (Array.isArray(idSet) ? idSet : Array(idSet)).map((e) => String(e.ID))
-      : [];
+    return toArray(jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET).map(
+      (e) => e.ID,
+    );
+  }
+
+  /**
+   * Fetch host details from asset manager.
+   *
+   * @param hostId a QWEB host ID
+   */
+  public async fetchHostDetails(hostId: number): Promise<assets.HostAsset> {
+    const endpoint = '/qps/rest/2.0/search/am/hostasset';
+
+    const body = `
+    <ServiceRequest>
+      <preferences>
+        <limitResults>1</limitResults>
+      </preferences>
+      <filters>
+        <Criteria field="qwebHostId" operator="EQUALS">${hostId}</Criteria>
+      </filters>
+    </ServiceRequest>`;
+
+    const response = await this.executeAuthenticatedAPIRequest(
+      this.qualysUrl(endpoint, {}),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
+        },
+        body,
+      },
+    );
+
+    const responseText = await response.text();
+    const jsonFromXml = xmlParser.parse(
+      responseText,
+    ) as assets.GetHostAssetResponse;
+
+    const responseCode = jsonFromXml.ServiceResponse?.responseCode;
+    if (responseCode && responseCode !== 'SUCCESS') {
+      throw new IntegrationProviderAPIError({
+        cause: new Error(
+          `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+        ),
+        endpoint,
+        status: response.status,
+        statusText: responseCode,
+      });
+    }
+
+    return jsonFromXml.ServiceResponse?.data?.HostAsset as assets.HostAsset;
   }
 
   /**
@@ -215,17 +283,17 @@ export class QualysAPIClient {
    * vulnerability database by QID, but the findings of vulnerabilities for a
    * host.
    *
-   * @param hostIds the set of host ids to fetch detections
+   * @param hostIds the set of QWEB host IDs to fetch detections
    * @param iteratee receives each host and its detections
    */
   public async iterateHostDetections(
-    hostIds: string[],
+    hostIds: number[],
     iteratee: ResourceIteratee<{
-      host: DetectionHost;
-      detections: HostDetection[];
+      host: vmpc.DetectionHost;
+      detections: vmpc.HostDetection[];
     }>,
   ): Promise<void> {
-    const fetchHostDetections = async (ids: string[]) => {
+    const fetchHostDetections = async (ids: number[]) => {
       const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
 
       const params = new URLSearchParams({
@@ -233,7 +301,7 @@ export class QualysAPIClient {
         show_tags: '1',
         show_igs: '1',
         output_format: 'XML',
-        ids,
+        ids: ids.map(String),
       });
 
       const response = await this.executeAuthenticatedAPIRequest(
@@ -243,7 +311,7 @@ export class QualysAPIClient {
 
       const responseText = await response.text();
       const jsonFromXml = xmlParser.parse(responseText);
-      const detectionHosts: DetectionHost[] = toArray(
+      const detectionHosts: vmpc.DetectionHost[] = toArray(
         jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
       );
 

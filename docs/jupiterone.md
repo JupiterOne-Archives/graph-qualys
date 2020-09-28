@@ -28,10 +28,23 @@ https://github.com/JupiterOne/sdk/blob/master/docs/integrations/development.md
 
 The following entities are created:
 
-| Resources | Entity `_type`   | Entity `_class` |
-| --------- | ---------------- | --------------- |
-| Host      | `qualys_host`    | `Host`          |
-| Web App   | `qualys_web_app` | `Application`   |
+| Resources | Entity `_type`        | Entity `_class` |
+| --------- | --------------------- | --------------- |
+| Account   | `qualys_account`      | `Account`       |
+| Detection | `qualys_host_finding` | `Finding`       |
+| Service   | `qualys_service`      | `Service`       |
+| Web App   | `qualys_web_app`      | `Application`   |
+
+### Relationships
+
+The following relationships are created/mapped:
+
+| Source Entity `_type` | Relationship `_class` | Target Entity `_type` |
+| --------------------- | --------------------- | --------------------- |
+| `qualys_account`      | **HAS**               | `qualys_service`      |
+| `qualys_host_finding` | **HAS**               | `aws_instance`        |
+| `qualys_host_finding` | **HAS**               | `discovered_host`     |
+| `qualys_service`      | **IDENTIFIED**        | `qualys_host_finding` |
 
 <!--
 ********************************************************************************

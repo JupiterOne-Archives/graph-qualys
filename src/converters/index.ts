@@ -49,11 +49,17 @@ export function buildKey(
   return parts.join('|');
 }
 
+export const TYPE_QUALYS_ACCOUNT = 'qualys_account';
+export const TYPE_QUALYS_SERVICE = 'qualys_service';
+
 export const TYPE_QUALYS_WEB_APP = 'qualys_web_app';
 export const TYPE_QUALYS_WEB_APP_FINDING = 'qualys_web_app_finding';
 export const TYPE_QUALYS_HOST = 'qualys_host';
 export const TYPE_QUALYS_HOST_FINDING = 'qualys_host_finding';
 export const TYPE_QUALYS_VULN = 'qualys_vuln';
+
+export const TYPE_QUALYS_HOST_FINDING_AWS_INSTANCE_RELATIONSHIP = `${TYPE_QUALYS_HOST_FINDING}_aws_instance`;
+export const TYPE_QUALYS_HOST_FINDING_DISCOVERED_HOST_RELATIONSHIP = `${TYPE_QUALYS_HOST_FINDING}_discovered_host`;
 
 const SEVERITY_MAPPINGS = ['none', 'info', 'low', 'medium', 'high', 'critical'];
 

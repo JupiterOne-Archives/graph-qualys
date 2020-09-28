@@ -5,7 +5,7 @@ import { Recording } from '@jupiterone/integration-sdk-testing';
 
 import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
-import { DetectionHost, QualysAPIClient, WebApp } from '../client';
+import { QualysAPIClient, vmpc, was } from '../client';
 
 const createClient = (): QualysAPIClient => {
   return new QualysAPIClient({
@@ -51,6 +51,20 @@ describe('verifyAuthentication', () => {
   });
 });
 
+describe('fetchPortalInfo', () => {
+  test('info', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'fetchPortalInfo',
+    });
+
+    await expect(createClient().fetchPortalInfo()).resolves.toMatchObject({
+      'Portal-Version': expect.any(Object),
+      'QWeb-Version': expect.any(Object),
+    });
+  });
+});
+
 describe('iterateWebApps', () => {
   test('invalid filter value', async () => {
     recording = setupQualysRecording({
@@ -76,7 +90,7 @@ describe('iterateWebApps', () => {
       name: 'iterateWebAppsPagination',
     });
 
-    const webApps: WebApp[] = [];
+    const webApps: was.WebApp[] = [];
     await createClient().iterateWebApps(
       (webApp) => {
         webApps.push(webApp);
@@ -100,7 +114,7 @@ describe('iterateWebApps', () => {
       name: 'iterateWebApps',
     });
 
-    const webApps: WebApp[] = [];
+    const webApps: was.WebApp[] = [];
     await createClient().iterateWebApps(
       (webApp) => {
         webApps.push(webApp);
@@ -135,8 +149,31 @@ describe('fetchHostIds', () => {
       name: 'fetchHostIds',
     });
 
-    const hostId = '107800671';
+    const hostId = 107800671;
     await expect(createClient().fetchHostIds()).resolves.toEqual([hostId]);
+  });
+});
+
+describe('fetchHostDetails', () => {
+  test('some', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'fetchHostDetails',
+    });
+
+    const client = createClient();
+    const hostIds = await client.fetchHostIds();
+    expect(hostIds.length).toBeGreaterThan(0);
+
+    const hostDetails = await client.fetchHostDetails(hostIds[0]);
+    expect(hostDetails).toMatchObject({
+      qwebHostId: hostIds[0],
+      sourceInfo: expect.objectContaining({
+        list: expect.objectContaining({
+          Ec2AssetSourceSimple: expect.any(Object),
+        }),
+      }),
+    });
   });
 });
 
@@ -147,7 +184,7 @@ describe('iterateHostDetections', () => {
       name: 'iterateHostDetectionsNone',
     });
 
-    const hosts: DetectionHost[] = [];
+    const hosts: vmpc.DetectionHost[] = [];
 
     await createClient().iterateHostDetections([], ({ host, detections }) => {
       hosts.push(host);
@@ -162,10 +199,10 @@ describe('iterateHostDetections', () => {
       name: 'iterateHostDetectionsUnknownId',
     });
 
-    const hosts: DetectionHost[] = [];
+    const hosts: vmpc.DetectionHost[] = [];
 
     await createClient().iterateHostDetections(
-      ['123'],
+      [123],
       ({ host, detections }) => {
         hosts.push(host);
       },
@@ -182,9 +219,12 @@ describe('iterateHostDetections', () => {
     });
 
     await expect(
-      createClient().iterateHostDetections(['abc123'], async (_) => {
-        // noop
-      }),
+      createClient().iterateHostDetections(
+        [('abc123' as unknown) as number],
+        async (_) => {
+          // noop
+        },
+      ),
     ).rejects.toThrow(/Bad Request/);
   });
 
@@ -197,7 +237,7 @@ describe('iterateHostDetections', () => {
     const client = createClient();
     const hostIds = await client.fetchHostIds();
 
-    const hosts: DetectionHost[] = [];
+    const hosts: vmpc.DetectionHost[] = [];
 
     await client.iterateHostDetections(hostIds, ({ host, detections }) => {
       hosts.push(host);
@@ -227,9 +267,9 @@ describe('iterateHostDetections', () => {
       res.status(200).type('application/xml').send(detectionsXml);
     });
 
-    const hosts: DetectionHost[] = [];
+    const hosts: vmpc.DetectionHost[] = [];
     await createClient().iterateHostDetections(
-      [...Array(502)].map((_, i) => String(i)),
+      [...Array(502)].map((_, i) => i),
       ({ host, detections }) => {
         hosts.push(host);
       },

@@ -1,6 +1,13 @@
-import { webAppSteps } from './webApps';
-import { hostSteps } from './hosts';
+import { accountSteps } from './account';
+import { serviceSteps } from './services';
+import { hostDetectionSteps } from './vmdr';
+import { webApplicationSteps } from './was';
 
-const integrationSteps = [...webAppSteps, ...hostSteps];
+const integrationSteps = [
+  ...accountSteps,
+  ...serviceSteps,
+  ...webApplicationSteps,
+  ...hostDetectionSteps,
+];
 
 export { integrationSteps };

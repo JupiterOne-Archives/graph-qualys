@@ -1,5 +1,6 @@
 import {
   createIntegrationEntity,
+  Entity,
   IntegrationStep,
   IntegrationStepExecutionContext,
   parseTimePropertyValue,
@@ -8,6 +9,7 @@ import {
 import { buildWebAppKey, TYPE_QUALYS_WEB_APP } from '../converters';
 import { createQualysAPIClient } from '../provider';
 import { QualysIntegrationConfig } from '../types';
+import { DATA_WAS_SERVICE_ENTITY, STEP_FETCH_SERVICES } from './services';
 
 export async function fetchWebApps({
   logger,
@@ -16,6 +18,11 @@ export async function fetchWebApps({
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
 
+  const serviceEntity = (await jobState.getData(
+    DATA_WAS_SERVICE_ENTITY,
+  )) as Entity;
+
+  // TODO Process vulnerabilities, relate to serviceEntity
   await apiClient.iterateWebApps(async (data) => {
     await jobState.addEntity(
       createIntegrationEntity({
@@ -39,7 +46,7 @@ export async function fetchWebApps({
   });
 }
 
-export const webAppSteps: IntegrationStep<QualysIntegrationConfig>[] = [
+export const webApplicationSteps: IntegrationStep<QualysIntegrationConfig>[] = [
   {
     id: 'fetch-webapps',
     name: 'Fetch Web Apps',
@@ -51,7 +58,7 @@ export const webAppSteps: IntegrationStep<QualysIntegrationConfig>[] = [
       },
     ],
     relationships: [],
-    dependsOn: [],
+    dependsOn: [STEP_FETCH_SERVICES],
     executionHandler: fetchWebApps,
   },
 ];
