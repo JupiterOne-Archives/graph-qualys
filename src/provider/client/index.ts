@@ -198,23 +198,30 @@ export class QualysAPIClient {
   }
 
   /**
-   * Answers the complete set of host IDs.
+   * Answers the complete set of scanned host IDs provided by the Qualys VMDR
+   * module. This does not include hosts that have never been scanned.
    *
-   * There are three IDs in Qualys. These are the VM module ("QWEB") host IDs.
+   * There are three IDs in Qualys. The IDs returned by this API are the VM
+   * module "QWEB" host IDs.
    *
    * @see https://qualys-secure.force.com/discussions/s/article/000006216 to
    * understand the difference.
+   *
+   * Fetches all IDs in a single request. This is documented by Qualys as a best
+   * practice for an implementation that will parallelize ingestion of other
+   * data for the hosts.
+   *
+   * @see
+   * https://github.com/QualysAPI/Qualys-API-Doc-Center/blob/master/Host%20List%20Detection%20API%20samples/Multithreading/multi_thread_hd.py
+   * for recommended approach to fetching set of hosts to process.
    */
-  public async fetchHostIds(): Promise<number[]> {
+  public async fetchScannedHostIds(): Promise<number[]> {
     const endpoint = '/api/2.0/fo/asset/host/';
 
     const response = await this.executeAuthenticatedAPIRequest(
       this.qualysUrl(endpoint, {
         action: 'list',
         details: 'None',
-        // Fetch all IDs in a single request. This is documented by Qualys as a
-        // best practice for an implementation that will parallelize ingestion
-        // of other data for the hosts.
         truncation_limit: 0,
       }),
       {

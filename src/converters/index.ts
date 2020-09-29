@@ -58,9 +58,6 @@ export const TYPE_QUALYS_HOST = 'qualys_host';
 export const TYPE_QUALYS_HOST_FINDING = 'qualys_host_finding';
 export const TYPE_QUALYS_VULN = 'qualys_vuln';
 
-export const TYPE_QUALYS_HOST_FINDING_AWS_INSTANCE_RELATIONSHIP = `${TYPE_QUALYS_HOST_FINDING}_aws_instance`;
-export const TYPE_QUALYS_HOST_FINDING_DISCOVERED_HOST_RELATIONSHIP = `${TYPE_QUALYS_HOST_FINDING}_discovered_host`;
-
 const SEVERITY_MAPPINGS = ['none', 'info', 'low', 'medium', 'high', 'critical'];
 
 export function convertNumericSeverityToString(

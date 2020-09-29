@@ -18,8 +18,6 @@ import {
   convertNumericSeverityToString,
   determinePlatform,
   TYPE_QUALYS_HOST_FINDING,
-  TYPE_QUALYS_HOST_FINDING_AWS_INSTANCE_RELATIONSHIP,
-  TYPE_QUALYS_HOST_FINDING_DISCOVERED_HOST_RELATIONSHIP,
   TYPE_QUALYS_SERVICE,
 } from '../converters';
 import { createQualysAPIClient } from '../provider';
@@ -27,49 +25,112 @@ import { assets, vmpc } from '../provider/client';
 import { QualysIntegrationConfig } from '../types';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from './services';
 
-const DATA_HOST_ASSET_IDS = 'DATA_HOST_ASSET_IDS';
+const STEP_FETCH_SCANNED_HOST_IDS = 'fetch-scanned-host-ids';
+const STEP_FETCH_SCANNED_HOST_DETAILS = 'fetch-scanned-host-details';
+const STEP_FETCH_SCANNED_HOST_FINDINGS = 'fetch-scanned_host-detections';
+
+const DATA_SCANNED_HOST_IDS = 'DATA_SCANNED_HOST_IDS';
 
 /**
- * Fetches the set of host IDs that will be processed by the integration. This
- * step may be changed to reduce the set of processed hosts.
+ * Fetches the set of scanned host IDs that will be processed by the
+ * integration. This step may be changed to reduce the set of processed hosts.
  */
-export async function fetchHostIds({
+export async function fetchScannedHostIds({
   logger,
   instance,
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
-  const hostIds = await apiClient.fetchHostIds();
-  await jobState.setData(DATA_HOST_ASSET_IDS, hostIds);
+  const hostIds = await apiClient.fetchScannedHostIds();
+  await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 
   // `query` reflects parameters used to limit the set of hosts processed by the
   // integration. A value of `'all'` means no filters were used so that all
   // hosts are processed.
-  logger.info({ hostIds: hostIds.length, filter: 'all' }, 'Host IDs collected');
+  logger.info(
+    { numScannedHostIds: hostIds.length, filter: 'all' },
+    'Scanned host IDs collected',
+  );
 }
 
-export async function fetchHostDetections({
+/**
+ * Fetches Host details and creates mapped relationships between the Service and
+ * Host entities.
+ *
+ * Qualys does not own Host entities, it monitors them, so it is important to
+ * allow the system mapper to connect the Service to existing Host entities.
+ */
+export async function fetchScannedHostDetails({
   logger,
   instance,
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
+  const hostIds = (await jobState.getData(DATA_SCANNED_HOST_IDS)) as number[];
+  const vdmrServiceEntity = (await jobState.getData(
+    DATA_VMDR_SERVICE_ENTITY,
+  )) as Entity;
+
   const apiClient = createQualysAPIClient(logger, instance.config);
+
+  await apiClient.iterateHostDetails(hostIds, async (host) => {
+    const hostname = host.dnsHostName || host.fqdn;
+    await jobState.addRelationship(
+      createMappedRelationship({
+        _class: RelationshipClass.MONITORS,
+        _type: TYPE_QUALYS_SERVICE_HOST_RELATIONSHIP,
+        _mapping: {
+          sourceEntityKey: vdmrServiceEntity._key,
+          relationshipDirection: RelationshipDirection.FORWARD,
+          targetFilterKeys: [
+            // Allow for mapping to AWS EC2 Host entities
+            ['_class', 'instanceId'],
+          ],
+          targetEntity: {
+            _class: 'Host',
+
+            displayName: host.name || hostname,
+            fqdn: host.fqdn,
+            hostname,
+
+            // Allow for mapping to EC2 Host entities
+            instanceId: getEC2InstanceId(host),
+
+            address: host.address,
+            // privateIpAddress: TODO
+            // publicIpAddress: TODO
+
+            // Provide these to allow for Finding mapped relationships later.
+            // These are expected to be transferred to existing target Host
+            // entities.
+            qualysAssetId: host.id,
+            qualysHostId: host.qwebHostId,
+
+            os: host.os,
+            platform: determinePlatform(host),
+
+            scannedBy: 'qualys',
+            lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
+          },
+        },
+      }),
+    );
+  });
+}
+
+export async function fetchScannedHostFindings({
+  logger,
+  instance,
+  jobState,
+}: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
+  const hostIds = (await jobState.getData(DATA_SCANNED_HOST_IDS)) as number[];
   const serviceEntity = (await jobState.getData(
     DATA_VMDR_SERVICE_ENTITY,
   )) as Entity;
-  const allHostIds = (await jobState.getData(DATA_HOST_ASSET_IDS)) as number[];
 
-  // const hostChunks = chunk(allHostIds, 500);
-  // for (const hostIds of hostChunks) {
-  // const hostDetailsById: Map<number, assets.HostAsset> = new Map(
-  //   (await apiClient.fetchHostAssets(hostIds)).map((asset) => [
-  //     asset.id!,
-  //     asset,
-  //   ]),
-  // );
+  const apiClient = createQualysAPIClient(logger, instance.config);
 
   await apiClient.iterateHostDetections(
-    allHostIds,
+    hostIds,
     async ({ host, detections }) => {
       const seenHostFindingEntityKeys = new Set<string>();
 
@@ -84,6 +145,8 @@ export async function fetchHostDetections({
 
         if (seenHostFindingEntityKeys.has(findingKey)) continue;
 
+        seenHostFindingEntityKeys.add(findingKey);
+
         const findingEntity = await jobState.addEntity(
           createHostFindingEntity(findingKey, host, detection),
         );
@@ -96,10 +159,8 @@ export async function fetchHostDetections({
           }),
         );
 
-        // const hostDetails = hostDetailsById[host.ID!];
-        const hostDetails = await apiClient.fetchHostDetails(host.ID!);
         await jobState.addRelationship(
-          createHostFindingRelationship(findingEntity, hostDetails),
+          createHostFindingRelationship(findingEntity, host),
         );
       }
     },
@@ -109,9 +170,6 @@ export async function fetchHostDetections({
 
 /**
  * Create a Finding entity for a detection host.
- *
- * TODO: Add `targets` to Finding and stop creating mapped relationship,
- * allowing global mappings to do their thing.
  *
  * @param key the Finding entity _key value
  * @param host the Host for which a vulnerability was detected
@@ -123,6 +181,7 @@ function createHostFindingEntity(
   detection: vmpc.HostDetection,
 ): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
+
   return createIntegrationEntity({
     entityData: {
       source: {
@@ -130,9 +189,12 @@ function createHostFindingEntity(
         detection,
       },
       assign: {
+        ...convertProperties(detection),
+
         _type: TYPE_QUALYS_HOST_FINDING,
         _key: key,
         _class: 'Finding',
+
         displayName: findingDisplayName,
         name: findingDisplayName,
         qid: detection.QID!,
@@ -157,6 +219,13 @@ function createHostFindingEntity(
         category: 'system-scan',
         open: true,
 
+        // This is referenced in global mappings to relate the Finding to any
+        // Host that has a property matching one of these values. The properties
+        // on the Host are: `name`, `hostname`, `publicIpAddress`, `privateIpAddress`.
+        // Additionally, when the Host has `_type: aws_instance|aws_db_instance`,
+        // the `instanceId` property will be matched.
+        targets: getTargetsFromDetectionHost(host),
+
         // TODO: These are required but not sure what values to use
         production: true,
         public: true,
@@ -166,89 +235,28 @@ function createHostFindingEntity(
 }
 
 /**
- * Creates a mapped relationship from the Host entity to the Finding.
+ * Creates a mapped relationship of Finding <- HAS - Host. The Host entities are
+ * expected to have been created already as part of mapping the Service -
+ * MONITORS -> Host mapped relationship in a previous step.
  *
- * The system-mapper observes values in certain Finding/Vulnerability properties
- * that match entities ingested by other integrations to build relationships,
- * defined based on state of `{Finding,Vulnerability}.open`:
- *
- * * `true` - mapped as `{Finding,Vulnerability} <- HAS - Entity`
- * * `false` - mapped as `{Finding,Vulnerability} <- HAD - Entity`
- *
- * Relationships are created when `{Finding,Vulnerability}.targets` includes:
- *
- * * `Host.{name, hostname, publicIpAddress, privateIpAddress}`
- * * `{CodeRepo,Project,Application}.name`
- * * `CodeRepo.fullName`
- * * `{aws_instance,aws_db_instance}.instanceId`
- *
- * That said, this integration creates mapped relationships itself.
- *
- * TODO: Stop creating these mapped relationships if `Finding.targets` can do
- * the job with global mappings.
- *
- * @param finding the Finding entity representing the detection of a
- * vulnerability
- * @param host the detection host details to build a propert mapping target
+ * @param finding of a vulnerability on a host
+ * @param host the host
  */
 function createHostFindingRelationship(
   finding: Entity,
-  host: assets.HostAsset,
-): Relationship {
-  const awsInstanceId = getEC2InstanceId(host);
-  if (awsInstanceId) {
-    return createEC2HostFindingRelationship(finding, host, awsInstanceId);
-  } else {
-    return createDiscoveredHostFindingRelationship(finding, host);
-  }
-}
-
-function createEC2HostFindingRelationship(
-  finding: Entity,
-  _host: assets.HostAsset,
-  instanceId: string,
+  host: vmpc.DetectionHost,
 ): Relationship {
   return createMappedRelationship({
     _class: RelationshipClass.HAS,
-    _type: TYPE_QUALYS_HOST_FINDING_AWS_INSTANCE_RELATIONSHIP,
+    _type: TYPE_QUALYS_FINDING_HOST_RELATIONSHIP,
     _mapping: {
       relationshipDirection: RelationshipDirection.REVERSE,
       sourceEntityKey: finding._key,
-      targetFilterKeys: [['_type', 'instanceId']],
+      targetFilterKeys: [['_class', 'qualysHostId']],
       targetEntity: {
-        _type: 'aws_instance',
-        instanceId: instanceId,
-      },
-    },
-  });
-}
-
-function createDiscoveredHostFindingRelationship(
-  finding: Entity,
-  host: assets.HostAsset,
-): Relationship {
-  const hostname = host.dnsHostName || host.fqdn;
-  return createMappedRelationship({
-    _class: RelationshipClass.HAS,
-    _type: TYPE_QUALYS_HOST_FINDING_DISCOVERED_HOST_RELATIONSHIP,
-    _mapping: {
-      relationshipDirection: RelationshipDirection.REVERSE,
-      sourceEntityKey: finding._key,
-      targetFilterKeys: [
-        ['_type', 'qualysHostId'],
-        ['_type', 'hostname'],
-      ],
-      targetEntity: {
-        ...convertProperties(host),
-        _type: 'discovered_host',
         _class: 'Host',
-        displayName: host.name || hostname,
-        hostname,
-        qualysHostId: host.id,
-        fqdn: host.fqdn,
-        os: host.os,
-        platform: determinePlatform(host),
-        lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
+        instanceId: host.EC2_INSTANCE_ID,
+        qualysHostId: host.ID,
       },
     },
   });
@@ -261,18 +269,48 @@ function getEC2InstanceId(hostAsset: assets.HostAsset): string | undefined {
   }
 }
 
+function getTargetsFromDetectionHost(host: vmpc.DetectionHost): string[] {
+  const targets: string[] = [];
+
+  [host.IP, host.EC2_INSTANCE_ID].forEach((e) => {
+    if (e) {
+      targets.push(e);
+    }
+  });
+
+  return targets;
+}
+
+export const TYPE_QUALYS_SERVICE_HOST_RELATIONSHIP = `${TYPE_QUALYS_SERVICE}_has_host`;
+export const TYPE_QUALYS_FINDING_HOST_RELATIONSHIP = `${TYPE_QUALYS_HOST_FINDING}_has_host`;
+
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
   {
-    id: 'fetch-host-ids',
-    name: 'Fetch Hosts IDs',
+    id: STEP_FETCH_SCANNED_HOST_IDS,
+    name: 'Fetch Scanned Host IDs',
     entities: [],
     relationships: [],
     dependsOn: [],
-    executionHandler: fetchHostIds,
+    executionHandler: fetchScannedHostIds,
   },
   {
-    id: 'fetch-host-detections',
-    name: 'Fetch Host Detections',
+    id: STEP_FETCH_SCANNED_HOST_DETAILS,
+    name: 'Fetch Scanned Host Details',
+    entities: [],
+    relationships: [
+      {
+        _type: TYPE_QUALYS_SERVICE_HOST_RELATIONSHIP,
+        _class: RelationshipClass.MONITORS,
+        sourceType: TYPE_QUALYS_SERVICE,
+        targetType: '*_host',
+      },
+    ],
+    dependsOn: [STEP_FETCH_SERVICES, STEP_FETCH_SCANNED_HOST_IDS],
+    executionHandler: fetchScannedHostDetails,
+  },
+  {
+    id: STEP_FETCH_SCANNED_HOST_FINDINGS,
+    name: 'Fetch Scanned Host Findings',
     entities: [
       {
         _type: TYPE_QUALYS_HOST_FINDING,
@@ -292,19 +330,13 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         targetType: TYPE_QUALYS_HOST_FINDING,
       },
       {
-        _type: TYPE_QUALYS_HOST_FINDING_DISCOVERED_HOST_RELATIONSHIP,
+        _type: TYPE_QUALYS_FINDING_HOST_RELATIONSHIP,
         _class: RelationshipClass.HAS,
         sourceType: TYPE_QUALYS_HOST_FINDING,
-        targetType: 'discovered_host',
-      },
-      {
-        _type: TYPE_QUALYS_HOST_FINDING_AWS_INSTANCE_RELATIONSHIP,
-        _class: RelationshipClass.HAS,
-        sourceType: TYPE_QUALYS_HOST_FINDING,
-        targetType: 'aws_instance',
+        targetType: '*host',
       },
     ],
-    dependsOn: [STEP_FETCH_SERVICES, 'fetch-host-ids'],
-    executionHandler: fetchHostDetections,
+    dependsOn: [STEP_FETCH_SCANNED_HOST_DETAILS],
+    executionHandler: fetchScannedHostFindings,
   },
 ];

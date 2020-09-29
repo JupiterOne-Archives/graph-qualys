@@ -9,6 +9,7 @@ Goals:
 5. Avoid duplicate \_key Error: Duplicate \_key detected (\_key=vuln-qid:150123)
    (/opt/lifeomic/app/node_modules/@jupiterone/graph-qualys/dist/collectors/QualysVulnEntityManager.js:86:48)
 6. Mapped relationship for web apps
+7. Ensure exceptions are handled and retries performed in all APIs
 
 on cisco call — for the qualys finding to host mapping, let’s make sure to
 include a mapping by \_class (Host) and publicIpAddress
@@ -25,6 +26,10 @@ Create mapped relationship to all hosts
 - discoveredBy: 'qualys'
 
 Service - DISCOVERED -> Host
+
+Finding should require `targets` on finding, ensure validation is enabled
+
+7. Service - MONITORS -> web app
 
 QualysVulnEntityManager - tracks vulns by QID, attempt to defer fetching, wants
 to fetch in batches

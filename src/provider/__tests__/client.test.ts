@@ -133,24 +133,26 @@ describe('iterateWebApps', () => {
   });
 });
 
-describe('fetchHostIds', () => {
+describe('fetchScannedHostIds', () => {
   test('none', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'fetchHostIdsNone',
+      name: 'fetchScannedHostIdsNone',
     });
 
-    await expect(createClient().fetchHostIds()).resolves.toEqual([]);
+    await expect(createClient().fetchScannedHostIds()).resolves.toEqual([]);
   });
 
   test('some', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'fetchHostIds',
+      name: 'fetchScannedHostIds',
     });
 
     const hostId = 107800671;
-    await expect(createClient().fetchHostIds()).resolves.toEqual([hostId]);
+    await expect(createClient().fetchScannedHostIds()).resolves.toEqual([
+      hostId,
+    ]);
   });
 });
 
@@ -209,7 +211,7 @@ describe('iterateHostDetails', () => {
     });
 
     const client = createClient();
-    const hostIds = await client.fetchHostIds();
+    const hostIds = await client.fetchScannedHostIds();
 
     const hosts: assets.HostAsset[] = [];
 
@@ -229,7 +231,7 @@ describe('fetchHostDetails', () => {
     });
 
     const client = createClient();
-    const hostIds = await client.fetchHostIds();
+    const hostIds = await client.fetchScannedHostIds();
     expect(hostIds.length).toBeGreaterThan(0);
 
     const hostDetails = await client.fetchHostDetails(hostIds[0]);
@@ -302,7 +304,7 @@ describe('iterateHostDetections', () => {
     });
 
     const client = createClient();
-    const hostIds = await client.fetchHostIds();
+    const hostIds = await client.fetchScannedHostIds();
 
     const hosts: vmpc.DetectionHost[] = [];
 

@@ -8,7 +8,11 @@ import { setupQualysRecording } from '../../../test/recording';
 import { QualysIntegrationConfig } from '../../types';
 import { fetchAccountDetails } from '../account';
 import { fetchServices } from '../services';
-import { fetchHostDetections, fetchHostIds } from '../vmdr';
+import {
+  fetchScannedHostDetails,
+  fetchScannedHostFindings,
+  fetchScannedHostIds,
+} from '../vmdr';
 import { fetchWebApps } from '../was';
 
 jest.setTimeout(10000 * 2);
@@ -32,8 +36,9 @@ test('steps', async () => {
   await fetchAccountDetails(context);
   await fetchServices(context);
   await fetchWebApps(context);
-  await fetchHostIds(context);
-  await fetchHostDetections(context);
+  await fetchScannedHostIds(context);
+  await fetchScannedHostDetails(context);
+  await fetchScannedHostFindings(context);
 
   // Review snapshot, failure is a regression
   expect({
