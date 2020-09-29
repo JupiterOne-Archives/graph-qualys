@@ -1,6 +1,6 @@
 import { PossibleArray, ISODateString } from './util';
 
-export interface GetHostAssetResponse {
+export interface SearchHostAssetResponse {
   ServiceResponse?: ServiceResponse;
 }
 

@@ -5,7 +5,7 @@ import { Recording } from '@jupiterone/integration-sdk-testing';
 
 import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
-import { QualysAPIClient, vmpc, was } from '../client';
+import { assets, QualysAPIClient, vmpc, was } from '../client';
 
 const createClient = (): QualysAPIClient => {
   return new QualysAPIClient({
@@ -151,6 +151,73 @@ describe('fetchHostIds', () => {
 
     const hostId = 107800671;
     await expect(createClient().fetchHostIds()).resolves.toEqual([hostId]);
+  });
+});
+
+describe('iterateHostDetails', () => {
+  test('none', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetailsNone',
+    });
+
+    const hosts: assets.HostAsset[] = [];
+
+    await createClient().iterateHostDetails([], (host) => {
+      hosts.push(host);
+    });
+
+    expect(hosts.length).toBe(0);
+  });
+
+  test('unknown host id', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetailsUnknownId',
+    });
+
+    const hosts: assets.HostAsset[] = [];
+
+    await createClient().iterateHostDetails([123], (host) => {
+      hosts.push(host);
+    });
+
+    expect(hosts.length).toBe(0);
+  });
+
+  test('bad host id', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetailsBadId',
+      options: { recordFailedRequests: true },
+    });
+
+    await expect(
+      createClient().iterateHostDetails(
+        [('abc123' as unknown) as number],
+        async (_) => {
+          // noop
+        },
+      ),
+    ).rejects.toThrow(/INVALID_REQUEST/);
+  });
+
+  test('some', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetails',
+    });
+
+    const client = createClient();
+    const hostIds = await client.fetchHostIds();
+
+    const hosts: assets.HostAsset[] = [];
+
+    await client.iterateHostDetails(hostIds, (host) => {
+      hosts.push(host);
+    });
+
+    expect(hosts.length).toBeGreaterThan(0);
   });
 });
 

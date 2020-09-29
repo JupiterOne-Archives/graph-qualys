@@ -212,7 +212,9 @@ export class QualysAPIClient {
       this.qualysUrl(endpoint, {
         action: 'list',
         details: 'None',
-        // Fetch all IDs in a single request
+        // Fetch all IDs in a single request. This is documented by Qualys as a
+        // best practice for an implementation that will parallelize ingestion
+        // of other data for the hosts.
         truncation_limit: 0,
       }),
       {
@@ -225,6 +227,73 @@ export class QualysAPIClient {
     return toArray(jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET).map(
       (e) => e.ID,
     );
+  }
+
+  /**
+   * Iterate details of hosts known to the Asset Manager.
+   *
+   * There are currently no [rate
+   * limits](https://www.qualys.com/docs/qualys-api-limits.pdf) on the Asset
+   * Manager APIs.
+   *
+   * @param hostIds a set of identified QWEB host IDs
+   */
+  public async iterateHostDetails(
+    hostIds: number[],
+    iteratee: ResourceIteratee<assets.HostAsset>,
+  ): Promise<void> {
+    const fetchHostDetails = async (ids: number[]) => {
+      const endpoint = '/qps/rest/2.0/search/am/hostasset';
+
+      const body = `
+      <ServiceRequest>
+        <preferences>
+          <limitResults>${ids.length}</limitResults>
+        </preferences>
+        <filters>
+          <Criteria field="qwebHostId" operator="IN">${hostIds.join(
+            ',',
+          )}</Criteria>
+        </filters>
+      </ServiceRequest>`;
+
+      const response = await this.executeAuthenticatedAPIRequest(
+        this.qualysUrl(endpoint, {}),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+          body,
+        },
+      );
+
+      const responseText = await response.text();
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as assets.SearchHostAssetResponse;
+
+      const responseCode = jsonFromXml.ServiceResponse?.responseCode;
+      if (responseCode && responseCode !== 'SUCCESS') {
+        throw new IntegrationProviderAPIError({
+          cause: new Error(
+            `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+          ),
+          endpoint,
+          status: response.status,
+          statusText: responseCode,
+        });
+      }
+
+      return toArray(jsonFromXml.ServiceResponse?.data?.HostAsset);
+    };
+
+    for (const ids of chunk(hostIds, 100)) {
+      const hosts = await fetchHostDetails(ids);
+      for (const host of hosts) {
+        await iteratee(host);
+      }
+    }
   }
 
   /**
@@ -259,7 +328,7 @@ export class QualysAPIClient {
     const responseText = await response.text();
     const jsonFromXml = xmlParser.parse(
       responseText,
-    ) as assets.GetHostAssetResponse;
+    ) as assets.SearchHostAssetResponse;
 
     const responseCode = jsonFromXml.ServiceResponse?.responseCode;
     if (responseCode && responseCode !== 'SUCCESS') {
