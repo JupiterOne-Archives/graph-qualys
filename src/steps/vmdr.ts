@@ -8,7 +8,6 @@ import {
   IntegrationStep,
   IntegrationStepExecutionContext,
   parseTimePropertyValue,
-  Relationship,
   RelationshipClass,
   RelationshipDirection,
 } from '@jupiterone/integration-sdk-core';
@@ -82,8 +81,9 @@ export async function fetchScannedHostDetails({
           sourceEntityKey: vdmrServiceEntity._key,
           relationshipDirection: RelationshipDirection.FORWARD,
           targetFilterKeys: [
-            // Allow for mapping to AWS EC2 Host entities
+            // Allow for mapping to AWS EC2 Host entities.
             ['_class', 'instanceId'],
+            ['_class', 'qualysHostId'],
           ],
           targetEntity: {
             _class: 'Host',
@@ -158,10 +158,6 @@ export async function fetchScannedHostFindings({
             to: findingEntity,
           }),
         );
-
-        await jobState.addRelationship(
-          createHostFindingRelationship(findingEntity, host),
-        );
       }
     },
   );
@@ -234,34 +230,6 @@ function createHostFindingEntity(
   });
 }
 
-/**
- * Creates a mapped relationship of Finding <- HAS - Host. The Host entities are
- * expected to have been created already as part of mapping the Service -
- * MONITORS -> Host mapped relationship in a previous step.
- *
- * @param finding of a vulnerability on a host
- * @param host the host
- */
-function createHostFindingRelationship(
-  finding: Entity,
-  host: vmpc.DetectionHost,
-): Relationship {
-  return createMappedRelationship({
-    _class: RelationshipClass.HAS,
-    _type: TYPE_QUALYS_FINDING_HOST_RELATIONSHIP,
-    _mapping: {
-      relationshipDirection: RelationshipDirection.REVERSE,
-      sourceEntityKey: finding._key,
-      targetFilterKeys: [['_class', 'qualysHostId']],
-      targetEntity: {
-        _class: 'Host',
-        instanceId: host.EC2_INSTANCE_ID,
-        qualysHostId: host.ID,
-      },
-    },
-  });
-}
-
 function getEC2InstanceId(hostAsset: assets.HostAsset): string | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
   if ('EC_2' === ec2?.type) {
@@ -282,7 +250,6 @@ function getTargetsFromDetectionHost(host: vmpc.DetectionHost): string[] {
 }
 
 export const TYPE_QUALYS_SERVICE_HOST_RELATIONSHIP = `${TYPE_QUALYS_SERVICE}_has_host`;
-export const TYPE_QUALYS_FINDING_HOST_RELATIONSHIP = `${TYPE_QUALYS_HOST_FINDING}_has_host`;
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
   {
@@ -328,12 +295,6 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _class: RelationshipClass.IDENTIFIED,
         sourceType: TYPE_QUALYS_SERVICE,
         targetType: TYPE_QUALYS_HOST_FINDING,
-      },
-      {
-        _type: TYPE_QUALYS_FINDING_HOST_RELATIONSHIP,
-        _class: RelationshipClass.HAS,
-        sourceType: TYPE_QUALYS_HOST_FINDING,
-        targetType: '*host',
       },
     ],
     dependsOn: [STEP_FETCH_SCANNED_HOST_DETAILS],

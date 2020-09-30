@@ -42,7 +42,6 @@ The following relationships are created/mapped:
 | Source Entity `_type` | Relationship `_class` | Target Entity `_type` |
 | --------------------- | --------------------- | --------------------- |
 | `qualys_account`      | **HAS**               | `qualys_service`      |
-| `qualys_host_finding` | **HAS**               | `*host`               |
 | `qualys_service`      | **MONITORS**          | `*_host`              |
 | `qualys_service`      | **IDENTIFIED**        | `qualys_host_finding` |
 
