@@ -12,7 +12,14 @@ import {
 
 import { QualysIntegrationConfig } from '../../types';
 import { executeAPIRequest } from './request';
-import { assets, RateLimitConfig, RateLimitState, vmpc, was } from './types';
+import {
+  assets,
+  RateLimitConfig,
+  RateLimitState,
+  RetryConfig,
+  vmpc,
+  was,
+} from './types';
 import { PortalInfo } from './types/portal';
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
@@ -20,6 +27,11 @@ import { buildFilterXml } from './was/util';
 export * from './types';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxAttempts: 5,
+  noRetry: [400, 401, 403],
+};
 
 /**
  * An initial rate limit state for a standard subscription level.
@@ -41,6 +53,7 @@ const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
   maxAttempts: 5,
   reserveLimit: 30,
   cooldownPeriod: 1000,
+  concurrencyDelay: 10000,
 };
 
 export type QualysAPIClientConfig = {
@@ -62,23 +75,35 @@ export type QualysAPIClientConfig = {
    * @see STANDARD_RATE_LIMIT_STATE
    */
   rateLimitState?: RateLimitState;
+
+  /**
+   * Initializes the API client witha `RetryConfig`.
+   *
+   * @see DEFAULT_RETRY_CONFIG
+   */
+  retryConfig?: Partial<RetryConfig>;
 };
 
 export class QualysAPIClient {
   public events: EventEmitter;
 
   private config: QualysIntegrationConfig;
+  private retryConfig: RetryConfig;
   private rateLimitConfig: RateLimitConfig;
+
+  // NOTE: This is NOT thread safe at this time.
   private rateLimitState: RateLimitState;
 
   constructor({
     config,
+    retryConfig,
     rateLimitConfig,
     rateLimitState,
   }: QualysAPIClientConfig) {
     this.config = config;
+    this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
     this.rateLimitConfig = { ...DEFAULT_RATE_LIMIT_CONFIG, ...rateLimitConfig };
-    this.rateLimitState = rateLimitState || STANDARD_RATE_LIMIT_STATE;
+    this.rateLimitState = rateLimitState || { ...STANDARD_RATE_LIMIT_STATE };
     this.events = new EventEmitter();
   }
 
@@ -429,10 +454,12 @@ export class QualysAPIClient {
     const apiResponse = await executeAPIRequest(this.events, {
       url: info as string,
       exec: () => fetch(info, init),
+      retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
       rateLimitState: this.rateLimitState,
     });
 
+    // NOTE: This is NOT thread safe at this time.
     this.rateLimitState = apiResponse.rateLimitState;
 
     if (apiResponse.status >= 400) {

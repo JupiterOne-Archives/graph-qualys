@@ -11,9 +11,11 @@ export enum ClientEvents {
 
 export type ClientEvent = {
   url: string;
+  retryConfig: RetryConfig;
+  retryAttempts: number;
   rateLimitConfig: RateLimitConfig;
   rateLimitState: RateLimitState;
-  attempt: number;
+  rateLimitedAttempts: number;
 };
 
 export type ClientRequestEvent = ClientEvent;
@@ -30,11 +32,33 @@ export type ClientResponseEvent = ClientEvent & {
   statusText: string | undefined;
 };
 
+export type RetryConfig = {
+  /**
+   * The maximum number of times to retry an unexpected failed request.
+   */
+  maxAttempts: number;
+
+  /**
+   * Response codes that should not be retried.
+   */
+  noRetry: number[];
+};
+
 export type RateLimitConfig = {
   /**
    * The code of a rate limited response.
    */
-  responseCode: 429 | 409;
+  responseCode: 409;
+
+  /**
+   * The period of time in milliseconds to wait between requests when
+   * concurrency limits have been reached.
+   *
+   * The API docs claim that there will be no headers providing a time to wait
+   * before retry when the reponse is blocked because of concurrency
+   * limitations.
+   */
+  concurrencyDelay: number;
 
   /**
    * The limit remaining value at which the client should slow down. This
@@ -54,10 +78,10 @@ export type RateLimitConfig = {
   cooldownPeriod: number;
 
   /**
-   * Maximum number of times to retry a request that continues to receive 429
-   * responses.
+   * Maximum number of times to retry a request that continues to receive rate
+   * limited responses.
    *
-   * The client will respect `x-ratelimit-retryafter`, but should it end up in a
+   * The client will respect `x-ratelimit-towait-sec`, but should it end up in a
    * battle to get the next allowed request, it will give up after this many
    * tries.
    */
@@ -96,8 +120,7 @@ export type RateLimitState = {
   concurrency: number;
 
   /**
-   * Number of API calls that are running right now (including the one
-   * identified in the current HTTP response header).
+   * Number of API calls that are running after this request completed.
    */
   concurrencyRunning: number;
 };

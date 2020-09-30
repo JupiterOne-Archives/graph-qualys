@@ -348,11 +348,42 @@ describe('iterateHostDetections', () => {
   });
 });
 
+// TODO consider aborting if time to next request is over some amount of time
 describe('executeAPIRequest', () => {
-  test('waits towait-sec on 409 response', async () => {
+  const concurrencyLimitXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>1960</CODE>
+      <TEXT> This API cannot be run again until 1 currently running API instance has finished.</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>CALLS_TO_FINISH</KEY>
+      <VALUE>2</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
+
+  const rateLimitXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>1965</CODE>
+      <TEXT> This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>SECONDS_TO_WAIT</KEY>
+      <VALUE>68928</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
+
+  test('waits towait-sec on 409 rate limit response', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'executeAPIRequest409',
+      name: 'executeAPIRequest409rateLimit',
       options: { recordFailedRequests: true },
     });
 
@@ -366,16 +397,56 @@ describe('executeAPIRequest', () => {
       .any()
       .times(1)
       .intercept((_req, res) => {
-        res.status(409).setHeaders({
-          'x-ratelimit-remaining': String(0),
-          'x-ratelimit-towait-sec': String(toWaitSec),
-        });
+        res
+          .status(409)
+          .setHeaders({
+            'x-ratelimit-limit': String(300),
+            'x-ratelimit-remaining': String(0),
+            'x-ratelimit-towait-sec': String(toWaitSec),
+          })
+          .send(rateLimitXMLBody);
       });
 
     await createClient().verifyAuthentication();
 
     expect(requestTimes.length).toBe(2);
     expect(requestTimes[1] - requestTimes[0]).toBeGreaterThan(toWaitSec * 1000);
+  });
+
+  test('waits on 409 concurrency limit response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequest409concurrencyLimit',
+      options: { recordFailedRequests: true },
+    });
+
+    const requestTimes: number[] = [];
+    recording.server.any().on('request', (_req, _event) => {
+      requestTimes.push(Date.now());
+    });
+
+    recording.server.any().intercept((_req, res) => {
+      res
+        .status(409)
+        .setHeaders({
+          'x-concurrency-limit-limit': String(2),
+          'x-concurrency-limit-running': String(2),
+        })
+        .send(concurrencyLimitXMLBody);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      rateLimitConfig: {
+        maxAttempts: 2,
+        concurrencyDelay: 500,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(/409 Conflict/);
+
+    expect(requestTimes.length).toBe(2);
+    expect(requestTimes[1] - requestTimes[0]).toBeGreaterThan(500);
   });
 
   test('retries 409 response limited times', async () => {
@@ -392,6 +463,7 @@ describe('executeAPIRequest', () => {
 
     recording.server.any().intercept((_req, res) => {
       res.status(409).setHeaders({
+        'x-ratelimit-limit': String(300),
         'x-ratelimit-remaining': String(100),
       });
     });
@@ -440,5 +512,86 @@ describe('executeAPIRequest', () => {
     await client.verifyAuthentication();
 
     expect(Date.now() - startTime).toBeGreaterThanOrEqual(1000);
+  });
+
+  test('retries unexpected errors', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestRetryUnexpected',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(500);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /500 Internal Server Error/,
+    );
+
+    expect(requestCount).toBe(2);
+  });
+
+  test('does not retry bad request', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestBadRequest',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(400);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /400 Bad Request/,
+    );
+
+    expect(requestCount).toBe(1);
+  });
+
+  test('does not retry authentication error', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestUnauthRequest',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(401);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /401 Unauthorized/,
+    );
+
+    expect(requestCount).toBe(1);
   });
 });
