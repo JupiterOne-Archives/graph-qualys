@@ -28,22 +28,24 @@ https://github.com/JupiterOne/sdk/blob/master/docs/integrations/development.md
 
 The following entities are created:
 
-| Resources | Entity `_type`        | Entity `_class` |
-| --------- | --------------------- | --------------- |
-| Account   | `qualys_account`      | `Account`       |
-| Detection | `qualys_host_finding` | `Finding`       |
-| Service   | `qualys_service`      | `Service`       |
-| Web App   | `qualys_web_app`      | `Application`   |
+| Resources               | Entity `_type`                 | Entity `_class` |
+| ----------------------- | ------------------------------ | --------------- |
+| Account                 | `qualys_account`               | `Account`       |
+| Detection               | `qualys_host_finding`          | `Finding`       |
+| Vulnerability Manager   | `qualys_vulnerability_manager` | `Service`       |
+| Web App                 | `qualys_web_app`               | `Application`   |
+| Web Application Scanner | `qualys_web_app_scanner`       | `Service`       |
 
 ### Relationships
 
 The following relationships are created/mapped:
 
-| Source Entity `_type` | Relationship `_class` | Target Entity `_type` |
-| --------------------- | --------------------- | --------------------- |
-| `qualys_account`      | **HAS**               | `qualys_service`      |
-| `qualys_service`      | **MONITORS**          | `*_host`              |
-| `qualys_service`      | **IDENTIFIED**        | `qualys_host_finding` |
+| Source Entity `_type`          | Relationship `_class` | Target Entity `_type`          |
+| ------------------------------ | --------------------- | ------------------------------ |
+| `qualys_account`               | **HAS**               | `qualys_vulnerability_manager` |
+| `qualys_account`               | **HAS**               | `qualys_web_app_scanner`       |
+| `qualys_vulnerability_manager` | **IDENTIFIED**        | `qualys_host_finding`          |
+| `qualys_vulnerability_manager` | **SCANS**             | `Host`                         |
 
 <!--
 ********************************************************************************

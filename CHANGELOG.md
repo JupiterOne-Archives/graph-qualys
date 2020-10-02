@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Break ingestion into multiple steps
+- Adopt pattern of `iterateResources` in provider client code
+- Ensure exceptions are handled and retries performed in all APIs
+- Use rate limit response headers from VMDR API to throttle client, avoiding
+  unneccessary retries
+- Add basic handling of concurrency response headers by waiting for a bit before
+  retrying
+- Create an `Account` entity, storing portal version information as raw data
+- Create a `Service` entity for VMDR, WAS, relate them to `Account`
+- Add `function` to `Service` entities
+- Create a mapped relationship `Service - SCANS -> Host`. This will cause the
+  mapper to create the Host entities and relate them to existing EC2 instances
+  by `instanceId` where possible. Both the asset ID and QWeb host ID are added
+  to the `Host` to allow for mapping `Finding`s in a later step.
+- Collect raw data on `Finding` entities
+- Create direct relationship `Service - IDENTIFIED -> Finding`
+- Rely on global mapping for `Finding <- HAS - Host`. This relies on
+  `Finding.targets` including host ID values (asset, QWeb).
+
 ## 3.1.0 2020-09-25
 
 ### Changed

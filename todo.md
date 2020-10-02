@@ -9,21 +9,23 @@ Goals:
   before retrying.
 - ✅ Create an `Account` entity.
 - ✅ Create a `Service` entity for VMDR, WAS, relate them to `Account`.
-- ✅ Create a mapped relationship `Service - MONITORS -> Host`. This will cause
-  the mapper to create the Host entities and relate them to existing EC2
-  instances by `instanceId` where possible. The `qualysHostId` is added to the
-  `Host` to allow for mapping `Finding`s in a later step.
+- ✅ Add `function` to `Service` entities.
+- ✅ Create a mapped relationship `Service - SCANS -> Host`. This will cause the
+  mapper to create the Host entities and relate them to existing EC2 instances
+  by `instanceId` where possible. Both the asset ID and QWeb host ID are added
+  to the `Host` to allow for mapping `Finding`s in a later step.
 - ✅ Collect raw data on `Finding` entities.
 - ✅ Create direct relationship `Service - IDENTIFIED -> Finding`.
 - ✅ Rely on global mapping for `Finding <- HAS - Host`. This relies on
-  `Finding.targets` including IP addresses and AWS instance ID values.
+  `Finding.targets` including host ID values (asset, QWeb).
 - Ingest `Vulnerability` entities and create `Finding - IS -> Vulnerability`
   direct relationships.
 - Create mapped relationships `Vulnerability - IS -> Weakness` for CVE, other
   standards.
-- Create a mapped relationship `Service - MONITORS -> WebApp`.
+- Create a mapped relationship `Service - SCANS -> WebApp`.
 - Ingest wep app `Finding`, including values in `targets` to allow global
   mappings to function.
+- Enable schema validation
 
 ---
 

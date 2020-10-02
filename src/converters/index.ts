@@ -50,7 +50,9 @@ export function buildKey(
 }
 
 export const TYPE_QUALYS_ACCOUNT = 'qualys_account';
-export const TYPE_QUALYS_SERVICE = 'qualys_service';
+
+export const TYPE_QUALYS_SERVICE_WAS = 'qualys_web_app_scanner';
+export const TYPE_QUALYS_SERVICE_VMDR = 'qualys_vulnerability_manager';
 
 export const TYPE_QUALYS_WEB_APP = 'qualys_web_app';
 export const TYPE_QUALYS_WEB_APP_FINDING = 'qualys_web_app_finding';

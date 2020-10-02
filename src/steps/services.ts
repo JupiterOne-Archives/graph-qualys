@@ -2,13 +2,18 @@ import {
   createDirectRelationship,
   createIntegrationEntity,
   Entity,
+  generateRelationshipType,
   IntegrationStep,
   IntegrationStepExecutionContext,
   JobState,
   RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
-import { TYPE_QUALYS_ACCOUNT, TYPE_QUALYS_SERVICE } from '../converters';
+import {
+  TYPE_QUALYS_ACCOUNT,
+  TYPE_QUALYS_SERVICE_VMDR,
+  TYPE_QUALYS_SERVICE_WAS,
+} from '../converters';
 import { createQualysAPIClient } from '../provider';
 import { PortalInfo } from '../provider/client/types/portal';
 import { QualysIntegrationConfig } from '../types';
@@ -45,12 +50,13 @@ async function createWebApplicationScannerService(
       entityData: {
         source: {},
         assign: {
-          _type: TYPE_QUALYS_SERVICE,
+          _type: TYPE_QUALYS_SERVICE_WAS,
           _class: 'Service',
           _key: `qualys-service:was`,
           displayName: name,
           name: name,
           category: ['software', 'other'],
+          function: 'DAST',
           description:
             'Automated Web Application Security Assessment and Reporting',
           version: portalInfo?.['Portal-Version']?.['WAS-VERSION'],
@@ -83,12 +89,13 @@ async function createVulnerabilityManagementService(
       entityData: {
         source: {},
         assign: {
-          _type: TYPE_QUALYS_SERVICE,
+          _type: TYPE_QUALYS_SERVICE_VMDR,
           _class: 'Service',
           _key: `qualys-service:vmdr`,
           displayName: name,
           name: name,
           category: ['software', 'other'],
+          function: 'vulnerability-management',
           description:
             'Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.',
           version: portalInfo?.['Portal-Version']?.['VM-VERSION'],
@@ -116,17 +123,36 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     name: 'Fetch Services',
     entities: [
       {
-        resourceName: 'Service',
-        _type: TYPE_QUALYS_SERVICE,
+        _type: TYPE_QUALYS_SERVICE_WAS,
         _class: 'Service',
+        resourceName: 'Web Application Scanner',
+      },
+      {
+        _type: TYPE_QUALYS_SERVICE_VMDR,
+        _class: 'Service',
+        resourceName: 'Vulnerability Manager',
       },
     ],
     relationships: [
       {
-        _type: 'qualys_account_has_service',
+        _type: generateRelationshipType(
+          RelationshipClass.HAS,
+          TYPE_QUALYS_ACCOUNT,
+          TYPE_QUALYS_SERVICE_WAS,
+        ),
         _class: RelationshipClass.HAS,
         sourceType: TYPE_QUALYS_ACCOUNT,
-        targetType: TYPE_QUALYS_SERVICE,
+        targetType: TYPE_QUALYS_SERVICE_WAS,
+      },
+      {
+        _type: generateRelationshipType(
+          RelationshipClass.HAS,
+          TYPE_QUALYS_ACCOUNT,
+          TYPE_QUALYS_SERVICE_VMDR,
+        ),
+        _class: RelationshipClass.HAS,
+        sourceType: TYPE_QUALYS_ACCOUNT,
+        targetType: TYPE_QUALYS_SERVICE_VMDR,
       },
     ],
     dependsOn: [STEP_FETCH_ACCOUNT],
