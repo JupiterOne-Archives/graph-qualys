@@ -13,6 +13,7 @@ import {
   fetchScannedHostFindings,
   fetchScannedHostIds,
 } from '../vmdr';
+import { fetchFindingVulnerabilities } from '../vulns';
 import { fetchWebApps } from '../was';
 
 jest.setTimeout(10000 * 2);
@@ -39,6 +40,7 @@ test('steps', async () => {
   await fetchScannedHostIds(context);
   await fetchScannedHostDetails(context);
   await fetchScannedHostFindings(context);
+  await fetchFindingVulnerabilities(context);
 
   // Review snapshot, failure is a regression
   expect({

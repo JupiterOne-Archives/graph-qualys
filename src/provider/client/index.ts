@@ -21,6 +21,10 @@ import {
   was,
 } from './types';
 import { PortalInfo } from './types/portal';
+import {
+  ListHostDetectionsResponse,
+  ListQualysVulnerabilitiesResponse,
+} from './types/vmpc';
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
 
@@ -411,7 +415,9 @@ export class QualysAPIClient {
       );
 
       const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(responseText);
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as ListHostDetectionsResponse;
       const detectionHosts: vmpc.DetectionHost[] = toArray(
         jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
       );
@@ -428,6 +434,49 @@ export class QualysAPIClient {
     // concurrency, add to queue to allow concurrency control.
     for (const ids of chunk(hostIds, 500)) {
       await fetchHostDetections(ids);
+    }
+  }
+
+  /**
+   * Iterate Qualys vulnerabilities.
+   *
+   * @param qids the set of Qualys QIDs to fetch vulnerabilities
+   * @param iteratee receives each vulnerability
+   */
+  public async iterateVulnerabilities(
+    qids: number[],
+    iteratee: ResourceIteratee<vmpc.Vuln>,
+  ): Promise<void> {
+    const fetchVulnerabilities = async (ids: number[]) => {
+      const endpoint = '/api/2.0/fo/knowledge_base/vuln/';
+
+      const params = new URLSearchParams({
+        action: 'list',
+        ids: ids.map(String),
+      });
+
+      const response = await this.executeAuthenticatedAPIRequest(
+        this.qualysUrl(endpoint),
+        { method: 'POST', body: params },
+      );
+
+      const responseText = await response.text();
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as ListQualysVulnerabilitiesResponse;
+      const vulns: vmpc.Vuln[] = toArray(
+        jsonFromXml.KNOWLEDGE_BASE_VULN_LIST_OUTPUT?.RESPONSE?.VULN_LIST?.VULN,
+      );
+
+      for (const vuln of vulns) {
+        await iteratee(vuln);
+      }
+    };
+
+    // Starting simple, sequential requests for pages. Once client supports
+    // concurrency, add to queue to allow concurrency control.
+    for (const ids of chunk(qids, 500)) {
+      await fetchVulnerabilities(ids);
     }
   }
 

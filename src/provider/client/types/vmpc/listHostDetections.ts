@@ -2,7 +2,7 @@
 // https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf. We don't have
 // enough data in our trial account to express all permutations.
 
-import { PossibleArray, ISODateString } from './util';
+import { PossibleArray, ISODateString } from '../util';
 
 // https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
 export interface ListHostDetectionsResponse {

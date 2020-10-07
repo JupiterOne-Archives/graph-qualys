@@ -44,8 +44,11 @@ The following relationships are created/mapped:
 | ------------------------------ | --------------------- | ------------------------------ |
 | `qualys_account`               | **HAS**               | `qualys_vulnerability_manager` |
 | `qualys_account`               | **HAS**               | `qualys_web_app_scanner`       |
+| `qualys_host_finding`          | **IS**                | `cve`                          |
+| `qualys_host_finding`          | **IS**                | `qualys_vuln`                  |
 | `qualys_vulnerability_manager` | **IDENTIFIED**        | `qualys_host_finding`          |
-| `qualys_vulnerability_manager` | **SCANS**             | `Host`                         |
+| `qualys_vulnerability_manager` | **SCANS**             | `aws_instance`                 |
+| `qualys_vulnerability_manager` | **SCANS**             | `discovered_host`              |
 
 <!--
 ********************************************************************************

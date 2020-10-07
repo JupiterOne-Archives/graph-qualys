@@ -8,7 +8,7 @@ import {
   TYPE_QUALYS_WEB_APP,
   TYPE_QUALYS_WEB_APP_FINDING,
   TYPE_QUALYS_HOST,
-  TYPE_QUALYS_HOST_FINDING,
+  ENTITY_TYPE_HOST_FINDING,
   TYPE_QUALYS_VULN,
 } from '../src/converters';
 import { IntegrationStepExecutionContext } from '@jupiterone/integration-sdk-core';
@@ -170,7 +170,7 @@ test('should be able to collect all data', async () => {
   const hostFindingKeys: string[] = [];
   await context.jobState.iterateEntities(
     {
-      _type: TYPE_QUALYS_HOST_FINDING,
+      _type: ENTITY_TYPE_HOST_FINDING,
     },
     (entity) => {
       hostFindingKeys.push(entity._key);

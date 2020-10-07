@@ -4,11 +4,13 @@ import {
   IntegrationStepExecutionContext,
 } from '@jupiterone/integration-sdk-core';
 
-import { TYPE_QUALYS_ACCOUNT } from '../converters';
 import { createQualysAPIClient } from '../provider';
 import { QualysIntegrationConfig } from '../types';
 
 export const STEP_FETCH_ACCOUNT = 'fetch-account';
+
+export const ENTITY_TYPE_QUALYS_ACCOUNT = 'qualys_account';
+
 export const DATA_ACCOUNT_ENTITY = 'DATA_ACCOUNT_ENTITY';
 
 export async function fetchAccountDetails({
@@ -27,7 +29,7 @@ export async function fetchAccountDetails({
         portal: data,
       },
       assign: {
-        _type: TYPE_QUALYS_ACCOUNT,
+        _type: ENTITY_TYPE_QUALYS_ACCOUNT,
         _class: 'Account',
         _key: `qualys-account:${instance.id}`,
         name,
@@ -49,7 +51,7 @@ export const accountSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     entities: [
       {
         resourceName: 'Account',
-        _type: TYPE_QUALYS_ACCOUNT,
+        _type: ENTITY_TYPE_QUALYS_ACCOUNT,
         _class: 'Account',
       },
     ],

@@ -7,6 +7,8 @@ import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
 import { assets, QualysAPIClient, vmpc, was } from '../client';
 
+jest.setTimeout(1000 * 60 * 1);
+
 const createClient = (): QualysAPIClient => {
   return new QualysAPIClient({
     config,
@@ -346,6 +348,104 @@ describe('iterateHostDetections', () => {
 
     expect(hosts.length).toBe(2);
   });
+});
+
+describe('iterateVulnerabilities', () => {
+  test('none', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateVulnerabilitiesNone',
+    });
+
+    const vulns: vmpc.Vuln[] = [];
+
+    await createClient().iterateVulnerabilities([], (vuln) => {
+      vulns.push(vuln);
+    });
+
+    expect(vulns.length).toBe(0);
+  });
+
+  test('unknown id', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateVulnerabilitiesUnknownId',
+      options: { recordFailedRequests: true },
+    });
+
+    const vulns: vmpc.Vuln[] = [];
+
+    await createClient().iterateVulnerabilities([123], (vuln) => {
+      vulns.push(vuln);
+    });
+
+    expect(vulns.length).toBe(0);
+  });
+
+  test('bad id', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateVulnerabilitiesBadId',
+      options: { recordFailedRequests: true },
+    });
+
+    await expect(
+      createClient().iterateVulnerabilities(
+        [('abc123' as unknown) as number],
+        async (_) => {
+          // noop
+        },
+      ),
+    ).rejects.toThrow(/Bad Request/);
+  });
+
+  test('some', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateVulnerabilities',
+    });
+
+    const client = createClient();
+    const vulns: vmpc.Vuln[] = [];
+
+    await client.iterateVulnerabilities([316760], (vuln) => {
+      vulns.push(vuln);
+    });
+
+    // TODO: Get some actual vulnerability scans working
+    expect(vulns.length).toBeGreaterThan(0);
+  });
+
+  // test('some mocked', async () => {
+  //   recording = setupQualysRecording({
+  //     directory: __dirname,
+  //     name: 'iterateVulnerabilitiesMocked',
+  //   });
+
+  //   const detectionsXml = fs
+  //     .readFileSync(path.join(__dirname, 'fixtures', 'detections.xml'))
+  //     .toString('utf8');
+
+  //   const requests = [/%2C498%2C499$/, /ids=500%2C501$/].reverse();
+
+  //   recording.server.any().intercept((req, res) => {
+  //     const expectedBody = requests.pop();
+  //     if (!expectedBody) throw 'no more requests expected';
+  //     expect(req.method).toBe('POST');
+  //     expect(req.body).toMatch(expectedBody);
+  //     res.status(200).type('application/xml').send(detectionsXml);
+  //   });
+
+  //   const hosts: vmpc.DetectionHost[] = [];
+  //   await createClient().iterateVulnerabilities(
+  //     [...Array(502)].map((_, i) => i),
+  //     ({ host, detections }) => {
+  //       hosts.push(host);
+  //     },
+  //   );
+
+  //   expect(hosts.length).toBe(2);
+  // });
 });
 
 // TODO consider aborting if time to next request is over some amount of time

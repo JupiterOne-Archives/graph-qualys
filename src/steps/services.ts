@@ -9,17 +9,20 @@ import {
   RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
-import {
-  TYPE_QUALYS_ACCOUNT,
-  TYPE_QUALYS_SERVICE_VMDR,
-  TYPE_QUALYS_SERVICE_WAS,
-} from '../converters';
 import { createQualysAPIClient } from '../provider';
 import { PortalInfo } from '../provider/client/types/portal';
 import { QualysIntegrationConfig } from '../types';
-import { DATA_ACCOUNT_ENTITY, STEP_FETCH_ACCOUNT } from './account';
+import {
+  DATA_ACCOUNT_ENTITY,
+  ENTITY_TYPE_QUALYS_ACCOUNT,
+  STEP_FETCH_ACCOUNT,
+} from './account';
 
 export const STEP_FETCH_SERVICES = 'fetch-services';
+
+export const ENTITY_TYPE_SERVICE_WAS = 'qualys_web_app_scanner';
+export const ENTITY_TYPE_SERVICE_VMDR = 'qualys_vulnerability_manager';
+
 export const DATA_WAS_SERVICE_ENTITY = 'DATA_WAS_SERVICE_ENTITY';
 export const DATA_VMDR_SERVICE_ENTITY = 'DATA_VMDR_SERVICE_ENTITY';
 
@@ -50,7 +53,7 @@ async function createWebApplicationScannerService(
       entityData: {
         source: {},
         assign: {
-          _type: TYPE_QUALYS_SERVICE_WAS,
+          _type: ENTITY_TYPE_SERVICE_WAS,
           _class: 'Service',
           _key: `qualys-service:was`,
           displayName: name,
@@ -89,7 +92,7 @@ async function createVulnerabilityManagementService(
       entityData: {
         source: {},
         assign: {
-          _type: TYPE_QUALYS_SERVICE_VMDR,
+          _type: ENTITY_TYPE_SERVICE_VMDR,
           _class: 'Service',
           _key: `qualys-service:vmdr`,
           displayName: name,
@@ -123,12 +126,12 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     name: 'Fetch Services',
     entities: [
       {
-        _type: TYPE_QUALYS_SERVICE_WAS,
+        _type: ENTITY_TYPE_SERVICE_WAS,
         _class: 'Service',
         resourceName: 'Web Application Scanner',
       },
       {
-        _type: TYPE_QUALYS_SERVICE_VMDR,
+        _type: ENTITY_TYPE_SERVICE_VMDR,
         _class: 'Service',
         resourceName: 'Vulnerability Manager',
       },
@@ -137,22 +140,22 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
       {
         _type: generateRelationshipType(
           RelationshipClass.HAS,
-          TYPE_QUALYS_ACCOUNT,
-          TYPE_QUALYS_SERVICE_WAS,
+          ENTITY_TYPE_QUALYS_ACCOUNT,
+          ENTITY_TYPE_SERVICE_WAS,
         ),
         _class: RelationshipClass.HAS,
-        sourceType: TYPE_QUALYS_ACCOUNT,
-        targetType: TYPE_QUALYS_SERVICE_WAS,
+        sourceType: ENTITY_TYPE_QUALYS_ACCOUNT,
+        targetType: ENTITY_TYPE_SERVICE_WAS,
       },
       {
         _type: generateRelationshipType(
           RelationshipClass.HAS,
-          TYPE_QUALYS_ACCOUNT,
-          TYPE_QUALYS_SERVICE_VMDR,
+          ENTITY_TYPE_QUALYS_ACCOUNT,
+          ENTITY_TYPE_SERVICE_VMDR,
         ),
         _class: RelationshipClass.HAS,
-        sourceType: TYPE_QUALYS_ACCOUNT,
-        targetType: TYPE_QUALYS_SERVICE_VMDR,
+        sourceType: ENTITY_TYPE_QUALYS_ACCOUNT,
+        targetType: ENTITY_TYPE_SERVICE_VMDR,
       },
     ],
     dependsOn: [STEP_FETCH_ACCOUNT],

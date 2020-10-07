@@ -1,6 +1,7 @@
 import { accountSteps } from './account';
 import { serviceSteps } from './services';
 import { hostDetectionSteps } from './vmdr';
+import { vulnSteps } from './vulns';
 import { webApplicationSteps } from './was';
 
 const integrationSteps = [
@@ -8,6 +9,7 @@ const integrationSteps = [
   ...serviceSteps,
   ...webApplicationSteps,
   ...hostDetectionSteps,
+  ...vulnSteps,
 ];
 
 export { integrationSteps };
