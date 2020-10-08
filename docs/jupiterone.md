@@ -31,9 +31,9 @@ The following entities are created:
 | Resources               | Entity `_type`                 | Entity `_class` |
 | ----------------------- | ------------------------------ | --------------- |
 | Account                 | `qualys_account`               | `Account`       |
-| Detection               | `qualys_host_finding`          | `Finding`       |
+| Host Detection          | `qualys_host_finding`          | `Finding`       |
 | Vulnerability Manager   | `qualys_vulnerability_manager` | `Service`       |
-| Web App                 | `qualys_web_app`               | `Application`   |
+| Web App Finding         | `qualys_web_app_finding`       | `Finding`       |
 | Web Application Scanner | `qualys_web_app_scanner`       | `Service`       |
 
 ### Relationships
@@ -49,6 +49,10 @@ The following relationships are created/mapped:
 | `qualys_vulnerability_manager` | **IDENTIFIED**        | `qualys_host_finding`          |
 | `qualys_vulnerability_manager` | **SCANS**             | `aws_instance`                 |
 | `qualys_vulnerability_manager` | **SCANS**             | `discovered_host`              |
+| `qualys_web_app_finding`       | **IS**                | `cve`                          |
+| `qualys_web_app_finding`       | **IS**                | `qualys_vuln`                  |
+| `qualys_web_app_scanner`       | **IDENTIFIED**        | `qualys_web_app_finding`       |
+| `qualys_web_app_scanner`       | **SCANS**             | `web_app`                      |
 
 <!--
 ********************************************************************************

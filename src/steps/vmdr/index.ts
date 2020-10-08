@@ -1,7 +1,6 @@
 import {
   createDirectRelationship,
   Entity,
-  IntegrationError,
   IntegrationStep,
   IntegrationStepExecutionContext,
   RelationshipClass,
@@ -11,10 +10,11 @@ import { createQualysAPIClient } from '../../provider';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
+import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
   DATA_HOST_TARGETS,
+  DATA_HOST_VULNERABILITY_FINDING_KEYS,
   DATA_SCANNED_HOST_IDS,
-  DATA_VULNERABILITY_FINDING_KEYS,
   STEP_FETCH_SCANNED_HOST_DETAILS,
   STEP_FETCH_SCANNED_HOST_FINDINGS,
   STEP_FETCH_SCANNED_HOST_IDS,
@@ -28,7 +28,7 @@ import {
   getEC2HostArn,
   getTargetsFromHostAsset,
 } from './converters';
-import { HostAssetTargetsMap, VulnerabilityFindingKeys } from './types';
+import { HostAssetTargetsMap } from './types';
 
 /**
  * Fetches the set of scanned host IDs that will be processed by the
@@ -43,7 +43,7 @@ export async function fetchScannedHostIds({
   const hostIds = await apiClient.fetchScannedHostIds();
   await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 
-  // `query` reflects parameters used to limit the set of hosts processed by the
+  // `filter` reflects parameters used to limit the set of hosts processed by the
   // integration. A value of `'all'` means no filters were used so that all
   // hosts are processed.
   logger.info(
@@ -162,52 +162,15 @@ export async function fetchScannedHostFindings({
         );
       }
 
-      // Ensure that `DATA_VULNERABILITY_FINDING_KEYS` is updated for each host
+      // Ensure that `DATA_HOST_VULNERABILITY_FINDING_KEYS` is updated for each host
       // so that should a partial set be ingested, we don't lose what we've seen
       // for later steps.
       await jobState.setData(
-        DATA_VULNERABILITY_FINDING_KEYS,
+        DATA_HOST_VULNERABILITY_FINDING_KEYS,
         vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
       );
     },
   );
-}
-
-class VulnerabilityFindingKeysCollector {
-  private mapping: Map<number, Set<string>>;
-
-  constructor() {
-    this.mapping = new Map();
-  }
-
-  /**
-   * Adds a Finding._key to set of vulnerability findings.
-   *
-   * @param qid vulnerability QID
-   * @param findingKey Finding._key related to vulnerability
-   */
-  public addVulnerabilityFinding(qid: number, findingKey: string): void {
-    if (!qid)
-      throw new IntegrationError({
-        code: 'UNDEFINED_VULNERABILITY_QID',
-        message: 'undefined QID provided for vulnerability',
-      });
-
-    let keys = this.mapping[qid];
-    if (!keys) {
-      keys = new Set();
-      this.mapping.set(qid, keys);
-    }
-    keys.add(findingKey);
-  }
-
-  /**
-   * Serializes collected values into form that can be stored between steps and
-   * used to re-create the Map.
-   */
-  public toVulnerabilityFindingKeys(): VulnerabilityFindingKeys {
-    return Array.from(this.mapping.entries());
-  }
 }
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
@@ -235,7 +198,7 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     name: 'Fetch Scanned Host Findings',
     entities: [VmdrEntities.HOST_FINDING],
     relationships: [
-      VmdrRelationships.SERVICE_FINDING,
+      VmdrRelationships.SERVICE_HOST_FINDING,
 
       // Global mappings will do the work of building a relationship between the
       // `Finding` and `Host` entities. It depends on the `Finding.targets`

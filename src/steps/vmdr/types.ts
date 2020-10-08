@@ -9,13 +9,3 @@
  * are therefore not available for lookup later.
  */
 export type HostAssetTargetsMap = Record<number, string[]>;
-
-/**
- * Maps a Qualys vulnerability QID to the set of related `Finding._key` values.
- *
- * As Findings are created during the processing of `HostDetection` data, the
- * QID and `Finding._key` values are easily obtained, and therefore tracked for
- * a later step that will fetch vulnerabilities and create mapped relationships
- * between the Finding and Vulnerabilty.
- */
-export type VulnerabilityFindingKeys = [number, Set<string>][];

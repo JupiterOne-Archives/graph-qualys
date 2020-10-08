@@ -158,21 +158,29 @@ export function createHostFindingEntity(
         name: findingDisplayName,
         qid: detection.QID!,
         type: detection.TYPE,
+
         severity: convertNumericSeverityToString(detection.SEVERITY),
         numericSeverity: detection.SEVERITY!,
-        firstFoundOn: parseTimePropertyValue(detection.FIRST_FOUND_DATETIME),
-        lastFoundOn: parseTimePropertyValue(detection.LAST_FOUND_DATETIME),
+
         numTimesFound: detection.TIMES_FOUND,
         isDisabled: detection.IS_DISABLED,
+
+        // Use found dates, same as web app findings
+        createdOn: parseTimePropertyValue(detection.FIRST_FOUND_DATETIME),
+        updatedOn: parseTimePropertyValue(detection.LAST_FOUND_DATETIME),
+
+        firstFoundOn: parseTimePropertyValue(detection.FIRST_FOUND_DATETIME),
+        lastFoundOn: parseTimePropertyValue(detection.LAST_FOUND_DATETIME),
         lastProcessedOn: parseTimePropertyValue(
           detection.LAST_PROCESSED_DATETIME,
         ),
+        lastTestedOn: parseTimePropertyValue(detection.LAST_TEST_DATETIME),
+        lastUpdatedOn: parseTimePropertyValue(detection.LAST_UPDATE_DATETIME),
+
         port: detection.PORT,
         protocol: detection.PROTOCOL,
         ssl: detection.SSL,
         status: detection.STATUS,
-        lastTestedOn: parseTimePropertyValue(detection.LAST_TEST_DATETIME),
-        lastUpdatedOn: parseTimePropertyValue(detection.LAST_UPDATE_DATETIME),
         isIgnored: detection.IS_IGNORED,
 
         category: 'system-scan',

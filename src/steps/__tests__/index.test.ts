@@ -14,9 +14,9 @@ import {
   fetchScannedHostIds,
 } from '../vmdr';
 import { fetchFindingVulnerabilities } from '../vulns';
-import { fetchWebApps } from '../was';
+import { fetchScannedWebAppFindings, fetchScannedWebApps } from '../was';
 
-jest.setTimeout(10000 * 2);
+jest.setTimeout(1000 * 60 * 1);
 
 let recording: Recording;
 
@@ -36,7 +36,8 @@ test('steps', async () => {
 
   await fetchAccountDetails(context);
   await fetchServices(context);
-  await fetchWebApps(context);
+  await fetchScannedWebApps(context);
+  await fetchScannedWebAppFindings(context);
   await fetchScannedHostIds(context);
   await fetchScannedHostDetails(context);
   await fetchScannedHostFindings(context);
@@ -80,7 +81,9 @@ test('steps', async () => {
     schema: {
       additionalProperties: true,
       properties: {
-        _type: { const: 'qualys_service' },
+        _type: {
+          enum: ['qualys_web_app_scanner', 'qualys_vulnerability_manager'],
+        },
         name: { type: 'string' },
         version: { type: 'string' },
         _rawData: {

@@ -19,7 +19,7 @@ export function buildKey(
 }
 
 export function getQualysHost(qualysApiUrl: string): string {
-  const match = /https:\/\/qualysapi\.([-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*))/.exec(
+  const match = /https:\/\/qualysapi\.([-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*))/.exec(
     qualysApiUrl.trim(),
   );
   if (match) {
@@ -42,7 +42,7 @@ export function toStringArray(
 ): string[] {
   const strings: string[] = [];
   values.forEach((e) => {
-    if (!!e) {
+    if (e) {
       strings.push(String(e));
     }
   });

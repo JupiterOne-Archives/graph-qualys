@@ -10,20 +10,23 @@ Goals:
 - ✅ Create an `Account` entity.
 - ✅ Create a `Service` entity for VMDR, WAS, relate them to `Account`.
 - ✅ Add `function` to `Service` entities.
-- ✅ Create a mapped relationship `Service - SCANS -> Host`. This will cause the
-  mapper to create the Host entities and relate them to existing EC2 instances
-  by `instanceId` where possible. Both the asset ID and QWeb host ID are added
-  to the `Host` to allow for mapping `Finding`s in a later step.
+- ✅ Create a mapped relationship
+  `Service - SCANS -> {_class: 'Host', _type: 'aws_instance', _key: '<instance arn>', id: [<instanceId>, <hostAssetId>, <qwebHostId>]`
+  to relate to existing entities and allow for entity adoption when the AWS
+  integration runs.
+- ✅ Create a mapped relationship
+  `Service - SCANS -> {_class: 'Host', _type: 'discovered_host', _key: 'qualys-host:<qwebHostId>', id: [<hostAssetId>, <qwebHostId>]`
+  to cause the mapper to create the entity.
 - ✅ Collect raw data on `Finding` entities.
 - ✅ Create direct relationship `Service - IDENTIFIED -> Finding`.
-- ✅ Rely on global mapping for `Finding <- HAS - Host`. This relies on
-  `Finding.targets` including host ID values (asset, QWeb).
-- Ingest `Vulnerability` entities and create `Finding - IS -> Vulnerability`
-  direct relationships.
-- Create mapped relationships `Vulnerability - IS -> Weakness` for CVE, other
-  standards.
-- Create a mapped relationship `Service - SCANS -> WebApp`.
-- Ingest wep app `Finding`, including values in `targets` to allow global
+- ✅ Rely on global mapping for `Finding <- HAS - Host`. This depends on
+  `Finding.targets` including `Host.id` values (hostAssetId, qwebHostId).
+- ✅ Create a mapped relationship
+  `Finding - IS -> {_class: 'Vulnerability', _type: 'cve', _key: '<cve.id>'` for
+  each CVE in the vulnerability. This will relate the `Finding` to the global
+  `cve` entities that all scanner integrations reference.
+- ✅ Create a mapped relationship `Service - SCANS -> WebApp`.
+- ✅ Ingest wep app `Finding`, including values in `targets` to allow global
   mappings to function.
 - Enable schema validation
 

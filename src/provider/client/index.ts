@@ -156,6 +156,8 @@ export class QualysAPIClient {
   /**
    * Iterate web applications. Details are minimal, it is necessary to request
    * details in a separate call.
+   *
+   * @see fetchScannedWebAppIds to simply obtain the scanned web app ID values
    */
   public async iterateWebApps(
     iteratee: ResourceIteratee<was.WebApp>,
@@ -226,6 +228,76 @@ export class QualysAPIClient {
     } while (hasMoreRecords);
   }
 
+  public async fetchScannedWebAppIds(): Promise<number[]> {
+    const ids: number[] = [];
+    await this.iterateWebApps(
+      (webApp) => {
+        ids.push(webApp.id!);
+      },
+      { filters: { isScanned: true } },
+    );
+    return ids;
+  }
+
+  /**
+   * Iterate web application vulnerability findings.
+   */
+  public async iterateWebAppFindings(
+    webAppIds: number[],
+    iteratee: ResourceIteratee<was.WebAppFinding>,
+  ): Promise<void> {
+    const fetchWebAppFindings = async (ids: number[]) => {
+      const endpoint = '/qps/rest/3.0/search/was/finding/';
+
+      const body = `
+      <ServiceRequest>
+        <preferences>
+          <limitResults>${ids.length}</limitResults>
+        </preferences>
+        <filters>
+          <Criteria field="webApp.id" operator="IN">${ids.join(',')}</Criteria>
+        </filters>
+      </ServiceRequest>`;
+
+      const response = await this.executeAuthenticatedAPIRequest(
+        this.qualysUrl(endpoint, {}),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+          body,
+        },
+      );
+
+      const responseText = await response.text();
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as was.ListWebAppFindingsResponse;
+
+      const responseCode = jsonFromXml.ServiceResponse?.responseCode;
+      if (responseCode && responseCode !== 'SUCCESS') {
+        throw new IntegrationProviderAPIError({
+          cause: new Error(
+            `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+          ),
+          endpoint,
+          status: response.status,
+          statusText: responseCode,
+        });
+      }
+
+      return toArray(jsonFromXml.ServiceResponse?.data?.Finding);
+    };
+
+    for (const ids of chunk(webAppIds, 100)) {
+      const findings = await fetchWebAppFindings(ids);
+      for (const finding of findings) {
+        await iteratee(finding);
+      }
+    }
+  }
+
   /**
    * Answers the complete set of scanned host IDs provided by the Qualys VMDR
    * module. This does not include hosts that have never been scanned.
@@ -287,9 +359,7 @@ export class QualysAPIClient {
           <limitResults>${ids.length}</limitResults>
         </preferences>
         <filters>
-          <Criteria field="qwebHostId" operator="IN">${hostIds.join(
-            ',',
-          )}</Criteria>
+          <Criteria field="qwebHostId" operator="IN">${ids.join(',')}</Criteria>
         </filters>
       </ServiceRequest>`;
 

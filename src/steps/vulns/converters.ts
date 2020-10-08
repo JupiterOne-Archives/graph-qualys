@@ -10,7 +10,6 @@ import {
 
 import { vmpc } from '../../provider/client';
 import toArray from '../../util/toArray';
-import { ENTITY_TYPE_HOST_FINDING } from '../vmdr/constants';
 import {
   ENTITY_TYPE_CVE_VULNERABILITY,
   ENTITY_TYPE_QUALYS_VULNERABILITY,
@@ -33,7 +32,7 @@ export function createFindingVulnerabilityMappedRelationships(
       _class: RelationshipClass.IS,
       _type: generateRelationshipType(
         RelationshipClass.IS,
-        ENTITY_TYPE_HOST_FINDING,
+        findingEntity._type,
         targetEntity._type!,
       ),
       _mapping: {
@@ -47,6 +46,8 @@ export function createFindingVulnerabilityMappedRelationships(
 }
 
 /**
+ * TODO: Rename this to createVulnerabilityTargetEntities
+ *
  * Creates a set of mapped relationship target entity properties for each
  * Vulnerability.
  *

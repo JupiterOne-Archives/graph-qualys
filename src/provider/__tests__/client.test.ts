@@ -135,6 +135,96 @@ describe('iterateWebApps', () => {
   });
 });
 
+describe('fetchScannedWebAppIds', () => {
+  test('none', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'fetchScannedWebAppIdsNone',
+    });
+
+    await expect(createClient().fetchScannedWebAppIds()).resolves.toEqual([]);
+  });
+
+  test('some', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'fetchScannedWebAppIds',
+    });
+
+    const webAppId = 81221901;
+    await expect(createClient().fetchScannedWebAppIds()).resolves.toEqual([
+      webAppId,
+    ]);
+  });
+});
+
+describe('iterateWebAppFindings', () => {
+  test('none', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindingsNone',
+    });
+
+    const findings: was.WebAppFinding[] = [];
+
+    await createClient().iterateWebAppFindings([], (webapp) => {
+      findings.push(webapp);
+    });
+
+    expect(findings.length).toBe(0);
+  });
+
+  test('unknown webapp id', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindingsUnknownId',
+    });
+
+    const findings: was.WebAppFinding[] = [];
+
+    await createClient().iterateWebAppFindings([123], (webapp) => {
+      findings.push(webapp);
+    });
+
+    expect(findings.length).toBe(0);
+  });
+
+  test('bad webapp id', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindingsBadId',
+      options: { recordFailedRequests: true },
+    });
+
+    await expect(
+      createClient().iterateWebAppFindings(
+        [('abc123' as unknown) as number],
+        async (_) => {
+          // noop
+        },
+      ),
+    ).rejects.toThrow(/INVALID_REQUEST/);
+  });
+
+  test('some', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindings',
+    });
+
+    const client = createClient();
+    const webappIds = await client.fetchScannedWebAppIds();
+
+    const findings: was.WebAppFinding[] = [];
+
+    await client.iterateWebAppFindings(webappIds, (webapp) => {
+      findings.push(webapp);
+    });
+
+    expect(findings.length).toBeGreaterThan(0);
+  });
+});
+
 describe('fetchScannedHostIds', () => {
   test('none', async () => {
     recording = setupQualysRecording({
