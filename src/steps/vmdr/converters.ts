@@ -11,6 +11,7 @@ import {
 
 import { assets, vmpc } from '../../provider/client';
 import { toStringArray } from '../../util';
+import { convertNumericSeverityToString } from '../utils';
 import {
   ENTITY_TYPE_DISCOVERED_HOST,
   ENTITY_TYPE_EC2_HOST,
@@ -293,15 +294,4 @@ export function determinePlatform(
   if (os.indexOf('windows') !== -1) {
     return 'windows';
   }
-}
-
-const SEVERITY_MAPPINGS = ['none', 'info', 'low', 'medium', 'high', 'critical'];
-
-export function convertNumericSeverityToString(
-  numericSeverity: number | undefined,
-): string {
-  if (numericSeverity === undefined || numericSeverity < 0) {
-    return 'unknown';
-  }
-  return numericSeverity <= 5 ? SEVERITY_MAPPINGS[numericSeverity] : 'critical';
 }

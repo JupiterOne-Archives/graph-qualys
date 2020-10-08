@@ -48,3 +48,14 @@ export class VulnerabilityFindingKeysCollector {
     return Array.from(this.mapping.entries());
   }
 }
+
+const SEVERITY_MAPPINGS = ['none', 'info', 'low', 'medium', 'high', 'critical'];
+
+export function convertNumericSeverityToString(
+  numericSeverity: number | undefined,
+): string {
+  if (numericSeverity === undefined || numericSeverity < 0) {
+    return 'unknown';
+  }
+  return numericSeverity <= 5 ? SEVERITY_MAPPINGS[numericSeverity] : 'critical';
+}

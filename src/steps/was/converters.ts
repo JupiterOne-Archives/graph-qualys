@@ -6,6 +6,8 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { was } from '../../provider/client';
+import { toStringArray } from '../../util';
+import { convertNumericSeverityToString } from '../utils';
 import { ENTITY_TYPE_WEBAPP_FINDING } from './constants';
 
 export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
@@ -25,9 +27,8 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
 
         qid: finding.qid,
         type: finding.type,
-        severity: finding.severity,
-        // TODO: convert string severty to numeric
-        // numericSeverity: finding.severity,
+        severity: convertNumericSeverityToString(finding.severity),
+        numericSeverity: finding.severity,
 
         // Use found dates, same as host vuln findings
         createdOn: parseTimePropertyValue(finding.firstDetectedDate),
@@ -36,7 +37,10 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
         lastTestedOn: parseTimePropertyValue(finding.lastTestedDate),
 
         // Global mapping of `Application.name` in `Finding.targets`
-        targets: finding.webApp?.name,
+        targets: toStringArray([finding.webApp?.name]),
+
+        category: 'app-scan',
+        open: 'FIXED' !== finding.status,
       },
     },
   });

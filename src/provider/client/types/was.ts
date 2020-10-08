@@ -73,7 +73,7 @@ export type WebAppFinding = {
   findingType?: 'QUALYS' | 'BURP' | 'BUGCROWD';
   status?: 'NEW' | 'ACTIVE' | 'REOPENED' | 'FIXED' | 'PROTECTED';
   isIgnored?: boolean;
-  severity?: string;
+  severity?: number;
   url?: string;
   firstDetectedDate?: string; // "YYYY-MM-DDThh:mm:ss"
   lastDetectedDate?: string;
