@@ -37,6 +37,11 @@ vulnerability
 - Create a mapped relationship `Service - SCANS -> WebApp`.
 - Ingest wep app `Finding`, including values in `targets` to allow global
   mappings to function.
+- Normalize `Finding.numericSeverity` to a range of 1-10 on web app and host
+  `Finding` entities to match data model.
+- Use `informational` instead of `info` for `Finding.severity`.
+- Process unexpected severity values: <= 0 are `informational`, >= 5 are
+  `critical`.
 
 ## 3.1.0 2020-09-25
 

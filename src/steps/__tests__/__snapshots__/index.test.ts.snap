@@ -126,7 +126,7 @@ Object {
       "lastTestedDate": "2020-09-10T00:08:20Z",
       "lastTestedOn": 1599696500000,
       "name": "Missing header: Referrer-Policy",
-      "numericSeverity": 2,
+      "numericSeverity": 4,
       "open": true,
       "qid": 150208,
       "severity": "low",

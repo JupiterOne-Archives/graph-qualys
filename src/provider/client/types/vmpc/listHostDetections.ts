@@ -1,8 +1,6 @@
-// Types manually created from review of
-// https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf. We don't have
-// enough data in our trial account to express all permutations.
+import { QualyNumericSeverity } from '../../../../types';
 
-import { PossibleArray, ISODateString } from '../util';
+import { ISODateString, PossibleArray } from '../util';
 
 // https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
 export type ListHostDetectionsResponse = {
@@ -49,7 +47,7 @@ export type HostDetectionList = {
 export type HostDetection = {
   QID?: number;
   TYPE?: HostDetectionType;
-  SEVERITY?: number;
+  SEVERITY?: QualyNumericSeverity;
   RESULTS?: string;
   FIRST_FOUND_DATETIME?: ISODateString;
   LAST_FOUND_DATETIME?: ISODateString;

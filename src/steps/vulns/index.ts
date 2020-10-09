@@ -29,6 +29,8 @@ import {
  * Fetches vulnerability information for each ingested Finding and builds mapped
  * relationships between a Finding and each detected Vulnerability.
  *
+ * TODO Handle CWEs in Findings as mapped relationship to Weakness entities
+ *
  * TODO Add a resource cache for integration (accessible across invocations) so
  * we don't have to re-load the vuln CVE data. Do not store everything, only
  * that necessary for CVE info.

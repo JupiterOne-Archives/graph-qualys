@@ -1,4 +1,5 @@
-import { PossibleArray, ISODateString } from '../util';
+import { QualyNumericSeverity } from '../../../../types';
+import { ISODateString, PossibleArray } from '../util';
 
 export type QualysVulnerabilitiesErrorResponse = {
   SIMPLE_RETURN: {
@@ -29,7 +30,7 @@ export type VulnList = {
 
 export type Vuln = {
   QID?: number;
-  SEVERITY_LEVEL?: number;
+  SEVERITY_LEVEL?: QualyNumericSeverity;
   TITLE?: string;
   CVE_LIST?: CveList;
   CVSS?: Cvss;

@@ -88,7 +88,7 @@ export function createVulnerabilityTargetEntities(
       name: vuln.TITLE,
       displayName: vuln.TITLE,
       webLink: buildQualysGuardVulnWebLink(qualysHost, vuln.QID!),
-      severityLevel: vuln.SEVERITY_LEVEL,
+      severityLevel: vuln.SEVERITY_LEVEL, // raw value, not normalized as it is on `Finding.numericSeverity`
     });
   }
 

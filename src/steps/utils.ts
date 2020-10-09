@@ -1,5 +1,7 @@
 import { IntegrationError } from '@jupiterone/integration-sdk-core';
 
+import { NormalizedNumericSeverity, QualyNumericSeverity } from '../types';
+
 /**
  * Maps a Qualys vulnerability QID to the set of related `Finding._key` values.
  *
@@ -49,13 +51,29 @@ export class VulnerabilityFindingKeysCollector {
   }
 }
 
-const SEVERITY_MAPPINGS = ['none', 'info', 'low', 'medium', 'high', 'critical'];
+const SEVERITY_MAPPINGS = [
+  'none',
+  'informational',
+  'low',
+  'medium',
+  'high',
+  'critical',
+];
 
 export function convertNumericSeverityToString(
-  numericSeverity: number | undefined,
+  numericSeverity: QualyNumericSeverity,
 ): string {
   if (numericSeverity === undefined || numericSeverity < 0) {
-    return 'unknown';
+    return SEVERITY_MAPPINGS[1];
   }
   return numericSeverity <= 5 ? SEVERITY_MAPPINGS[numericSeverity] : 'critical';
+}
+
+export function normalizeNumericSeverity(
+  numericSeverity: QualyNumericSeverity,
+): NormalizedNumericSeverity {
+  if (numericSeverity === undefined || numericSeverity <= 1) return 1;
+  return (numericSeverity <= 5
+    ? numericSeverity * 2
+    : 10) as NormalizedNumericSeverity;
 }

@@ -7,7 +7,10 @@ import {
 
 import { was } from '../../provider/client';
 import { toStringArray } from '../../util';
-import { convertNumericSeverityToString } from '../utils';
+import {
+  convertNumericSeverityToString,
+  normalizeNumericSeverity,
+} from '../utils';
 import { ENTITY_TYPE_WEBAPP_FINDING } from './constants';
 
 export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
@@ -28,7 +31,7 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
         qid: finding.qid,
         type: finding.type,
         severity: convertNumericSeverityToString(finding.severity),
-        numericSeverity: finding.severity,
+        numericSeverity: normalizeNumericSeverity(finding.severity),
 
         // Use found dates, same as host vuln findings
         createdOn: parseTimePropertyValue(finding.firstDetectedDate),

@@ -11,7 +11,10 @@ import {
 
 import { assets, vmpc } from '../../provider/client';
 import { toStringArray } from '../../util';
-import { convertNumericSeverityToString } from '../utils';
+import {
+  convertNumericSeverityToString,
+  normalizeNumericSeverity,
+} from '../utils';
 import {
   ENTITY_TYPE_DISCOVERED_HOST,
   ENTITY_TYPE_EC2_HOST,
@@ -127,9 +130,6 @@ export function createServiceScansEC2HostRelationship(
  * Create a Finding entity for a detection host. Relationships to Host entities
  * depend on global mappings that match `Finding.targets`.
  *
- * TODO ensure severity is normalized
- * https://bitbucket.org/jupiterone/jupiter-integration-aws/pull-requests/693#Lsrc/integration-aws/macie/converters.tsT20
- *
  * @param key the Finding entity _key value
  * @param host the Host for which a vulnerability was detected
  * @param detection the detection of a vulnerability
@@ -161,7 +161,7 @@ export function createHostFindingEntity(
         type: detection.TYPE,
 
         severity: convertNumericSeverityToString(detection.SEVERITY),
-        numericSeverity: detection.SEVERITY!,
+        numericSeverity: normalizeNumericSeverity(detection.SEVERITY),
 
         numTimesFound: detection.TIMES_FOUND,
         isDisabled: detection.IS_DISABLED,

@@ -1,3 +1,4 @@
+import { QualyNumericSeverity } from '../../../types';
 import { PossibleArray, ISODateString } from './util';
 
 export type ListWebAppsFilterInputParameter =
@@ -71,7 +72,7 @@ export type WebAppFinding = {
   findingType?: 'QUALYS' | 'BURP' | 'BUGCROWD';
   status?: 'NEW' | 'ACTIVE' | 'REOPENED' | 'FIXED' | 'PROTECTED';
   isIgnored?: boolean;
-  severity?: number;
+  severity?: QualyNumericSeverity;
   url?: string;
   firstDetectedDate?: string; // "YYYY-MM-DDThh:mm:ss"
   lastDetectedDate?: string;
