@@ -46,10 +46,7 @@ export function createFindingVulnerabilityMappedRelationships(
 }
 
 /**
- * TODO: Rename this to createVulnerabilityTargetEntities
- *
- * Creates a set of mapped relationship target entity properties for each
- * Vulnerability.
+ * Creates a set of mapped relationship target entities for each Vulnerability.
  *
  * When a vuln is related to one or more CVEs, the properties will map to
  * `_type: ENTITY_TYPE_CVE_VULNERABILITY, _key: '<cve id>'`. In the case where a
@@ -60,7 +57,7 @@ export function createFindingVulnerabilityMappedRelationships(
  * qg3.apps.qualys.com, to be used in building `webLink` values to the Qualys UI
  * @param vuln the vulnerability data from the Qualys Knowledgebase
  */
-export function createVulnerabilityTargetEntityProperties(
+export function createVulnerabilityTargetEntities(
   qualysHost: string,
   vuln: vmpc.Vuln,
 ): TargetEntityProperties[] {

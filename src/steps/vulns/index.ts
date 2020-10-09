@@ -22,18 +22,18 @@ import {
 import { STEP_FETCH_FINDING_VULNS, VulnRelationships } from './constants';
 import {
   createFindingVulnerabilityMappedRelationships,
-  createVulnerabilityTargetEntityProperties,
+  createVulnerabilityTargetEntities,
 } from './converters';
 
 /**
  * Fetches vulnerability information for each ingested Finding and builds mapped
  * relationships between a Finding and each detected Vulnerability.
  *
- * TODO Add a resource cache for integration (lasts accross invocations) so we
- * don't have to re-load the vuln cve data. Do not store everything, only that
- * necessary for CVE info.
+ * TODO Add a resource cache for integration (accessible across invocations) so
+ * we don't have to re-load the vuln CVE data. Do not store everything, only
+ * that necessary for CVE info.
  *
- * @see `createVulnerabilityTargetEntityProperties`
+ * @see `createVulnerabilityTargetEntities`
  */
 export async function fetchFindingVulnerabilities({
   logger,
@@ -48,7 +48,7 @@ export async function fetchFindingVulnerabilities({
   const vulnerabilityQIDs = Array.from(vulnerabilityFindingKeysMap.keys());
 
   await apiClient.iterateVulnerabilities(vulnerabilityQIDs, async (vuln) => {
-    const targetEntityProperties = createVulnerabilityTargetEntityProperties(
+    const targetEntities = createVulnerabilityTargetEntities(
       getQualysHost(instance.config.qualysApiUrl),
       vuln,
     );
@@ -58,35 +58,36 @@ export async function fetchFindingVulnerabilities({
       for (const findingKey of vulnFindingKeys) {
         const findingEntity = await jobState.findEntity(findingKey);
         if (!findingEntity) {
-          // This is unexpected. The previous step only adds the Finding._key when
-          // it adds a Finding to the `jobState`.
           logger.warn(
             { qid: vuln.QID, findingKey },
-            'Finding entity not found',
+            'Previous ingestion steps failed to store Finding in job state for _key',
           );
         } else {
           await jobState.addRelationships(
             createFindingVulnerabilityMappedRelationships(
               findingEntity,
-              targetEntityProperties,
+              targetEntities,
             ),
           );
         }
       }
     } else {
-      // This is unexpected. The previous step should only add the QID to the
-      // `vulnerabilityFindingKeysMap` when there were findings.
       logger.warn(
         { qid: vuln.QID },
-        'No finding IDs associated with vulnerability',
+        'Previous ingestion steps failed to associate Finding _keys with vulnerability',
       );
     }
   });
 }
 
 /**
- * Answers a single map of qid -> Finding._key[] from all steps that collected
+ * Answers a map of QID -> `Finding._key[]` from all steps that collected
  * Finding entities.
+ *
+ * The Finding ingestion steps will store a mapping of QID to each
+ * `Finding._key` associated with the vulnerability. This allows
+ * `STEP_FETCH_FINDING_VULNS` to know which vulnerabilities to fetch and to
+ * which Finding entites to map relationships.
  */
 async function getVulnerabilityFindingKeysMap(
   jobState: JobState,
