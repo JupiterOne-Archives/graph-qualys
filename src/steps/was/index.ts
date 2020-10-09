@@ -138,9 +138,20 @@ export const webApplicationSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     relationships: [
       WasRelationships.SERVICE_WEBAPP_FINDING,
 
+      // TODO: Consider using createMappedRelationship since global mappings are
+      // configured to `skipTargetCreation: true`.
+
+      // targetFilterKeys: [
+      //   ['_class', 'uri'],
+      //   ['_class', 'url'],
+      //   ['_class', 'webLink'],
+      //   ['_class', 'name'],
+      // ]
+
       // Global mappings will do the work of building a relationship between the
-      // `Finding` and `Application` entities. It depends on the `Finding.targets`
-      // containing a value that matches certain properties on the `Application`.
+      // `Finding` and existing `Application` entities. It depends on the
+      // `Finding.targets` containing a value that matches certain properties on
+      // the `Application`.
     ],
     dependsOn: [STEP_FETCH_SCANNED_WEBAPPS],
     executionHandler: fetchScannedWebAppFindings,

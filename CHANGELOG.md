@@ -42,6 +42,7 @@ vulnerability
 - Use `informational` instead of `info` for `Finding.severity`.
 - Process unexpected severity values: <= 0 are `informational`, >= 5 are
   `critical`.
+- Add `publicIpAddress`, `privateIpAddress` to `Host` entities.
 
 ## 3.1.0 2020-09-25
 
