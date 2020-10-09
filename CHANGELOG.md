@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.0.0 2020-10-09
+
 This is a significant change to the program structure to be sure, but also makes
 significant changes to the generated graph to move to the documented
 vulnerability
