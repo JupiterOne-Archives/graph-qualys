@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE HOST_LIST_VM_DETECTION_OUTPUT SYSTEM
+  "https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd">
+<!-- This report was generated with an evaluation version of Qualys //-->
+<HOST_LIST_VM_DETECTION_OUTPUT>
+   <RESPONSE>
+      <DATETIME>2020-09-27T01:29:21Z</DATETIME>
+      <HOST_LIST>
+         <HOST>
+            <ID>6506432</ID>
+            <IP>10.10.10.11</IP>
+            <TRACKING_METHOD>IP</TRACKING_METHOD>
+            <OS><![CDATA[Windows 2008 R2 Enterprise Service Pack1]]></OS>
+            <DNS><![CDATA[2k8r2-u-10-11]]></DNS>
+            <NETBIOS><![CDATA[2K8R2-U-10-11]]></NETBIOS>
+            <LAST_SCAN_DATETIME>2018-04-13T03:49:05Z</LAST_SCAN_DATETIME>
+            <LAST_VM_SCANNED_DATE>2018-04-13T03:48:50Z</LAST_VM_SCANNED_DATE>
+            <LAST_VM_SCANNED_DURATION>352</LAST_VM_SCANNED_DURATION>
+            <DETECTION_LIST>
+               <DETECTION>
+                  <QID>38170</QID>
+                  <TYPE>Confirmed</TYPE>
+                  <SEVERITY>2</SEVERITY>
+                  <PORT>3389</PORT>
+                  <PROTOCOL>tcp</PROTOCOL>
+                  <SSL>1</SSL>
+                  <RESULTS
+            ><![CDATA[Certificate #0 CN=2k8r2-u-10-11(2k8r2-u-10-11) doesn&apos;tresolve]]></RESULTS>
+                  <STATUS>Active</STATUS>
+                  <FIRST_FOUND_DATETIME
+            >2018-01-26T04:45:50Z</FIRST_FOUND_DATETIME>
+                  <LAST_FOUND_DATETIME
+            >2018-04-13T03:48:50Z</LAST_FOUND_DATETIME>
+                  <TIMES_FOUND>111</TIMES_FOUND>
+                  <LAST_TEST_DATETIME>2018-04-13T03:48:50Z</LAST_TEST_DATETIME>
+                  <LAST_UPDATE_DATETIME
+            >2018-04-13T03:49:05Z</LAST_UPDATE_DATETIME>
+                  <IS_IGNORED>0</IS_IGNORED>
+                  <IS_DISABLED>0</IS_DISABLED>
+                  <LAST_PROCESSED_DATETIME
+            >2018-04-13T03:49:05Z</LAST_PROCESSED_DATETIME>
+               </DETECTION>
+               <DETECTION>
+                  <QID>38173</QID>
+                  <TYPE>Confirmed</TYPE>
+                  <SEVERITY>2</SEVERITY>
+                  <PORT>3389</PORT>
+                  <PROTOCOL>tcp</PROTOCOL>
+                  <SSL>1</SSL>
+                  <RESULTS
+            ><![CDATA[Certificate #0 CN=2k8r2-u-10-11
+unable to get local
+issuer certificate]]></RESULTS>
+                  <STATUS>Active</STATUS>
+                  <FIRST_FOUND_DATETIME
+            >2018-01-26T04:45:50Z</FIRST_FOUND_DATETIME>
+                  <LAST_FOUND_DATETIME
+            >2018-04-13T03:48:50Z</LAST_FOUND_DATETIME>
+                  <TIMES_FOUND>111</TIMES_FOUND>
+                  <LAST_TEST_DATETIME>2018-04-13T03:48:50Z</LAST_TEST_DATETIME>
+                  <LAST_UPDATE_DATETIME
+            >2018-04-13T03:49:05Z</LAST_UPDATE_DATETIME>
+                  <IS_IGNORED>0</IS_IGNORED>
+                  <IS_DISABLED>0</IS_DISABLED>
+                  <LAST_PROCESSED_DATETIME
+            >2018-04-13T03:49:05Z</LAST_PROCESSED_DATETIME>
+               </DETECTION>
+               <DETECTION>
+                  <QID>38601</QID>
+                  <TYPE>Confirmed</TYPE>
+                  <SEVERITY>2</SEVERITY>
+                  <PORT>3389</PORT>
+                  <PROTOCOL>tcp</PROTOCOL>
+                  <SSL>1</SSL>
+                  <RESULTS
+            ><![CDATA[CIPHER KEY-EXCHANGE AUTHENTICATION
+MAC ENCRYPTION(KEY-STRENGTH)
+GRADE TLSv1 WITH RC4 CIPHERs IS SUPPORTED
+RC4-SHA RSA RSA SHA1 RC4(128) MEDIUM
+RC4-MD5 RSA RSA MD5 RC4(128) MEDIUM]]></RESULTS>
+                  <STATUS>Active</STATUS>
+                  <FIRST_FOUND_DATETIME
+            >2018-01-26T04:45:50Z</FIRST_FOUND_DATETIME>
+                  <LAST_FOUND_DATETIME
+            >2018-04-13T03:48:50Z</LAST_FOUND_DATETIME>
+                  <TIMES_FOUND>111</TIMES_FOUND>
+                  <LAST_TEST_DATETIME>2018-04-13T03:48:50Z</LAST_TEST_DATETIME>
+                  <LAST_UPDATE_DATETIME
+            >2018-04-13T03:49:05Z</LAST_UPDATE_DATETIME>
+                  <IS_IGNORED>0</IS_IGNORED>
+                  <IS_DISABLED>0</IS_DISABLED>
+                  <LAST_PROCESSED_DATETIME
+            >2018-04-13T03:49:05Z</LAST_PROCESSED_DATETIME>
+               </DETECTION>
+            </DETECTION_LIST>
+         </HOST>
+      </HOST_LIST>
+   </RESPONSE>
+</HOST_LIST_VM_DETECTION_OUTPUT>
+<!-- This report was generated with an evaluation version of Qualys //-->
+<!-- CONFIDENTIAL AND PROPRIETARY INFORMATION. Qualys provides the QualysGuard Service "As Is," without any warranty of any kind. Qualys makes no warranty that the information contained in this report is complete or error-free. Copyright 2020, Qualys, Inc. //-->

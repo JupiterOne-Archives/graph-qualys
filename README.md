@@ -7,6 +7,8 @@ This integration is used to ingest the following data into JupiterOne:
 - Web Apps
 - Web App Vulnerabilities
 
+Please see the [JupiterOne Vulnerability Data Model][vuln-data-model].
+
 The data is ingested via the Qualys API using user credentials (username and
 password).
 
@@ -128,3 +130,6 @@ Qualys API (web page):
 Qualys Web Application Scanning API User Guide:
 
 <https://www.qualys.com/docs/qualys-was-api-user-guide.pdf>
+
+[vuln-data-model]:
+  https://support.jupiterone.io/hc/en-us/articles/360041429733-Data-Model-for-Vulnerability-Management

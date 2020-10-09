@@ -5,6 +5,7 @@ import {
   IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
+import { createQualysAPIClient } from './provider';
 import { QualysIntegrationConfig } from './types';
 
 const REQUIRED_PROPERTIES = [
@@ -13,10 +14,11 @@ const REQUIRED_PROPERTIES = [
   'qualysApiUrl',
 ];
 
-export default async function validateInvocation(
-  context: IntegrationExecutionContext<QualysIntegrationConfig>,
-): Promise<void> {
-  const config = context.instance.config;
+export default async function validateInvocation({
+  logger,
+  instance,
+}: IntegrationExecutionContext<QualysIntegrationConfig>): Promise<void> {
+  const config = instance.config;
 
   for (const key of REQUIRED_PROPERTIES) {
     if (!config[key]) {
@@ -34,5 +36,6 @@ export default async function validateInvocation(
     );
   }
 
-  return Promise.resolve();
+  const client = createQualysAPIClient(logger, instance.config);
+  await client.verifyAuthentication();
 }
