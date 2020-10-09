@@ -31,6 +31,11 @@ describe('verifyAuthentication', () => {
       options: { recordFailedRequests: true },
     });
 
+    let requestCount = 0;
+    recording.server.any().on('request', (_req) => {
+      requestCount++;
+    });
+
     const client = new QualysAPIClient({
       config: { ...config, qualysUsername: 'testing-failure' },
     });
@@ -38,6 +43,8 @@ describe('verifyAuthentication', () => {
     await expect(client.verifyAuthentication()).rejects.toThrow(
       'Provider authentication failed at /api/2.0/fo/activity_log/: 401 Unauthorized',
     );
+
+    expect(requestCount).toBe(1);
   });
 
   test('accessible', async () => {
@@ -379,6 +386,11 @@ describe('iterateHostDetections', () => {
       options: { recordFailedRequests: true },
     });
 
+    let requestCount = 0;
+    recording.server.any().on('request', (_req) => {
+      requestCount++;
+    });
+
     await expect(
       createClient().iterateHostDetections(
         [('abc123' as unknown) as number],
@@ -387,6 +399,8 @@ describe('iterateHostDetections', () => {
         },
       ),
     ).rejects.toThrow(/Bad Request/);
+
+    expect(requestCount).toBe(1);
   });
 
   test('some', async () => {
