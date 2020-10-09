@@ -418,7 +418,7 @@ describe('iterateHostDetections', () => {
       .readFileSync(path.join(__dirname, 'fixtures', 'detections.xml'))
       .toString('utf8');
 
-    const requests = [/%2C498%2C499$/, /ids=500%2C501$/].reverse();
+    const requests = [/%2C298%2C299$/, /ids=300%2C301$/].reverse();
 
     recording.server.any().intercept((req, res) => {
       const expectedBody = requests.pop();
@@ -430,7 +430,7 @@ describe('iterateHostDetections', () => {
 
     const hosts: vmpc.DetectionHost[] = [];
     await createClient().iterateHostDetections(
-      [...Array(502)].map((_, i) => i),
+      [...Array(302)].map((_, i) => i),
       ({ host, detections }) => {
         hosts.push(host);
       },

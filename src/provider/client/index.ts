@@ -290,7 +290,7 @@ export class QualysAPIClient {
       return toArray(jsonFromXml.ServiceResponse?.data?.Finding);
     };
 
-    for (const ids of chunk(webAppIds, 100)) {
+    for (const ids of chunk(webAppIds, 300)) {
       const findings = await fetchWebAppFindings(ids);
       for (const finding of findings) {
         await iteratee(finding);
@@ -502,7 +502,7 @@ export class QualysAPIClient {
 
     // Starting simple, sequential requests for pages. Once client supports
     // concurrency, add to queue to allow concurrency control.
-    for (const ids of chunk(hostIds, 500)) {
+    for (const ids of chunk(hostIds, 300)) {
       await fetchHostDetections(ids);
     }
   }
@@ -545,7 +545,7 @@ export class QualysAPIClient {
 
     // Starting simple, sequential requests for pages. Once client supports
     // concurrency, add to queue to allow concurrency control.
-    for (const ids of chunk(qids, 500)) {
+    for (const ids of chunk(qids, 300)) {
       await fetchVulnerabilities(ids);
     }
   }
