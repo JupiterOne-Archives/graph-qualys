@@ -1,5 +1,3 @@
-// TODO Make these types instead of interfaces, since they do nothing but document the API response data.
-
 import { PossibleArray, ISODateString } from './util';
 
 export type ListWebAppsFilterInputParameter =
@@ -21,22 +19,22 @@ export type ListWebAppsFilters = Partial<
 
 export type ListWebAppsPagination = { limit: number; offset?: number };
 
-export interface ListWebAppsResponse {
+export type ListWebAppsResponse = {
   ServiceResponse?: ServiceResponse<WebAppData>;
-}
+};
 
-export interface ServiceResponse<DataType> {
+export type ServiceResponse<DataType> = {
   responseCode?: string;
   count?: number;
   hasMoreRecords?: boolean;
   data?: DataType;
-}
+};
 
-export interface WebAppData {
+export type WebAppData = {
   WebApp?: PossibleArray<WebApp>;
-}
+};
 
-export interface WebApp {
+export type WebApp = {
   id?: number;
   name?: string;
   url?: string;
@@ -44,15 +42,15 @@ export interface WebApp {
   tags?: Tags;
   createdDate?: ISODateString;
   updatedDate?: ISODateString;
-}
+};
 
-export interface Owner {
+export type Owner = {
   id?: number;
-}
+};
 
-export interface Tags {
+export type Tags = {
   count?: number;
-}
+};
 
 // https://qualysapi.qg3.apps.qualys.com/qps/xsd/3.0/was/finding.xsd
 

@@ -1,25 +1,25 @@
 import { PossibleArray, ISODateString } from './util';
 
-export interface SearchHostAssetResponse {
+export type SearchHostAssetResponse = {
   ServiceResponse?: ServiceResponse;
-}
+};
 
-export interface ListHostAssetsResponse {
+export type ListHostAssetsResponse = {
   ServiceResponse?: ServiceResponse;
-}
+};
 
-export interface ServiceResponse {
+export type ServiceResponse = {
   responseCode?: string;
   count?: number;
   hasMoreRecords?: boolean;
   data?: Data;
-}
+};
 
-export interface Data {
+export type Data = {
   HostAsset?: PossibleArray<HostAsset>;
-}
+};
 
-export interface HostAsset {
+export type HostAsset = {
   id?: number;
   name?: string;
   created?: ISODateString;
@@ -52,21 +52,21 @@ export interface HostAsset {
   lastVulnScan?: ISODateString;
   software?: Software;
   vuln?: Vuln;
-}
+};
 
-export interface Account {
+export type Account = {
   list?: AccountList;
-}
+};
 
-export interface AccountList {
+export type AccountList = {
   HostAssetAccount?: PossibleArray<HostAssetAccount>;
-}
+};
 
-export interface HostAssetAccount {
+export type HostAssetAccount = {
   username?: string;
-}
+};
 
-export interface AgentInfo {
+export type AgentInfo = {
   agentVersion?: string;
   agentId?: string;
   status?: string;
@@ -78,91 +78,91 @@ export interface AgentInfo {
   manifestVersion?: ManifestVersion;
   agentConfiguration?: AgentConfiguration;
   activationKey?: ActivationKey;
-}
+};
 
-export interface ActivationKey {
+export type ActivationKey = {
   activationId?: string;
   title?: string;
-}
+};
 
-export interface AgentConfiguration {
+export type AgentConfiguration = {
   id?: number;
   name?: string;
-}
+};
 
-export interface ManifestVersion {
+export type ManifestVersion = {
   pc?: string;
   vm?: string;
-}
+};
 
-export interface NetworkInterface {
+export type NetworkInterface = {
   list?: NetworkInterfaceList;
-}
+};
 
-export interface NetworkInterfaceList {
+export type NetworkInterfaceList = {
   HostAssetInterface?: PossibleArray<HostAssetInterfaceElement>;
-}
+};
 
-export interface HostAssetInterfaceElement {
+export type HostAssetInterfaceElement = {
   hostname?: string;
   interfaceName?: string;
   macAddress?: string;
   type?: string;
   address?: string;
   gatewayAddress?: string;
-}
+};
 
-export interface OpenPort {
+export type OpenPort = {
   list?: OpenPortList;
-}
+};
 
-export interface OpenPortList {
+export type OpenPortList = {
   HostAssetOpenPort?: PossibleArray<HostAssetOpenPort>;
-}
+};
 
-export interface HostAssetOpenPort {
+export type HostAssetOpenPort = {
   port?: number;
   protocol?: Protocol;
-}
+};
 
 export type Protocol = 'TCP' | 'UDP' | string;
 
-export interface Processor {
+export type Processor = {
   list?: ProcessorList;
-}
+};
 
-export interface ProcessorList {
+export type ProcessorList = {
   HostAssetProcessor?: PossibleArray<HostAssetProcessorElement>;
-}
+};
 
-export interface HostAssetProcessorElement {
+export type HostAssetProcessorElement = {
   name?: string;
   speed?: number;
-}
+};
 
-export interface Software {
+export type Software = {
   list?: SoftwareList;
-}
+};
 
-export interface SoftwareList {
+export type SoftwareList = {
   HostAssetSoftware?: PossibleArray<HostAssetSoftware>;
-}
+};
 
-export interface HostAssetSoftware {
+export type HostAssetSoftware = {
   name?: string;
   version?: number | string;
-}
+};
 
-export interface SourceInfo {
+export type SourceInfo = {
   list?: SourceInfoList;
-}
+};
 
-export interface SourceInfoList {
+export type SourceInfoList = {
   Ec2AssetSourceSimple?: Ec2AssetSourceSimple;
   AssetSource?: string;
-}
+};
 
-export interface Ec2AssetSourceSimple {
+export type Ec2AssetSourceSimple = {
   assetId?: number;
   type?: string;
   firstDiscovered?: ISODateString;
@@ -186,49 +186,49 @@ export interface Ec2AssetSourceSimple {
   publicIpAddress?: string;
   privateIpAddress?: string;
   macAddress?: string;
-}
+};
 
-export interface Ec2InstanceTags {
+export type Ec2InstanceTags = {
   tags?: Ec2InstanceTagsTags;
-}
+};
 
-export interface Ec2InstanceTagsTags {
+export type Ec2InstanceTagsTags = {
   list?: PossibleArray<string>;
-}
+};
 
-export interface HostAssetTags {
+export type HostAssetTags = {
   list?: TagsList;
-}
+};
 
-export interface TagsList {
+export type TagsList = {
   TagSimple?: PossibleArray<AgentConfiguration>;
-}
+};
 
-export interface Volume {
+export type Volume = {
   list?: VolumeList;
-}
+};
 
-export interface VolumeList {
+export type VolumeList = {
   HostAssetVolume?: PossibleArray<HostAssetVolume>;
-}
+};
 
-export interface HostAssetVolume {
+export type HostAssetVolume = {
   name?: string;
   size?: number;
   free?: number;
-}
+};
 
-export interface Vuln {
+export type Vuln = {
   list?: VulnList;
-}
+};
 
-export interface VulnList {
+export type VulnList = {
   HostAssetVuln?: PossibleArray<HostAssetVuln>;
-}
+};
 
-export interface HostAssetVuln {
+export type HostAssetVuln = {
   qid?: number;
   hostInstanceVulnId?: number;
   firstFound?: ISODateString;
   lastFound?: ISODateString;
-}
+};

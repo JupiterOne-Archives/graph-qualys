@@ -5,27 +5,27 @@
 import { PossibleArray, ISODateString } from '../util';
 
 // https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
-export interface ListHostDetectionsResponse {
+export type ListHostDetectionsResponse = {
   HOST_LIST_VM_DETECTION_OUTPUT?: ListHostDetectionOutput;
-}
+};
 
-export interface ListHostDetectionOutput {
+export type ListHostDetectionOutput = {
   RESPONSE?: ListHostDetectionResponse;
-}
+};
 
-export interface ListHostDetectionResponse {
+export type ListHostDetectionResponse = {
   DATETIME?: ISODateString;
   HOST_LIST?: DetectionHostList;
   WARNING?: {
     URL?: string;
   };
-}
+};
 
-export interface DetectionHostList {
+export type DetectionHostList = {
   HOST?: PossibleArray<DetectionHost>;
-}
+};
 
-export interface DetectionHost {
+export type DetectionHost = {
   ID?: number;
   IP?: string; // 10.97.5.247, ??
   TRACKING_METHOD?: string; // EC2, ??
@@ -40,13 +40,13 @@ export interface DetectionHost {
   QG_HOSTID?: string;
   LAST_VM_AUTH_SCANNED_DATE?: ISODateString;
   LAST_PC_SCANNED_DATE?: ISODateString;
-}
+};
 
-export interface HostDetectionList {
+export type HostDetectionList = {
   DETECTION?: PossibleArray<HostDetection>;
-}
+};
 
-export interface HostDetection {
+export type HostDetection = {
   QID?: number;
   TYPE?: HostDetectionType;
   SEVERITY?: number;
@@ -63,7 +63,7 @@ export interface HostDetection {
   LAST_TEST_DATETIME?: ISODateString;
   LAST_UPDATE_DATETIME?: ISODateString;
   IS_IGNORED?: number;
-}
+};
 
 export type Metadata = {
   EC2: EC2Metadata;
