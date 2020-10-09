@@ -3,6 +3,7 @@ import {
   createIntegrationEntity,
   createMappedRelationship,
   Entity,
+  isPublicIp,
   parseTimePropertyValue,
   Relationship,
   RelationshipClass,
@@ -51,10 +52,10 @@ export function createServiceScansDiscoveredHostRelationship(
         _type: ENTITY_TYPE_DISCOVERED_HOST,
         _key: `qualys-host:${host.qwebHostId!}`,
 
-        // Add to the entity's `id` property values that this host is known
-        // as in the Qualys system. These values are also added to the
-        // `Finding.targets` to allow for global mappings of of Findings to
-        // these Host entities.
+        // Add to the entity's `id` property values that this host is known as
+        // in the Qualys system. These values are also added to the
+        // `Finding.targets` to allow for global mappings of Findings to these
+        // Host entities.
         id: toStringArray([host.id, host.qwebHostId]),
         qualysAssetId: host.id,
         qualysHostId: host.qwebHostId,
@@ -65,7 +66,7 @@ export function createServiceScansDiscoveredHostRelationship(
         displayName: host.name || hostname,
         fqdn: host.fqdn,
         hostname,
-        ipAddress: host.address,
+        ...getHostIPAddresses(host),
 
         os: host.os,
         platform: determinePlatform(host),
@@ -105,19 +106,19 @@ export function createServiceScansEC2HostRelationship(
         _type: ENTITY_TYPE_EC2_HOST,
         _key: instanceArn,
 
-        // TODO ?? will the mapper enrich existing entities with these identifiers
-        id: toStringArray([instanceId, host.id, host.qwebHostId]),
+        // This value is also added to the `Finding.targets` to allow for global
+        // mappings of Findings to these Host entities.
+        id: instanceId,
         qualysAssetId: host.id,
         qualysHostId: host.qwebHostId,
 
         scannedBy: 'qualys',
         lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
 
-        // TODO ?? when the mapper enriches, do we really want these to modify the EC2 host
         displayName: host.name || hostname,
         fqdn: host.fqdn,
         hostname,
-        ipAddress: host.address,
+        ...getHostIPAddresses(host),
 
         os: host.os,
         platform: determinePlatform(host),
@@ -275,6 +276,16 @@ export function getEC2InstanceId(
 
 export function getHostName(host: assets.HostAsset): string {
   return host.dnsHostName || host.fqdn || host.address || String(host.id!);
+}
+
+export function getHostIPAddresses(host: assets.HostAsset) {
+  return {
+    ipAddress: host.address,
+    publicIpAddress:
+      host.address && isPublicIp(host.address) ? host.address : undefined,
+    privateIpAddress:
+      host.address && !isPublicIp(host.address) ? host.address : undefined,
+  };
 }
 
 export function determinePlatform(
