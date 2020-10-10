@@ -612,6 +612,96 @@ describe('fetchScannedHostIds', () => {
   });
 });
 
+describe('iterateScannedHostIds', () => {
+  const allHostIds = [...Array(23).keys()];
+
+  // https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
+  // Those docs only indicate this kind of response.
+  const hostList = (ids: number[]): string =>
+    `<HOST_LIST>${ids
+      .map((e) => `<HOST><ID>${e}</ID></HOST>`)
+      .join('')}</HOST_LIST>`;
+
+  // https://github.com/QualysAPI/Qualys-API-Doc-Center/blob/master/Host%20List%20Detection%20API%20samples/Multithreading/multi_thread_hd.py
+  // That prescribed approach indicates this kind of response, and it is the
+  // recorded response structure when the orginal fetchScannedHostIds was
+  // written and recorded.
+  const idSet = (ids: number[]): string =>
+    `<ID_SET>${ids.map((e) => `<ID>${e}</ID>`).join('')}</ID_SET>`;
+
+  const paginateWarning = (limit: number, nextId: number): string => `<WARNING>
+          <CODE>1980</CODE>
+          <TEXT>1000 record limit exceeded. Use URL to get next batch of results.</TEXT>
+          <URL><![CDATA[https://qualysapi.qualys.com/api/2.0/fo/asset/host/?action=list&truncation_limit=${limit}&id_min=${nextId}]]></URL>
+        </WARNING>`;
+
+  const hostListOutput = (
+    listFunction: (ids: number[]) => string,
+    ids: number[],
+    limit: number,
+    nextId: number,
+  ): string => `
+      <HOST_LIST_OUTPUT>
+        <RESPONSE>
+          ${listFunction(ids)}
+          ${
+            nextId < allHostIds.length - 1 ? paginateWarning(limit, nextId) : ''
+          }
+        </RESPONSE>
+      </HOST_LIST_OUTPUT>
+      `;
+
+  test('mocked HOST_LIST response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateScannedHostIdsHostList',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      const limit = Number(req.query['truncation_limit']);
+      const idMin = Number(req.query['id_min']) || 0;
+      const ids = allHostIds.slice(idMin, idMin + limit);
+      const nextId = idMin + limit;
+      res.status(200).send(hostListOutput(hostList, ids, limit, nextId));
+    });
+
+    const hostIds: number[] = [];
+    await createClient().iterateScannedHostIds(
+      (ids) => {
+        ids.forEach((e) => hostIds.push(e));
+      },
+      { pageSize: 10 },
+    );
+
+    expect(hostIds).toEqual(allHostIds);
+  });
+
+  test('mocked ID_SET response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateScannedHostIdsIdSet',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      const limit = Number(req.query['truncation_limit']);
+      const idMin = Number(req.query['id_min']) || 0;
+      const ids = allHostIds.slice(idMin, idMin + limit);
+      const nextId = idMin + limit;
+      res.status(200).send(hostListOutput(idSet, ids, limit, nextId));
+    });
+
+    const hostIds: number[] = [];
+    await createClient().iterateScannedHostIds(
+      (ids) => {
+        ids.forEach((e) => hostIds.push(e));
+      },
+      { pageSize: 10 },
+    );
+
+    expect(hostIds).toEqual(allHostIds);
+  });
+});
+
 describe('iterateHostDetails', () => {
   test('none', async () => {
     recording = setupQualysRecording({

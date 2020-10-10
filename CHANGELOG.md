@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- `iterateScannedHostIds` to allow for paginating requests for scanned host IDs.
+
+### Fixed
+
+- `fetchScannedHostIds` when there is more than a single host in the list.
+
 ## 4.0.0 2020-10-09
 
 This is a significant change to the program structure to be sure, but also makes

@@ -18,6 +18,7 @@ import {
   ClientEvents,
   ClientRequestEvent,
   ClientResponseEvent,
+  QWebHostId,
   RateLimitConfig,
   RateLimitState,
   RetryConfig,
@@ -317,14 +318,8 @@ export class QualysAPIClient {
   }
 
   /**
-   * Answers the complete set of scanned host IDs provided by the Qualys VMDR
+   * Answers the complete set of scanned `QWebHostId`s provided by the Qualys VMDR
    * module. This does not include hosts that have never been scanned.
-   *
-   * There are three IDs in Qualys. The IDs returned by this API are the VM
-   * module "QWEB" host IDs.
-   *
-   * @see https://qualys-secure.force.com/discussions/s/article/000006216 to
-   * understand the difference.
    *
    * Fetches all IDs in a single request. This is documented by Qualys as a best
    * practice for an implementation that will parallelize ingestion of other
@@ -350,9 +345,66 @@ export class QualysAPIClient {
 
     const responseText = await response.text();
     const jsonFromXml = xmlParser.parse(responseText);
-    return toArray(jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET).map(
-      (e) => e.ID,
+    return toArray(jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET?.ID);
+  }
+
+  /**
+   * Answers the complete set of scanned host IDs provided by the Qualys VMDR
+   * module. This does not include hosts that have never been scanned.
+   *
+   * @param iteratee receives each page of host ID values
+   * @param options optional values for pagination
+   */
+  public async iterateScannedHostIds(
+    iteratee: ResourceIteratee<QWebHostId[]>,
+    options?: {
+      pageSize: number;
+    },
+  ): Promise<void> {
+    type ListHostIdsResponse = {
+      nextUrl?: string;
+      hostIds: QWebHostId[];
+    };
+
+    const buildHostIdsResponse = async (
+      response: Response,
+    ): Promise<ListHostIdsResponse> => {
+      const responseText = await response.text();
+      const jsonFromXml = xmlParser.parse(responseText);
+
+      const hostList = jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.HOST_LIST;
+      const idSet = jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET;
+
+      return {
+        hostIds: hostList
+          ? toArray(hostList.HOST).map((host) => host.ID)
+          : toArray(idSet.ID),
+        nextUrl: jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.WARNING?.URL,
+      };
+    };
+
+    const endpoint = '/api/2.0/fo/asset/host/';
+    const response = await this.executeAuthenticatedAPIRequest(
+      this.qualysUrl(endpoint, {
+        action: 'list',
+        details: 'None',
+        truncation_limit: options?.pageSize || 500,
+      }),
+      { method: 'GET' },
     );
+
+    let hostIdsResponse = await buildHostIdsResponse(response);
+    await iteratee(hostIdsResponse.hostIds);
+
+    while (hostIdsResponse.nextUrl) {
+      const response = await this.executeAuthenticatedAPIRequest(
+        this.qualysUrl(hostIdsResponse.nextUrl),
+        { method: 'GET' },
+      );
+
+      hostIdsResponse = await buildHostIdsResponse(response);
+      await iteratee(hostIdsResponse.hostIds);
+    }
   }
 
   /**
@@ -365,10 +417,10 @@ export class QualysAPIClient {
    * @param hostIds a set of identified QWEB host IDs
    */
   public async iterateHostDetails(
-    hostIds: number[],
+    hostIds: QWebHostId[],
     iteratee: ResourceIteratee<assets.HostAsset>,
   ): Promise<void> {
-    const fetchHostDetails = async (ids: number[]) => {
+    const fetchHostDetails = async (ids: QWebHostId[]) => {
       const endpoint = '/qps/rest/2.0/search/am/hostasset';
 
       const body = `
@@ -425,7 +477,7 @@ export class QualysAPIClient {
    *
    * @param hostId a QWEB host ID
    */
-  public async fetchHostDetails(hostId: number): Promise<assets.HostAsset> {
+  public async fetchHostDetails(hostId: QWebHostId): Promise<assets.HostAsset> {
     const endpoint = '/qps/rest/2.0/search/am/hostasset';
 
     const body = `
@@ -480,13 +532,13 @@ export class QualysAPIClient {
    * @param iteratee receives each host and its detections
    */
   public async iterateHostDetections(
-    hostIds: number[],
+    hostIds: QWebHostId[],
     iteratee: ResourceIteratee<{
       host: vmpc.DetectionHost;
       detections: vmpc.HostDetection[];
     }>,
   ): Promise<void> {
-    const fetchHostDetections = async (ids: number[]) => {
+    const fetchHostDetections = async (ids: QWebHostId[]) => {
       const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
 
       const params = new URLSearchParams({
