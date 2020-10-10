@@ -4,6 +4,7 @@ import { Response } from 'node-fetch';
 
 import {
   ClientDelayedRequestEvent,
+  ClientEvent,
   ClientEvents,
   ClientRequestEvent,
   ClientResponseEvent,
@@ -103,14 +104,7 @@ async function attemptAPIRequest(
   const toWaitSec = rateLimitState.toWaitSeconds;
   const tryAfter = Math.max(Date.now() + toWaitSec * 1000, tryAfterCooldown);
 
-  const now = Date.now();
-  if (tryAfter > now) {
-    const delay = tryAfter - now;
-    emitDelayedRequestEvent(events, { ...request, delay });
-    await Timeout.set(delay);
-  }
-
-  emitRequestEvent(events, {
+  const requestEvent: ClientEvent = {
     url: request.url,
     retryConfig: request.retryConfig,
     retryable: request.retryable,
@@ -119,7 +113,16 @@ async function attemptAPIRequest(
     rateLimitState: request.rateLimitState,
     rateLimitedAttempts: request.rateLimitedAttempts,
     totalAttempts: request.totalAttempts,
-  });
+  };
+
+  const now = Date.now();
+  if (tryAfter > now) {
+    const delay = tryAfter - now;
+    emitDelayedRequestEvent(events, { ...requestEvent, delay });
+    await Timeout.set(delay);
+  }
+
+  emitRequestEvent(events, requestEvent);
 
   const response = await request.exec();
 
@@ -194,9 +197,9 @@ function extractRateLimitHeaders(
 
   return {
     limit: limit ? Number(limit) : defaultState.limit,
-    limitWindowSeconds: limit
-      ? Number(response.headers.get('x-ratelimit-window-sec'))
-      : defaultState.limitWindowSeconds,
+    limitWindowSeconds:
+      Number(response.headers.get('x-ratelimit-window-sec')) ||
+      defaultState.limitWindowSeconds,
     limitRemaining: limit
       ? Number(response.headers.get('x-ratelimit-remaining'))
       : defaultState.limitRemaining,
