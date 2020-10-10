@@ -14,6 +14,10 @@ import { QualysIntegrationConfig } from '../../types';
 import { executeAPIRequest } from './request';
 import {
   assets,
+  ClientDelayedRequestEvent,
+  ClientEvents,
+  ClientRequestEvent,
+  ClientResponseEvent,
   RateLimitConfig,
   RateLimitState,
   RetryConfig,
@@ -32,7 +36,7 @@ export * from './types';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
-const DEFAULT_RETRY_CONFIG: RetryConfig = {
+export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
   noRetry: [400, 401, 403],
 };
@@ -43,7 +47,7 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
  * @see https://www.qualys.com/docs/qualys-api-limits.pdf for details on
  * subscription level rate limits.
  */
-const STANDARD_RATE_LIMIT_STATE: RateLimitState = {
+export const STANDARD_RATE_LIMIT_STATE: RateLimitState = {
   limit: 300,
   limitRemaining: 300,
   limitWindowSeconds: 60 * 60,
@@ -52,7 +56,7 @@ const STANDARD_RATE_LIMIT_STATE: RateLimitState = {
   concurrencyRunning: 0,
 };
 
-const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
+export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
   responseCode: 409,
   maxAttempts: 5,
   reserveLimit: 30,
@@ -89,7 +93,7 @@ export type QualysAPIClientConfig = {
 };
 
 export class QualysAPIClient {
-  public events: EventEmitter;
+  private events: EventEmitter;
 
   private config: QualysIntegrationConfig;
   private retryConfig: RetryConfig;
@@ -107,8 +111,22 @@ export class QualysAPIClient {
     this.config = config;
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
     this.rateLimitConfig = { ...DEFAULT_RATE_LIMIT_CONFIG, ...rateLimitConfig };
-    this.rateLimitState = rateLimitState || { ...STANDARD_RATE_LIMIT_STATE };
+    this.rateLimitState = rateLimitState || STANDARD_RATE_LIMIT_STATE;
     this.events = new EventEmitter();
+  }
+
+  public onRequest(eventHandler: (event: ClientRequestEvent) => void): void {
+    this.events.on(ClientEvents.REQUEST, eventHandler);
+  }
+
+  public onDelayedRequest(
+    eventHandler: (event: ClientDelayedRequestEvent) => void,
+  ): void {
+    this.events.on(ClientEvents.DELAYED_REQUEST, eventHandler);
+  }
+
+  public onResponse(eventHandler: (event: ClientResponseEvent) => void): void {
+    this.events.on(ClientEvents.RESPONSE, eventHandler);
   }
 
   public async verifyAuthentication(): Promise<void> {
@@ -550,7 +568,7 @@ export class QualysAPIClient {
     }
   }
 
-  private async executeAuthenticatedAPIRequest(
+  public async executeAuthenticatedAPIRequest(
     info: RequestInfo,
     init: RequestInit,
   ): Promise<Response> {
@@ -575,11 +593,23 @@ export class QualysAPIClient {
       exec: () => fetch(info, init),
       retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
-      rateLimitState: this.rateLimitState,
+      rateLimitState: { ...this.rateLimitState },
     });
 
     // NOTE: This is NOT thread safe at this time.
     this.rateLimitState = apiResponse.rateLimitState;
+
+    if (!apiResponse.completed && apiResponse.request.retryable) {
+      const err = new Error(
+        `Could not complete request within ${apiResponse.request.totalAttempts} attempts!`,
+      );
+      Object.assign(err, {
+        statusText: apiResponse.statusText,
+        status: apiResponse.status,
+        code: apiResponse.status,
+      });
+      throw err;
+    }
 
     if (apiResponse.status >= 400) {
       const err = new Error(

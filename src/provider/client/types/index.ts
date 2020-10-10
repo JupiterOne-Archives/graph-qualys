@@ -12,10 +12,12 @@ export enum ClientEvents {
 export type ClientEvent = {
   url: string;
   retryConfig: RetryConfig;
+  retryable: boolean;
   retryAttempts: number;
   rateLimitConfig: RateLimitConfig;
   rateLimitState: RateLimitState;
   rateLimitedAttempts: number;
+  totalAttempts: number;
 };
 
 export type ClientRequestEvent = ClientEvent;
@@ -30,6 +32,7 @@ export type ClientDelayedRequestEvent = ClientRequestEvent & {
 export type ClientResponseEvent = ClientEvent & {
   status: number | string | undefined;
   statusText: string | undefined;
+  completed: boolean;
 };
 
 export type RetryConfig = {

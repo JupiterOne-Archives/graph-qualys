@@ -5,7 +5,17 @@ import { Recording } from '@jupiterone/integration-sdk-testing';
 
 import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
-import { assets, QualysAPIClient, vmpc, was } from '../client';
+import {
+  assets,
+  ClientRequestEvent,
+  ClientResponseEvent,
+  DEFAULT_RATE_LIMIT_CONFIG,
+  DEFAULT_RETRY_CONFIG,
+  QualysAPIClient,
+  STANDARD_RATE_LIMIT_STATE,
+  vmpc,
+  was,
+} from '../client';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -21,6 +31,230 @@ afterEach(async () => {
   if (recording) {
     await recording.stop();
   }
+});
+
+describe('events', () => {
+  let client: QualysAPIClient;
+  const url = 'https://example.com/api/test';
+
+  beforeEach(() => {
+    client = new QualysAPIClient({ config });
+
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'events',
+    });
+  });
+
+  test('request', async () => {
+    recording.server.any().intercept((req, res) => {
+      res.sendStatus(200);
+    });
+
+    let requestEvent: ClientRequestEvent | undefined;
+    client.onRequest((event) => {
+      requestEvent = event;
+    });
+
+    await client.executeAuthenticatedAPIRequest(url, {});
+
+    expect(requestEvent).toEqual({
+      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitState: STANDARD_RATE_LIMIT_STATE,
+      rateLimitedAttempts: 0,
+      retryAttempts: 0,
+      retryConfig: DEFAULT_RETRY_CONFIG,
+      retryable: true,
+      totalAttempts: 0,
+      url,
+    });
+  });
+
+  test('response', async () => {
+    recording.server.any().intercept((req, res) => {
+      res
+        .setHeaders({
+          'x-ratelimit-limit': String(123),
+          'x-ratelimit-remaining': String(99),
+          'x-ratelimit-towait-sec': String(2),
+          'x-ratelimit-window-sec': String(2400),
+          'x-concurrency-limit-limit': String(6),
+          'x-concurrency-limit-running': String(3),
+        })
+        .sendStatus(200);
+    });
+
+    let responseEvent: ClientResponseEvent | undefined;
+    client.onResponse((event) => {
+      responseEvent = event;
+    });
+
+    await client.executeAuthenticatedAPIRequest(url, {});
+
+    expect(responseEvent).toEqual({
+      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitState: {
+        concurrency: 6,
+        concurrencyRunning: 3,
+        limit: 123,
+        limitRemaining: 99,
+        limitWindowSeconds: 2400,
+        toWaitSeconds: 2,
+      },
+      rateLimitedAttempts: 0,
+      retryAttempts: 0,
+      retryConfig: DEFAULT_RETRY_CONFIG,
+      retryable: true,
+      totalAttempts: 1,
+      url,
+      completed: true,
+      status: 200,
+      statusText: 'OK',
+    });
+  });
+
+  test('retry', async () => {
+    recording.server.any().intercept((req, res) => {
+      res.sendStatus(409);
+    });
+
+    const requestEvents: ClientRequestEvent[] = [];
+    client.onRequest((event) => {
+      requestEvents.push(event);
+    });
+
+    const responseEvents: ClientResponseEvent[] = [];
+    client.onResponse((event) => {
+      responseEvents.push(event);
+    });
+
+    await expect(
+      client.executeAuthenticatedAPIRequest(url, {}),
+    ).rejects.toThrow(/Could not complete/);
+
+    expect(requestEvents).toEqual([
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 0,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 0,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 1,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 2,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 2,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 3,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 3,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 4,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 4,
+        url,
+      },
+    ]);
+
+    expect(responseEvents).toEqual([
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 1,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 2,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 2,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 3,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 3,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 4,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 4,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 5,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 5,
+        url,
+      },
+    ]);
+  });
+
+  // TODO: test delayed
 });
 
 describe('verifyAuthentication', () => {

@@ -110,18 +110,38 @@ async function attemptAPIRequest(
     await Timeout.set(delay);
   }
 
-  emitRequestEvent(events, request);
+  emitRequestEvent(events, {
+    url: request.url,
+    retryConfig: request.retryConfig,
+    retryable: request.retryable,
+    retryAttempts: request.retryAttempts,
+    rateLimitConfig: request.rateLimitConfig,
+    rateLimitState: request.rateLimitState,
+    rateLimitedAttempts: request.rateLimitedAttempts,
+    totalAttempts: request.totalAttempts,
+  });
 
   const response = await request.exec();
 
-  const completed = response.status >= 200 && response.status < 400;
-  const rateLimited = response.status === rateLimitConfig.responseCode;
   const responseRateLimitState = extractRateLimitHeaders(
     response,
     rateLimitConfig,
     rateLimitState,
   );
+
+  const completed = response.status >= 200 && response.status < 400;
+  const rateLimited = response.status === rateLimitConfig.responseCode;
+  const rateLimitedAttempts = rateLimited
+    ? request.rateLimitedAttempts + 1
+    : request.rateLimitedAttempts;
+
   const retryable = !retryConfig.noRetry.includes(response.status);
+  const retryAttempts =
+    !completed && !rateLimited
+      ? request.retryAttempts + 1
+      : request.retryAttempts;
+
+  const totalAttempts = request.totalAttempts + 1;
 
   const apiResponse: APIResponse = {
     request: {
@@ -129,14 +149,9 @@ async function attemptAPIRequest(
       completed,
       retryable,
       rateLimitState: responseRateLimitState,
-      totalAttempts: request.totalAttempts + 1,
-      retryAttempts:
-        !completed && !rateLimited
-          ? request.retryAttempts + 1
-          : request.retryAttempts,
-      rateLimitedAttempts: rateLimitState
-        ? request.rateLimitedAttempts + 1
-        : request.rateLimitedAttempts,
+      totalAttempts,
+      retryAttempts,
+      rateLimitedAttempts,
     },
     response,
     rateLimitState: responseRateLimitState,
@@ -149,11 +164,14 @@ async function attemptAPIRequest(
     url: request.url,
     status: response.status,
     statusText: response.statusText,
+    completed,
+    retryable,
     retryConfig: request.retryConfig,
-    retryAttempts: request.retryAttempts,
+    retryAttempts,
     rateLimitConfig: request.rateLimitConfig,
-    rateLimitState: request.rateLimitState,
-    rateLimitedAttempts: request.rateLimitedAttempts,
+    rateLimitState: responseRateLimitState,
+    rateLimitedAttempts,
+    totalAttempts,
   });
 
   return apiResponse;
