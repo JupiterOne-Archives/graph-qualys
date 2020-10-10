@@ -5,7 +5,18 @@ import { Recording } from '@jupiterone/integration-sdk-testing';
 
 import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
-import { assets, QualysAPIClient, vmpc, was } from '../client';
+import {
+  assets,
+  ClientDelayedRequestEvent,
+  ClientRequestEvent,
+  ClientResponseEvent,
+  DEFAULT_RATE_LIMIT_CONFIG,
+  DEFAULT_RETRY_CONFIG,
+  QualysAPIClient,
+  STANDARD_RATE_LIMIT_STATE,
+  vmpc,
+  was,
+} from '../client';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -23,12 +34,363 @@ afterEach(async () => {
   }
 });
 
+describe('events', () => {
+  let client: QualysAPIClient;
+  const url = 'https://example.com/api/test';
+
+  beforeEach(() => {
+    client = new QualysAPIClient({ config });
+
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'events',
+    });
+  });
+
+  test('request', async () => {
+    recording.server.any().intercept((req, res) => {
+      res.sendStatus(200);
+    });
+
+    let requestEvent: ClientRequestEvent | undefined;
+    client.onRequest((event) => {
+      requestEvent = event;
+    });
+
+    await client.executeAuthenticatedAPIRequest(url, {});
+
+    expect(requestEvent).toEqual({
+      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitState: STANDARD_RATE_LIMIT_STATE,
+      rateLimitedAttempts: 0,
+      retryAttempts: 0,
+      retryConfig: DEFAULT_RETRY_CONFIG,
+      retryable: true,
+      totalAttempts: 0,
+      url,
+    });
+  });
+
+  test('response', async () => {
+    recording.server.any().intercept((req, res) => {
+      res
+        .setHeaders({
+          'x-ratelimit-limit': String(123),
+          'x-ratelimit-remaining': String(99),
+          'x-ratelimit-towait-sec': String(2),
+          'x-ratelimit-window-sec': String(2400),
+          'x-concurrency-limit-limit': String(6),
+          'x-concurrency-limit-running': String(3),
+        })
+        .sendStatus(200);
+    });
+
+    let responseEvent: ClientResponseEvent | undefined;
+    client.onResponse((event) => {
+      responseEvent = event;
+    });
+
+    await client.executeAuthenticatedAPIRequest(url, {});
+
+    expect(responseEvent).toEqual({
+      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitState: {
+        concurrency: 6,
+        concurrencyRunning: 3,
+        limit: 123,
+        limitRemaining: 99,
+        limitWindowSeconds: 2400,
+        toWaitSeconds: 2,
+      },
+      rateLimitedAttempts: 0,
+      retryAttempts: 0,
+      retryConfig: DEFAULT_RETRY_CONFIG,
+      retryable: true,
+      totalAttempts: 1,
+      url,
+      completed: true,
+      status: 200,
+      statusText: 'OK',
+    });
+  });
+
+  test('retry', async () => {
+    recording.server.any().intercept((req, res) => {
+      res.sendStatus(409);
+    });
+
+    const requestEvents: ClientRequestEvent[] = [];
+    client.onRequest((event) => {
+      requestEvents.push(event);
+    });
+
+    const responseEvents: ClientResponseEvent[] = [];
+    client.onResponse((event) => {
+      responseEvents.push(event);
+    });
+
+    await expect(
+      client.executeAuthenticatedAPIRequest(url, {}),
+    ).rejects.toThrow(/Could not complete/);
+
+    expect(requestEvents).toEqual([
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 0,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 0,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 1,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 2,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 2,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 3,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 3,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 4,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 4,
+        url,
+      },
+    ]);
+
+    expect(responseEvents).toEqual([
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 1,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 2,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 2,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 3,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 3,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 4,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 4,
+        url,
+      },
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 5,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 5,
+        url,
+      },
+    ]);
+  });
+
+  test('delay', async () => {
+    let requestTimes = 0;
+    recording.server.any().intercept((req, res) => {
+      requestTimes++;
+      if (requestTimes === 1) {
+        res
+          .setHeaders({
+            'x-ratelimit-limit': String(10),
+            'x-ratelimit-remaining': String(0),
+            'x-ratelimit-towait-sec': String(1),
+          })
+          .sendStatus(409);
+      } else {
+        res.sendStatus(200);
+      }
+    });
+
+    const requestEvents: ClientRequestEvent[] = [];
+    client.onRequest((event) => {
+      requestEvents.push(event);
+    });
+
+    const delayedRequestEvents: ClientDelayedRequestEvent[] = [];
+    client.onDelayedRequest((event) => {
+      delayedRequestEvents.push(event);
+    });
+
+    const responseEvents: ClientResponseEvent[] = [];
+    client.onResponse((event) => {
+      responseEvents.push(event);
+    });
+
+    const startTime = Date.now();
+    await client.executeAuthenticatedAPIRequest(url, {});
+
+    expect(Date.now() - startTime).toBeGreaterThanOrEqual(1000);
+
+    expect(requestEvents).toEqual([
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+        rateLimitedAttempts: 0,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 0,
+        url,
+      },
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: {
+          ...STANDARD_RATE_LIMIT_STATE,
+          limit: 10,
+          limitRemaining: 0,
+          toWaitSeconds: 1,
+        },
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        totalAttempts: 1,
+        url,
+      },
+    ]);
+
+    expect(delayedRequestEvents).toEqual([
+      {
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: {
+          ...STANDARD_RATE_LIMIT_STATE,
+          limit: 10,
+          limitRemaining: 0,
+          toWaitSeconds: 1,
+        },
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        delay: 1000,
+        totalAttempts: 1,
+        url,
+      },
+    ]);
+
+    expect(responseEvents).toEqual([
+      {
+        completed: false,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: {
+          ...STANDARD_RATE_LIMIT_STATE,
+          limit: 10,
+          limitRemaining: 0,
+          toWaitSeconds: 1,
+        },
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 409,
+        statusText: 'Conflict',
+        totalAttempts: 1,
+        url,
+      },
+      {
+        completed: true,
+        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitState: {
+          ...STANDARD_RATE_LIMIT_STATE,
+          limit: 10,
+          limitRemaining: 0,
+          toWaitSeconds: 1,
+        },
+        rateLimitedAttempts: 1,
+        retryAttempts: 0,
+        retryConfig: DEFAULT_RETRY_CONFIG,
+        retryable: true,
+        status: 200,
+        statusText: 'OK',
+        totalAttempts: 2,
+        url,
+      },
+    ]);
+  });
+});
+
 describe('verifyAuthentication', () => {
   test('inaccessible', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
       name: 'verifyAuthenticationInaccesible',
       options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().on('request', (_req) => {
+      requestCount++;
     });
 
     const client = new QualysAPIClient({
@@ -38,6 +400,8 @@ describe('verifyAuthentication', () => {
     await expect(client.verifyAuthentication()).rejects.toThrow(
       'Provider authentication failed at /api/2.0/fo/activity_log/: 401 Unauthorized',
     );
+
+    expect(requestCount).toBe(1);
   });
 
   test('accessible', async () => {
@@ -248,6 +612,96 @@ describe('fetchScannedHostIds', () => {
   });
 });
 
+describe('iterateScannedHostIds', () => {
+  const allHostIds = [...Array(23).keys()];
+
+  // https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
+  // Those docs only indicate this kind of response.
+  const hostList = (ids: number[]): string =>
+    `<HOST_LIST>${ids
+      .map((e) => `<HOST><ID>${e}</ID></HOST>`)
+      .join('')}</HOST_LIST>`;
+
+  // https://github.com/QualysAPI/Qualys-API-Doc-Center/blob/master/Host%20List%20Detection%20API%20samples/Multithreading/multi_thread_hd.py
+  // That prescribed approach indicates this kind of response, and it is the
+  // recorded response structure when the orginal fetchScannedHostIds was
+  // written and recorded.
+  const idSet = (ids: number[]): string =>
+    `<ID_SET>${ids.map((e) => `<ID>${e}</ID>`).join('')}</ID_SET>`;
+
+  const paginateWarning = (limit: number, nextId: number): string => `<WARNING>
+          <CODE>1980</CODE>
+          <TEXT>1000 record limit exceeded. Use URL to get next batch of results.</TEXT>
+          <URL><![CDATA[https://qualysapi.qualys.com/api/2.0/fo/asset/host/?action=list&truncation_limit=${limit}&id_min=${nextId}]]></URL>
+        </WARNING>`;
+
+  const hostListOutput = (
+    listFunction: (ids: number[]) => string,
+    ids: number[],
+    limit: number,
+    nextId: number,
+  ): string => `
+      <HOST_LIST_OUTPUT>
+        <RESPONSE>
+          ${listFunction(ids)}
+          ${
+            nextId < allHostIds.length - 1 ? paginateWarning(limit, nextId) : ''
+          }
+        </RESPONSE>
+      </HOST_LIST_OUTPUT>
+      `;
+
+  test('mocked HOST_LIST response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateScannedHostIdsHostList',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      const limit = Number(req.query['truncation_limit']);
+      const idMin = Number(req.query['id_min']) || 0;
+      const ids = allHostIds.slice(idMin, idMin + limit);
+      const nextId = idMin + limit;
+      res.status(200).send(hostListOutput(hostList, ids, limit, nextId));
+    });
+
+    const hostIds: number[] = [];
+    await createClient().iterateScannedHostIds(
+      (ids) => {
+        ids.forEach((e) => hostIds.push(e));
+      },
+      { pageSize: 10 },
+    );
+
+    expect(hostIds).toEqual(allHostIds);
+  });
+
+  test('mocked ID_SET response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateScannedHostIdsIdSet',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      const limit = Number(req.query['truncation_limit']);
+      const idMin = Number(req.query['id_min']) || 0;
+      const ids = allHostIds.slice(idMin, idMin + limit);
+      const nextId = idMin + limit;
+      res.status(200).send(hostListOutput(idSet, ids, limit, nextId));
+    });
+
+    const hostIds: number[] = [];
+    await createClient().iterateScannedHostIds(
+      (ids) => {
+        ids.forEach((e) => hostIds.push(e));
+      },
+      { pageSize: 10 },
+    );
+
+    expect(hostIds).toEqual(allHostIds);
+  });
+});
+
 describe('iterateHostDetails', () => {
   test('none', async () => {
     recording = setupQualysRecording({
@@ -379,6 +833,11 @@ describe('iterateHostDetections', () => {
       options: { recordFailedRequests: true },
     });
 
+    let requestCount = 0;
+    recording.server.any().on('request', (_req) => {
+      requestCount++;
+    });
+
     await expect(
       createClient().iterateHostDetections(
         [('abc123' as unknown) as number],
@@ -387,6 +846,8 @@ describe('iterateHostDetections', () => {
         },
       ),
     ).rejects.toThrow(/Bad Request/);
+
+    expect(requestCount).toBe(1);
   });
 
   test('some', async () => {

@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## 4.1.0 2020-10-10
+
+### Added
+
+- `iterateScannedHostIds` to allow for paginating requests for scanned host IDs.
+
+### Fixed
+
+- `fetchScannedHostIds` when there is more than a single host in the list.
+
+### Changed
+
+- `STEP_FETCH_SCANNED_HOST_IDS` now uses `iterateScannedHostIds` and issues
+  `logger.info` with an updated total count of seen IDs.
+
 ## 4.0.0 2020-10-09
 
 This is a significant change to the program structure to be sure, but also makes

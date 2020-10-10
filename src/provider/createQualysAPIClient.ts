@@ -1,13 +1,7 @@
 import { IntegrationLogger } from '@jupiterone/integration-sdk-core';
 
 import { QualysIntegrationConfig } from '../types';
-import {
-  ClientDelayedRequestEvent,
-  ClientEvents,
-  ClientRequestEvent,
-  ClientResponseEvent,
-  QualysAPIClient,
-} from './client';
+import { QualysAPIClient } from './client';
 
 export default function createQualysAPIClient(
   logger: IntegrationLogger,
@@ -17,18 +11,15 @@ export default function createQualysAPIClient(
     config,
   });
 
-  qualysAPI.events.on(
-    ClientEvents.DELAYED_REQUEST,
-    (event: ClientDelayedRequestEvent) => {
-      logger.info(event, 'Delaying Qualys API request...');
-    },
-  );
-
-  qualysAPI.events.on(ClientEvents.REQUEST, (event: ClientRequestEvent) => {
+  qualysAPI.onRequest((event) => {
     logger.info(event, 'Sending Qualys API request...');
   });
 
-  qualysAPI.events.on(ClientEvents.RESPONSE, (event: ClientResponseEvent) => {
+  qualysAPI.onDelayedRequest((event) => {
+    logger.info(event, 'Delaying Qualys API request...');
+  });
+
+  qualysAPI.onResponse((event) => {
     logger.info(event, 'Received Qualys API response.');
   });
 

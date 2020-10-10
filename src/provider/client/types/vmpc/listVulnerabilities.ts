@@ -1,4 +1,5 @@
 import { QualyNumericSeverity } from '../../../../types';
+import { QWebHostId } from '../index';
 import { ISODateString, PossibleArray } from '../util';
 
 export type QualysVulnerabilitiesErrorResponse = {
@@ -29,7 +30,7 @@ export type VulnList = {
 };
 
 export type Vuln = {
-  QID?: number;
+  QID?: QWebHostId;
   SEVERITY_LEVEL?: QualyNumericSeverity;
   TITLE?: string;
   CVE_LIST?: CveList;
