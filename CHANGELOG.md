@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.1.0 2020-10-10
+
 ### Added
 
 - `iterateScannedHostIds` to allow for paginating requests for scanned host IDs.
