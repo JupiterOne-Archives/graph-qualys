@@ -38,7 +38,7 @@ export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
-  noRetry: [400, 401, 403],
+  noRetry: [400, 401, 403, 413],
 };
 
 /**
