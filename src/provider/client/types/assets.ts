@@ -1,4 +1,5 @@
-import { PossibleArray, ISODateString } from './util';
+import { QWebHostId } from './index';
+import { ISODateString, PossibleArray } from './util';
 
 export type SearchHostAssetResponse = {
   ServiceResponse?: ServiceResponse;
@@ -27,7 +28,7 @@ export type HostAsset = {
   type?: string;
   tags?: HostAssetTags;
   sourceInfo?: SourceInfo;
-  qwebHostId?: number;
+  qwebHostId?: QWebHostId;
   lastComplianceScan?: ISODateString;
   lastSystemBoot?: ISODateString;
   lastLoggedOnUser?: string;

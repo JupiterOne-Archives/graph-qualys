@@ -1,5 +1,5 @@
 import { QualyNumericSeverity } from '../../../../types';
-
+import { QWebHostId } from '../index';
 import { ISODateString, PossibleArray } from '../util';
 
 // https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
@@ -24,7 +24,7 @@ export type DetectionHostList = {
 };
 
 export type DetectionHost = {
-  ID?: number;
+  ID?: QWebHostId;
   IP?: string; // 10.97.5.247, ??
   TRACKING_METHOD?: string; // EC2, ??
   OS?: string;
