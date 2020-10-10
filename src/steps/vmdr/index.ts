@@ -7,6 +7,7 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { createQualysAPIClient } from '../../provider';
+import { QWebHostId } from '../../provider/client';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
@@ -40,15 +41,29 @@ export async function fetchScannedHostIds({
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
-  const hostIds = await apiClient.fetchScannedHostIds();
-  await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 
   // `filter` reflects parameters used to limit the set of hosts processed by the
   // integration. A value of `'all'` means no filters were used so that all
   // hosts are processed.
-  logger.info(
-    { numScannedHostIds: hostIds.length, filter: 'all' },
-    'Scanned host IDs collected',
+  const loggerFetch = logger.child({ filter: 'all' });
+
+  const hostIds: QWebHostId[] = [];
+  await apiClient.iterateScannedHostIds(
+    (pageOfIds) => {
+      pageOfIds.forEach((e) => hostIds.push(e));
+      loggerFetch.info(
+        { numScannedHostIds: hostIds.length },
+        'Fetched page of scanned host IDs',
+      );
+    },
+    { pageSize: 300 },
+  );
+
+  await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
+
+  loggerFetch.info(
+    { numScannedHostIds: hostIds.length },
+    'Finished fetching scanned host IDs',
   );
 }
 
