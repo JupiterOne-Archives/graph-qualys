@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## 4.1.1 2020-10-10
+
+### Fixed
+
+- Fixed pagination request URL to avoid prepending that produced
+  `https://qualysapi.qualys.comhttps://qualysapi.qualys.com/api/2.0/fo/asset/host/`
+
 ## 4.1.0 2020-10-10
 
 ### Added
