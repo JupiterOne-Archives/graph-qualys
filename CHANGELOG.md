@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.1.3 2020-10-11
+
 - `iterateScannedHostIds` defaults to requesting 10,000 IDs per page
 - `iterateHostDetails` defaults to requesting details for 2,500 hosts per page
 - `iterateHostDetections` defaults to requesting detections for 2,500 hosts per
