@@ -927,6 +927,9 @@ describe('iterateHostDetections', () => {
       ({ host, detections }) => {
         hosts.push(host);
       },
+      {
+        pageSize: 300,
+      },
     );
 
     expect(hosts.length).toBe(2);
