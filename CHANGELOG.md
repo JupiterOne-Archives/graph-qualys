@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.1.1 2020-10-10
+
 ### Fixed
 
 - Fixed pagination request URL to avoid prepending that produced
