@@ -48,16 +48,13 @@ export async function fetchScannedHostIds({
   const loggerFetch = logger.child({ filter: 'all' });
 
   const hostIds: QWebHostId[] = [];
-  await apiClient.iterateScannedHostIds(
-    (pageOfIds) => {
-      pageOfIds.forEach((e) => hostIds.push(e));
-      loggerFetch.info(
-        { numScannedHostIds: hostIds.length },
-        'Fetched page of scanned host IDs',
-      );
-    },
-    { pageSize: 300 },
-  );
+  await apiClient.iterateScannedHostIds((pageOfIds) => {
+    pageOfIds.forEach((e) => hostIds.push(e));
+    loggerFetch.info(
+      { numScannedHostIds: hostIds.length },
+      'Fetched page of scanned host IDs',
+    );
+  });
 
   await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 

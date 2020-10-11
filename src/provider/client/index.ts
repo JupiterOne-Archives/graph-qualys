@@ -35,7 +35,10 @@ import { buildFilterXml } from './was/util';
 
 export * from './types';
 
-export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
+const DEFAULT_HOST_IDS_PAGE_SIZE = 5000;
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 1000;
+const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 1000;
+const DEFAULT_VULNERABILITIES_PAGE_SIZE = 1000;
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
@@ -92,6 +95,8 @@ export type QualysAPIClientConfig = {
    */
   retryConfig?: Partial<RetryConfig>;
 };
+
+export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
 export class QualysAPIClient {
   private events: EventEmitter;
@@ -388,7 +393,7 @@ export class QualysAPIClient {
       this.qualysUrl(endpoint, {
         action: 'list',
         details: 'None',
-        truncation_limit: options?.pageSize || 500,
+        truncation_limit: options?.pageSize || DEFAULT_HOST_IDS_PAGE_SIZE,
       }),
       { method: 'GET' },
     );
@@ -419,6 +424,9 @@ export class QualysAPIClient {
   public async iterateHostDetails(
     hostIds: QWebHostId[],
     iteratee: ResourceIteratee<assets.HostAsset>,
+    options?: {
+      pageSize: number;
+    },
   ): Promise<void> {
     const fetchHostDetails = async (ids: QWebHostId[]) => {
       const endpoint = '/qps/rest/2.0/search/am/hostasset';
@@ -464,7 +472,10 @@ export class QualysAPIClient {
       return toArray(jsonFromXml.ServiceResponse?.data?.HostAsset);
     };
 
-    for (const ids of chunk(hostIds, 100)) {
+    for (const ids of chunk(
+      hostIds,
+      options?.pageSize || DEFAULT_HOST_DETAILS_PAGE_SIZE,
+    )) {
       const hosts = await fetchHostDetails(ids);
       for (const host of hosts) {
         await iteratee(host);
@@ -537,6 +548,9 @@ export class QualysAPIClient {
       host: vmpc.DetectionHost;
       detections: vmpc.HostDetection[];
     }>,
+    options?: {
+      pageSize: number;
+    },
   ): Promise<void> {
     const fetchHostDetections = async (ids: QWebHostId[]) => {
       const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
@@ -546,6 +560,7 @@ export class QualysAPIClient {
         show_tags: '1',
         show_igs: '1',
         output_format: 'XML',
+        truncation_limit: String(ids.length),
         ids: ids.map(String),
       });
 
@@ -572,7 +587,10 @@ export class QualysAPIClient {
 
     // Starting simple, sequential requests for pages. Once client supports
     // concurrency, add to queue to allow concurrency control.
-    for (const ids of chunk(hostIds, 300)) {
+    for (const ids of chunk(
+      hostIds,
+      options?.pageSize || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
+    )) {
       await fetchHostDetections(ids);
     }
   }
@@ -586,10 +604,15 @@ export class QualysAPIClient {
   public async iterateVulnerabilities(
     qids: number[],
     iteratee: ResourceIteratee<vmpc.Vuln>,
+    options?: {
+      pageSize: number;
+    },
   ): Promise<void> {
     const fetchVulnerabilities = async (ids: number[]) => {
       const endpoint = '/api/2.0/fo/knowledge_base/vuln/';
 
+      // The documenation for this endpoint provides no indication of support
+      // for `truncation_limit`.
       const params = new URLSearchParams({
         action: 'list',
         ids: ids.map(String),
@@ -615,7 +638,10 @@ export class QualysAPIClient {
 
     // Starting simple, sequential requests for pages. Once client supports
     // concurrency, add to queue to allow concurrency control.
-    for (const ids of chunk(qids, 300)) {
+    for (const ids of chunk(
+      qids,
+      options?.pageSize || DEFAULT_VULNERABILITIES_PAGE_SIZE,
+    )) {
       await fetchVulnerabilities(ids);
     }
   }

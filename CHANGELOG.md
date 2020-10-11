@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## 4.1.2 2020-10-11
+
+### Changed
+
+- `iterateScannedHostIds` defaults to requesting 5000 IDs per page
+- `iterateHostDetails` now supports `options?: { pageSize }` and defaults to
+  requesting details for 1000 hosts per page
+- `iterateHostDetections` now supports `options?: { pageSize }` and defaults to
+  requesting detections for 1000 hosts per page
+- `iterateVulnerabilities` now supports `options?: { pageSize }` and defaults to
+  requesting 1000 vulnerabilities per page
+
 ## 4.1.1 2020-10-10
 
 ### Fixed
