@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.2.0 2020-10-11
+
 ### Added
 
 - `iterateScannedHostIds` options now supports
