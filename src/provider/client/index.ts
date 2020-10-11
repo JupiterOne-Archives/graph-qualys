@@ -398,7 +398,7 @@ export class QualysAPIClient {
 
     while (hostIdsResponse.nextUrl) {
       const response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(hostIdsResponse.nextUrl),
+        hostIdsResponse.nextUrl,
         { method: 'GET' },
       );
 

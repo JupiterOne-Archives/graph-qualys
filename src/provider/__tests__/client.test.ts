@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { Recording } from '@jupiterone/integration-sdk-testing';
+import { Request } from '@pollyjs/core';
 
 import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
@@ -13,6 +14,7 @@ import {
   DEFAULT_RATE_LIMIT_CONFIG,
   DEFAULT_RETRY_CONFIG,
   QualysAPIClient,
+  QWebHostId,
   STANDARD_RATE_LIMIT_STATE,
   vmpc,
   was,
@@ -613,6 +615,15 @@ describe('fetchScannedHostIds', () => {
 });
 
 describe('iterateScannedHostIds', () => {
+  type PageData = {
+    details?: string;
+    limit: number;
+    idMin: number;
+    ids: QWebHostId[];
+    nextId: QWebHostId;
+    urlRegExp: RegExp;
+  };
+
   const allHostIds = [...Array(23).keys()];
 
   // https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
@@ -629,27 +640,52 @@ describe('iterateScannedHostIds', () => {
   const idSet = (ids: number[]): string =>
     `<ID_SET>${ids.map((e) => `<ID>${e}</ID>`).join('')}</ID_SET>`;
 
-  const paginateWarning = (limit: number, nextId: number): string => `<WARNING>
+  const paginateWarning = (pageData: PageData): string => `<WARNING>
           <CODE>1980</CODE>
           <TEXT>1000 record limit exceeded. Use URL to get next batch of results.</TEXT>
-          <URL><![CDATA[https://qualysapi.qualys.com/api/2.0/fo/asset/host/?action=list&truncation_limit=${limit}&id_min=${nextId}]]></URL>
+          <URL><![CDATA[${
+            config.qualysApiUrl
+          }/api/2.0/fo/asset/host/?action=list${
+    pageData.details ? `&details=${pageData.details}` : ''
+  }&truncation_limit=${pageData.limit}&id_min=${pageData.nextId}]]></URL>
         </WARNING>`;
 
   const hostListOutput = (
     listFunction: (ids: number[]) => string,
-    ids: number[],
-    limit: number,
-    nextId: number,
+    pageData: PageData,
   ): string => `
       <HOST_LIST_OUTPUT>
         <RESPONSE>
-          ${listFunction(ids)}
+          ${listFunction(pageData.ids)}
           ${
-            nextId < allHostIds.length - 1 ? paginateWarning(limit, nextId) : ''
+            pageData.nextId < allHostIds.length - 1
+              ? paginateWarning(pageData)
+              : ''
           }
         </RESPONSE>
       </HOST_LIST_OUTPUT>
       `;
+
+  const pageData = (req: Request): PageData => {
+    const details = req.query['details'] as string;
+    const limit = Number(req.query['truncation_limit']);
+    const idMin = Number(req.query['id_min']) || 0;
+
+    return {
+      details,
+      limit,
+      idMin,
+      ids: allHostIds.slice(idMin, idMin + limit),
+      nextId: idMin + limit,
+      urlRegExp: new RegExp(
+        `${
+          config.qualysApiUrl
+        }/api/2.0/fo/asset/host/\\?action=list&details=None&truncation_limit=\\d+${
+          req.query['id_min'] ? '&id_min=\\d+' : ''
+        }`,
+      ),
+    };
+  };
 
   test('mocked HOST_LIST response', async () => {
     recording = setupQualysRecording({
@@ -658,11 +694,9 @@ describe('iterateScannedHostIds', () => {
     });
 
     recording.server.any().intercept((req, res) => {
-      const limit = Number(req.query['truncation_limit']);
-      const idMin = Number(req.query['id_min']) || 0;
-      const ids = allHostIds.slice(idMin, idMin + limit);
-      const nextId = idMin + limit;
-      res.status(200).send(hostListOutput(hostList, ids, limit, nextId));
+      const pd = pageData(req);
+      expect(req.absoluteUrl).toMatch(pd.urlRegExp);
+      res.status(200).send(hostListOutput(hostList, pd));
     });
 
     const hostIds: number[] = [];
@@ -683,11 +717,9 @@ describe('iterateScannedHostIds', () => {
     });
 
     recording.server.any().intercept((req, res) => {
-      const limit = Number(req.query['truncation_limit']);
-      const idMin = Number(req.query['id_min']) || 0;
-      const ids = allHostIds.slice(idMin, idMin + limit);
-      const nextId = idMin + limit;
-      res.status(200).send(hostListOutput(idSet, ids, limit, nextId));
+      const pd = pageData(req);
+      expect(req.absoluteUrl).toMatch(pd.urlRegExp);
+      res.status(200).send(hostListOutput(idSet, pd));
     });
 
     const hostIds: number[] = [];
