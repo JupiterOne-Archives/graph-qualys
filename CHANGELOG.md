@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.1.2 2020-10-11
+
 ### Changed
 
 - `iterateScannedHostIds` defaults to requesting 5000 IDs per page
