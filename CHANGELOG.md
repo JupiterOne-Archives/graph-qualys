@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Added
+
+- `iterateScannedHostIds` options now supports
+  `{ filters: { vm_scan_since: <ISO date> } }` to limit to hosts that have been
+  scanned since a date/time.
+
+### Changed
+
+- `STEP_FETCH_SCANNED_HOST_IDS` limits to hosts scanned since 30 days ago.
+- `iterateScannedHostIds` options changed from `{ pageSize }` to
+  `{ filters: {}, pagination: { limit: number } }`.
+- `iterateHostDetails` options changed from `{ pageSize }` to
+  `{ pagination: { limit: number } }`.
+- `iterateHostDetections` options changed from `{ pageSize }` to
+  `{ pagination: { limit: number } }`.
+- `iterateVulnerabilities` options changed from `{ pageSize }` to
+  `{ pagination: { limit: number } }`.
+
 ## 4.1.3 2020-10-11
 
 - `iterateScannedHostIds` defaults to requesting 10,000 IDs per page

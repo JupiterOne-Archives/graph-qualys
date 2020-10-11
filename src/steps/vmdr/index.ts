@@ -8,6 +8,7 @@ import {
 
 import { createQualysAPIClient } from '../../provider';
 import { QWebHostId } from '../../provider/client';
+import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
@@ -31,6 +32,9 @@ import {
 } from './converters';
 import { HostAssetTargetsMap } from './types';
 
+const MILLISECONDS_ONE_DAY = 1000 * 60 * 60 * 24;
+const MAX_LAST_SCAN_AGE = 30 * MILLISECONDS_ONE_DAY;
+
 /**
  * Fetches the set of scanned host IDs that will be processed by the
  * integration. This step may be changed to reduce the set of processed hosts.
@@ -42,19 +46,25 @@ export async function fetchScannedHostIds({
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
 
-  // `filter` reflects parameters used to limit the set of hosts processed by the
-  // integration. A value of `'all'` means no filters were used so that all
-  // hosts are processed.
-  const loggerFetch = logger.child({ filter: 'all' });
+  const filters: ListScannedHostIdsFilters = {
+    vm_scan_since: new Date(Date.now() - MAX_LAST_SCAN_AGE).toISOString(),
+  };
+
+  const loggerFetch = logger.child({ filters });
 
   const hostIds: QWebHostId[] = [];
-  await apiClient.iterateScannedHostIds((pageOfIds) => {
-    pageOfIds.forEach((e) => hostIds.push(e));
-    loggerFetch.info(
-      { numScannedHostIds: hostIds.length },
-      'Fetched page of scanned host IDs',
-    );
-  });
+  await apiClient.iterateScannedHostIds(
+    (pageOfIds) => {
+      pageOfIds.forEach((e) => hostIds.push(e));
+      loggerFetch.info(
+        { numScannedHostIds: hostIds.length },
+        'Fetched page of scanned host IDs',
+      );
+    },
+    {
+      filters,
+    },
+  );
 
   await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 
