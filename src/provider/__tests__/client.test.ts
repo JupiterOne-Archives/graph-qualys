@@ -1,3 +1,4 @@
+import xmlParser from 'fast-xml-parser';
 import fs from 'fs';
 import path from 'path';
 
@@ -798,6 +799,65 @@ describe('iterateHostDetails', () => {
     });
 
     expect(hosts.length).toBeGreaterThan(0);
+  });
+
+  test('mocked many', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetailsMocked',
+    });
+
+    const responseBody = `
+      <?xml version="1.0" encoding="UTF-8"?>
+      <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd">
+        <responseCode>SUCCESS</responseCode>
+        <count>1</count>
+        <data>
+          <HostAsset>
+            <id>2020094</id>
+            <name>Updated Name</name>
+            <os>Windows</os>
+            <dnsHostName>win95.old.corp.net</dnsHostName>
+            <created>2018-09-06T19:16:35Z</created>
+            <modified>2018-09-06T19:16:35Z</modified>
+            <type>HOST</type>
+            <tags><list /></tags>
+            <sourceInfo><list/></sourceInfo>
+            <netbiosName>TEST</netbiosName>
+            <netbiosNetworkId>10</netbiosNetworkId>
+            <networkGuid>66bf43c8-7392-4257-b856-a320fde231eb</networkGuid>
+            <address>127.0.0.1</address>
+            <trackingMethod>INSTANCE_ID</trackingMethod>
+            <openPort><list/></openPort>
+            <software><list/></software>
+            <vuln><list/></vuln>
+          </HostAsset>
+        </data>
+      </ServiceResponse>
+    `;
+
+    const hostIds = [1, 2, 3];
+    const requests: string[] = [];
+    recording.server.any().intercept((req, res) => {
+      requests.push(req.body);
+      res.status(200).send(responseBody);
+    });
+
+    await createClient().iterateHostDetails(hostIds, (host) => {
+      // noop
+    });
+
+    expect(requests.length).toEqual(1);
+    expect(xmlParser.parse(requests[0])).toEqual(
+      xmlParser.parse(`<ServiceRequest>
+  <preferences>
+    <limitResults>3</limitResults>
+  </preferences>
+  <filters>
+    <Criteria field="qwebHostId" operator="IN">1,2,3</Criteria>
+  </filters>
+</ServiceRequest>`),
+    );
   });
 });
 

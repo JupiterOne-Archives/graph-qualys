@@ -50,10 +50,20 @@ export async function fetchScannedHostIds({
 
   const loggerFetch = logger.child({ filters });
 
+  let loggedIdsDataType = false;
   const hostIds: QWebHostId[] = [];
   await apiClient.iterateScannedHostIds(
     (pageOfIds) => {
-      pageOfIds.forEach((e) => hostIds.push(e));
+      for (const hostId of pageOfIds) {
+        if (!loggedIdsDataType && typeof hostId !== 'number') {
+          loggerFetch.info(
+            { hostId, type: typeof hostId },
+            'Data type of host id is not number',
+          );
+          loggedIdsDataType = true;
+        }
+        hostIds.push(hostId);
+      }
       loggerFetch.info(
         { numScannedHostIds: hostIds.length },
         'Fetched page of scanned host IDs',
@@ -169,6 +179,7 @@ export async function fetchScannedHostFindings({
             findingKey,
             host,
             detection,
+            // TODO handle no map, getting `Cannot read property '2507587' of undefined`
             hostTargetsMap[host.ID!],
           ),
         );

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## 4.2.3 2020-10-12
+
+### Added
+
+- `responseErrorDetails` when receiving an error response for host asset
+  listing.
+- Logging of host IDs data type.
+
 ## 4.2.2 2020-10-12
 
 ### Changed

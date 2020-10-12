@@ -2,7 +2,7 @@ import { QualyNumericSeverity } from '../../../../types';
 import { QWebHostId } from '../index';
 import { ISODateString, PossibleArray } from '../util';
 
-// https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
+// https://qualysapi.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
 export type ListHostDetectionsResponse = {
   HOST_LIST_VM_DETECTION_OUTPUT?: ListHostDetectionOutput;
 };
