@@ -2,7 +2,16 @@
 
 ## [Unreleased]
 
+## 4.2.2 2020-10-12
+
+### Changed
+
+- Allow passing in `VM_SCAN_SINCE_DAYS_MS` environment variable that is used to
+  custom configure a date range for debugging.
+
 ## 4.2.1 2020-10-12
+
+### Fixed
 
 - Fix `vm_scan_since` to remove milliseconds, which produced a bad request
   response from Qualys.
