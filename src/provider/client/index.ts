@@ -470,7 +470,7 @@ export class QualysAPIClient {
       if (responseCode && responseCode !== 'SUCCESS') {
         throw new IntegrationProviderAPIError({
           cause: new Error(
-            `Unexpected responseCode in ServiceResponse: ${responseCode}\n${jsonFromXml.ServiceResponse?.responseErrorDetails}`,
+            `Unexpected responseCode in ServiceResponse: ${responseCode}\n${responseText}`,
           ),
           endpoint,
           status: response.status,
