@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## 4.2.1 2020-10-12
+
+- Fix `vm_scan_since` to remove milliseconds, which produced a bad request
+  response from Qualys.
+
 ## 4.2.0 2020-10-11
 
 ### Added
