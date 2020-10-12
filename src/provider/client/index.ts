@@ -349,7 +349,9 @@ export class QualysAPIClient {
     );
 
     const responseText = await response.text();
-    const jsonFromXml = xmlParser.parse(responseText);
+    const jsonFromXml = xmlParser.parse(
+      responseText,
+    ) as vmpc.ListScannedHostIdsResponse;
     return toArray(jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET?.ID);
   }
 
@@ -363,7 +365,8 @@ export class QualysAPIClient {
   public async iterateScannedHostIds(
     iteratee: ResourceIteratee<QWebHostId[]>,
     options?: {
-      pageSize: number;
+      filters?: vmpc.ListScannedHostIdsFilters;
+      pagination?: vmpc.ListScannedHostIdsPagination;
     },
   ): Promise<void> {
     type ListHostIdsResponse = {
@@ -375,15 +378,19 @@ export class QualysAPIClient {
       response: Response,
     ): Promise<ListHostIdsResponse> => {
       const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(responseText);
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as vmpc.ListScannedHostIdsResponse;
 
-      const hostList = jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.HOST_LIST;
-      const idSet = jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET;
+      const hostListIds = toArray(
+        jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
+      ).map((host) => host.ID!);
+      const idSetIds = toArray(
+        jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET?.ID,
+      );
 
       return {
-        hostIds: hostList
-          ? toArray(hostList.HOST).map((host) => host.ID)
-          : toArray(idSet.ID),
+        hostIds: hostListIds.length > 0 ? hostListIds : idSetIds,
         nextUrl: jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.WARNING?.URL,
       };
     };
@@ -393,7 +400,9 @@ export class QualysAPIClient {
       this.qualysUrl(endpoint, {
         action: 'list',
         details: 'None',
-        truncation_limit: options?.pageSize || DEFAULT_HOST_IDS_PAGE_SIZE,
+        truncation_limit:
+          options?.pagination?.limit || DEFAULT_HOST_IDS_PAGE_SIZE,
+        ...options?.filters,
       }),
       { method: 'GET' },
     );
@@ -425,7 +434,7 @@ export class QualysAPIClient {
     hostIds: QWebHostId[],
     iteratee: ResourceIteratee<assets.HostAsset>,
     options?: {
-      pageSize: number;
+      pagination: { limit: number };
     },
   ): Promise<void> {
     const fetchHostDetails = async (ids: QWebHostId[]) => {
@@ -474,7 +483,7 @@ export class QualysAPIClient {
 
     for (const ids of chunk(
       hostIds,
-      options?.pageSize || DEFAULT_HOST_DETAILS_PAGE_SIZE,
+      options?.pagination?.limit || DEFAULT_HOST_DETAILS_PAGE_SIZE,
     )) {
       const hosts = await fetchHostDetails(ids);
       for (const host of hosts) {
@@ -549,7 +558,7 @@ export class QualysAPIClient {
       detections: vmpc.HostDetection[];
     }>,
     options?: {
-      pageSize: number;
+      pagination?: { limit: number };
     },
   ): Promise<void> {
     const fetchHostDetections = async (ids: QWebHostId[]) => {
@@ -589,7 +598,7 @@ export class QualysAPIClient {
     // concurrency, add to queue to allow concurrency control.
     for (const ids of chunk(
       hostIds,
-      options?.pageSize || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
+      options?.pagination?.limit || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
     )) {
       await fetchHostDetections(ids);
     }
@@ -605,7 +614,7 @@ export class QualysAPIClient {
     qids: number[],
     iteratee: ResourceIteratee<vmpc.Vuln>,
     options?: {
-      pageSize: number;
+      pagination: { limit: number };
     },
   ): Promise<void> {
     const fetchVulnerabilities = async (ids: number[]) => {
@@ -640,7 +649,7 @@ export class QualysAPIClient {
     // concurrency, add to queue to allow concurrency control.
     for (const ids of chunk(
       qids,
-      options?.pageSize || DEFAULT_VULNERABILITIES_PAGE_SIZE,
+      options?.pagination?.limit || DEFAULT_VULNERABILITIES_PAGE_SIZE,
     )) {
       await fetchVulnerabilities(ids);
     }

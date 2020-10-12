@@ -704,7 +704,7 @@ describe('iterateScannedHostIds', () => {
       (ids) => {
         ids.forEach((e) => hostIds.push(e));
       },
-      { pageSize: 10 },
+      { pagination: { limit: 10 } },
     );
 
     expect(hostIds).toEqual(allHostIds);
@@ -727,7 +727,7 @@ describe('iterateScannedHostIds', () => {
       (ids) => {
         ids.forEach((e) => hostIds.push(e));
       },
-      { pageSize: 10 },
+      { pagination: { limit: 10 } },
     );
 
     expect(hostIds).toEqual(allHostIds);
@@ -928,7 +928,7 @@ describe('iterateHostDetections', () => {
         hosts.push(host);
       },
       {
-        pageSize: 300,
+        pagination: { limit: 300 },
       },
     );
 

@@ -30,6 +30,9 @@ test('steps', async () => {
     name: 'steps',
   });
 
+  const nowTimestamp = 1602457230303; // '2020-10-11T23:00:30.303Z';
+  jest.spyOn(Date, 'now').mockImplementation(() => nowTimestamp);
+
   const context = createMockStepExecutionContext<QualysIntegrationConfig>({
     instanceConfig: config,
   });
