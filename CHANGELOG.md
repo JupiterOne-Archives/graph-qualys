@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.2.4 2020-10-12
+
 ### Changed
 
 - `responseErrorDetails` was an object, going to log the response text on error
