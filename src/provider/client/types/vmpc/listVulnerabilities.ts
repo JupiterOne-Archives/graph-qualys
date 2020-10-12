@@ -12,7 +12,7 @@ export type QualysVulnerabilitiesErrorResponse = {
   };
 };
 
-// https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/knowledge_base_vuln_list_output.dtd
+// https://qualysapi.qualys.com/api/2.0/fo/knowledge_base/vuln/knowledge_base_vuln_list_output.dtd
 export type ListQualysVulnerabilitiesResponse = {
   KNOWLEDGE_BASE_VULN_LIST_OUTPUT?: KnowledgeBaseVulnListOutput;
 };

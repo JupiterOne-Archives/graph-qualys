@@ -11,6 +11,7 @@ export type ListHostAssetsResponse = {
 
 export type ServiceResponse = {
   responseCode?: string;
+  responseErrorDetails?: string;
   count?: number;
   hasMoreRecords?: boolean;
   data?: Data;
