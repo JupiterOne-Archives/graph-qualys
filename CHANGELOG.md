@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## 4.2.5 2020-10-12
+
+### Fixed
+
+- Switch host detections and details page size to `1000`.
+
 ## 4.2.4 2020-10-12
 
 ### Changed
