@@ -6,7 +6,7 @@
 
 ### Changed
 
-- Allow passing in `VM_SCAN_SINCE_DAYS_MS` environment variable that is used to
+- Allow passing in `VM_SCAN_SINCE_DAYS` environment variable that is used to
   custom configure a date range for debugging.
 
 ## 4.2.1 2020-10-12
