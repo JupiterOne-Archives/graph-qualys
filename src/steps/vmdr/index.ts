@@ -11,6 +11,7 @@ import { QWebHostId } from '../../provider/client';
 import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
+import { getVmScanSinceDate } from '../../util/date';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
@@ -32,9 +33,6 @@ import {
 } from './converters';
 import { HostAssetTargetsMap } from './types';
 
-const MILLISECONDS_ONE_DAY = 1000 * 60 * 60 * 24;
-const MAX_LAST_SCAN_AGE = 30 * MILLISECONDS_ONE_DAY;
-
 /**
  * Fetches the set of scanned host IDs that will be processed by the
  * integration. This step may be changed to reduce the set of processed hosts.
@@ -47,9 +45,7 @@ export async function fetchScannedHostIds({
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   const filters: ListScannedHostIdsFilters = {
-    vm_scan_since: new Date(Date.now() - MAX_LAST_SCAN_AGE)
-      .toISOString()
-      .replace(/\.\d{1,3}/, ''),
+    vm_scan_since: getVmScanSinceDate(),
   };
 
   const loggerFetch = logger.child({ filters });
