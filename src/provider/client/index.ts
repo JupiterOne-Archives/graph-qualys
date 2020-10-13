@@ -33,6 +33,7 @@ import {
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
 import PQueue from 'p-queue';
+import * as crypto from 'crypto';
 
 export * from './types';
 
@@ -713,6 +714,12 @@ export class QualysAPIClient {
     });
   }
 
+  private hashBody(body: string) {
+    const shasum = crypto.createHash('sha1');
+    shasum.update(body);
+    return shasum.digest('hex');
+  }
+
   private async executeAPIRequest(
     info: RequestInfo,
     init: RequestInit,
@@ -723,6 +730,7 @@ export class QualysAPIClient {
       retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
       rateLimitState: { ...this.rateLimitState },
+      bodyHash: init.body && this.hashBody(JSON.stringify(init.body)),
     });
 
     // NOTE: This is NOT thread safe at this time.

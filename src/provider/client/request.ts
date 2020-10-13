@@ -4,7 +4,6 @@ import { Response } from 'node-fetch';
 
 import {
   ClientDelayedRequestEvent,
-  ClientEvent,
   ClientEvents,
   ClientRequestEvent,
   ClientResponseEvent,
@@ -68,6 +67,7 @@ type APIRequest = {
   retryConfig: RetryConfig;
   rateLimitConfig: RateLimitConfig;
   rateLimitState: RateLimitState;
+  bodyHash?: string;
 };
 
 type APIRequestAttempt = APIRequest & {
@@ -116,7 +116,7 @@ async function attemptAPIRequest(
   const toWaitSec = rateLimitState.toWaitSeconds;
   const tryAfter = Math.max(Date.now() + toWaitSec * 1000, tryAfterCooldown);
 
-  const requestEvent: ClientEvent = {
+  const requestEvent: ClientRequestEvent = {
     url: request.url,
     retryConfig: request.retryConfig,
     retryable: request.retryable,
@@ -125,6 +125,7 @@ async function attemptAPIRequest(
     rateLimitState: request.rateLimitState,
     rateLimitedAttempts: request.rateLimitedAttempts,
     totalAttempts: request.totalAttempts,
+    bodyHash: request.bodyHash,
   };
 
   const now = Date.now();

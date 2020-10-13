@@ -15,7 +15,9 @@ export type ClientEvent = {
   totalAttempts: number;
 };
 
-export type ClientRequestEvent = ClientEvent;
+export type ClientRequestEvent = ClientEvent & {
+  bodyHash: string;
+};
 
 export type ClientDelayedRequestEvent = ClientRequestEvent & {
   /**
