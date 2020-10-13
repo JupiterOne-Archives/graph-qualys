@@ -17,7 +17,7 @@
     "lint": "eslint . --cache --fix --ext .ts,.tsx",
     "format": "prettier --write '**/*.{ts,js,json,css,md,yml}'",
     "type-check": "tsc",
-    "test": "jest --passWithNoTests",
+    "test": "jest",
     "test:ci": "yarn lint && yarn type-check && yarn test",
     "prepush": "yarn test:ci",
     "build": "tsc -p tsconfig.dist.json --declaration",
@@ -34,7 +34,8 @@
     "mkdirp": "^1.0.4",
     "node-fetch": "^2.6.0",
     "p-all": "^3.0.0",
-    "p-map": "^4.0.0"
+    "p-map": "^4.0.0",
+    "p-queue": "^6.6.2"
   },
   "devDependencies": {
     "@jupiterone/integration-sdk-core": "^3.5.1",

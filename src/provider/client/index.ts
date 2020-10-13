@@ -32,6 +32,7 @@ import {
 } from './types/vmpc';
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
+import PQueue from 'p-queue';
 
 export * from './types';
 
@@ -483,23 +484,32 @@ export class QualysAPIClient {
       return toArray(jsonFromXml.ServiceResponse?.data?.HostAsset);
     };
 
+    const hostDetailsQueue = new PQueue({
+      concurrency: 5,
+    });
+
     for (const ids of chunk(
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETAILS_PAGE_SIZE,
     )) {
-      let hosts: assets.HostAsset[] | undefined;
-      try {
-        hosts = await fetchHostDetails(ids);
-      } catch (err) {
-        if (!options?.onPageError) throw err;
-        options.onPageError(ids, err);
-        continue;
-      }
+      await hostDetailsQueue.add(async () => {
+        let hosts: assets.HostAsset[] | undefined;
 
-      for (const host of hosts) {
-        await iteratee(host);
-      }
+        try {
+          hosts = await fetchHostDetails(ids);
+        } catch (err) {
+          if (!options?.onPageError) throw err;
+          options.onPageError(ids, err);
+          return;
+        }
+
+        for (const host of hosts) {
+          await iteratee(host);
+        }
+      });
     }
+
+    await hostDetailsQueue.onIdle();
   }
 
   /**
