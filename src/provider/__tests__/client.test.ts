@@ -71,6 +71,7 @@ describe('events', () => {
       retryable: true,
       totalAttempts: 0,
       url,
+      hash: expect.any(String),
     });
   });
 
@@ -111,6 +112,7 @@ describe('events', () => {
       retryable: true,
       totalAttempts: 1,
       url,
+      hash: expect.any(String),
       completed: true,
       status: 200,
       statusText: 'OK',
@@ -146,6 +148,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 0,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -156,6 +159,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -166,6 +170,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 2,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -176,6 +181,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 3,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -186,6 +192,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 4,
         url,
+        hash: expect.any(String),
       },
     ]);
 
@@ -202,6 +209,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -215,6 +223,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 2,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -228,6 +237,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 3,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -241,6 +251,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 4,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -254,6 +265,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 5,
         url,
+        hash: expect.any(String),
       },
     ]);
   });
@@ -305,6 +317,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 0,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -320,6 +333,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
     ]);
 
@@ -339,6 +353,7 @@ describe('events', () => {
         delay: 1000,
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
     ]);
 
@@ -360,6 +375,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
       {
         completed: true,
@@ -378,6 +394,7 @@ describe('events', () => {
         statusText: 'OK',
         totalAttempts: 2,
         url,
+        hash: expect.any(String),
       },
     ]);
   });
@@ -563,14 +580,18 @@ describe('iterateWebAppFindings', () => {
       options: { recordFailedRequests: true },
     });
 
-    await expect(
-      createClient().iterateWebAppFindings(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/INVALID_REQUEST/);
+    const onRequestError = jest.fn();
+    await createClient().iterateWebAppFindings(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
   test('some', async () => {
@@ -773,14 +794,18 @@ describe('iterateHostDetails', () => {
       options: { recordFailedRequests: true },
     });
 
-    await expect(
-      createClient().iterateHostDetails(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/INVALID_REQUEST/);
+    const onRequestError = jest.fn();
+    await createClient().iterateHostDetails(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
   test('some', async () => {

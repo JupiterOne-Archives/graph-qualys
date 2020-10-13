@@ -6,6 +6,7 @@ import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 import PQueue from 'p-queue';
 import querystring from 'querystring';
 import { URLSearchParams } from 'url';
+import { v4 as uuid } from 'uuid';
 
 import {
   IntegrationProviderAPIError,
@@ -706,9 +707,9 @@ export class QualysAPIClient {
     });
   }
 
-  private hashBody(body: string) {
+  private hashAPIRequest(init: RequestInit) {
     const shasum = crypto.createHash('sha1');
-    shasum.update(body);
+    shasum.update(init.body ? JSON.stringify(init.body) : uuid());
     return shasum.digest('hex');
   }
 
@@ -718,11 +719,11 @@ export class QualysAPIClient {
   ): Promise<Response> {
     const apiResponse = await executeAPIRequest(this.events, {
       url: info as string,
+      hash: this.hashAPIRequest(init),
       exec: () => fetch(info, init),
       retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
       rateLimitState: { ...this.rateLimitState },
-      bodyHash: init.body && this.hashBody(JSON.stringify(init.body)),
     });
 
     // NOTE: This is NOT thread safe at this time.
