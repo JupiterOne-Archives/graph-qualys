@@ -993,7 +993,17 @@ describe('iterateHostDetections', () => {
     });
 
     const detectionsXml = fs
-      .readFileSync(path.join(__dirname, 'fixtures', 'detections.xml'))
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'detections.xml',
+        ),
+      )
       .toString('utf8');
 
     const requests = [/%2C298%2C299$/, /ids=300%2C301$/].reverse();

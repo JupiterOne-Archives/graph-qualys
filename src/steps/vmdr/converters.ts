@@ -233,7 +233,11 @@ export function getTargetsForDetectionHost(
   const targets = new Set(
     toStringArray([host.ID, host.IP, host.EC2_INSTANCE_ID]),
   );
-  if (assetTargets) assetTargets.forEach(targets.add);
+  if (assetTargets) {
+    for (const target of assetTargets) {
+      targets.add(target);
+    }
+  }
   return [...targets];
 }
 
