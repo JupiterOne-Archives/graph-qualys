@@ -164,6 +164,7 @@ Object {
         "targetEntity": Object {
           "_class": "Application",
           "_type": "web_app",
+          "displayName": "Ask JupiterOne",
           "name": "Ask JupiterOne",
         },
         "targetFilterKeys": Array [

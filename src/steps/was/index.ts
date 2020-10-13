@@ -52,6 +52,7 @@ export async function fetchScannedWebApps({
               _class: 'Application',
               _type: 'web_app',
               name: webApp.name,
+              displayName: webApp.name,
             },
           },
         }),
