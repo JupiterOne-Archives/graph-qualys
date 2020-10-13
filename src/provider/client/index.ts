@@ -324,7 +324,7 @@ export class QualysAPIClient {
     };
 
     const webAppFindingsQueue = new PQueue({
-      concurrency: 5,
+      concurrency: 3,
     });
 
     for (const ids of chunk(webAppIds, options?.pagination?.limit || 300)) {
@@ -506,7 +506,7 @@ export class QualysAPIClient {
     };
 
     const hostDetailsQueue = new PQueue({
-      concurrency: 5,
+      concurrency: 3,
     });
 
     for (const ids of chunk(
