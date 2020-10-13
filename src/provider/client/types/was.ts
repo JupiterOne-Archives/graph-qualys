@@ -53,7 +53,16 @@ export type Tags = {
   count?: number;
 };
 
-// https://qualysapi.qg3.apps.qualys.com/qps/xsd/3.0/was/finding.xsd
+// https://qualysapi.apps.qualys.com/qps/xsd/3.0/was/finding.xsd
+
+export type ListWebAppFindingsFilterInputParameter = 'webApp.id';
+
+export type ListWebAppFindingsFilters = Partial<
+  Record<
+    ListWebAppFindingsFilterInputParameter,
+    string | string[] | boolean | number | number[]
+  >
+>;
 
 export type ListWebAppFindingsResponse = {
   ServiceResponse?: ServiceResponse<WebAppFindingsData>;
