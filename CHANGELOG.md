@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## 4.2.6 2020-10-12
+
+### Changed
+
+- Additional logging per API request
+- Add queuing mechanism for web app findings and host detail requests
+- Set 3 minute timeout on host details and web app findings page requests
+
 ## 4.2.5 2020-10-12
 
 ### Fixed

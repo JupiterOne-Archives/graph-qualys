@@ -16,7 +16,7 @@ export type ClientEvent = {
 };
 
 export type ClientRequestEvent = ClientEvent & {
-  bodyHash: string;
+  bodyHash?: string;
 };
 
 export type ClientDelayedRequestEvent = ClientRequestEvent & {
