@@ -720,8 +720,7 @@ export class QualysAPIClient {
       fingerprint = JSON.stringify(init.body);
     }
 
-    fingerprint = fingerprint?.trim();
-    if (!fingerprint || fingerprint === '' || fingerprint === '{}') {
+    if (!fingerprint || fingerprint === '{}') {
       fingerprint = uuid();
     }
 
