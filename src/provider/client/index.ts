@@ -1,9 +1,12 @@
+import * as crypto from 'crypto';
 import EventEmitter from 'events';
 import xmlParser from 'fast-xml-parser';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
+import PQueue from 'p-queue';
 import querystring from 'querystring';
 import { URLSearchParams } from 'url';
+import { v4 as uuid } from 'uuid';
 
 import {
   IntegrationProviderAPIError,
@@ -32,15 +35,13 @@ import {
 } from './types/vmpc';
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
-import PQueue from 'p-queue';
-import * as crypto from 'crypto';
 
 export * from './types';
 
 const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
-const DEFAULT_HOST_DETAILS_PAGE_SIZE = 1000;
-const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 1000;
-const DEFAULT_VULNERABILITIES_PAGE_SIZE = 1000;
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
+const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 250;
+const DEFAULT_VULNERABILITIES_PAGE_SIZE = 250;
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
@@ -273,7 +274,8 @@ export class QualysAPIClient {
     iteratee: ResourceIteratee<was.WebAppFinding>,
     options?: {
       pagination?: { limit: number };
-      onPageError?: (pageIds: number[], err: Error) => void;
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchWebAppFindings = async (ids: number[]) => {
@@ -297,7 +299,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
-          timeout: 1000 * 60 * 3,
+          timeout: 1000 * 60 * 5,
         },
       );
 
@@ -322,25 +324,20 @@ export class QualysAPIClient {
     };
 
     const webAppFindingsQueue = new PQueue({
-      concurrency: 5,
+      concurrency: 3,
     });
 
     for (const ids of chunk(webAppIds, options?.pagination?.limit || 300)) {
-      await webAppFindingsQueue.add(async () => {
-        let findings: was.WebAppFinding[] | undefined;
-
-        try {
-          findings = await fetchWebAppFindings(ids);
-        } catch (err) {
-          if (!options?.onPageError) throw err;
-          options.onPageError(ids, err);
-          return;
-        }
-
-        for (const finding of findings) {
-          await iteratee(finding);
-        }
-      });
+      webAppFindingsQueue
+        .add(async () => {
+          const findings = await fetchWebAppFindings(ids);
+          for (const finding of findings) {
+            await iteratee(finding);
+          }
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
 
     await webAppFindingsQueue.onIdle();
@@ -459,7 +456,8 @@ export class QualysAPIClient {
     iteratee: ResourceIteratee<assets.HostAsset>,
     options?: {
       pagination?: { limit: number };
-      onPageError?: (pageIds: number[], err: Error) => void;
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchHostDetails = async (ids: QWebHostId[]) => {
@@ -483,7 +481,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
-          timeout: 1000 * 60 * 3,
+          timeout: 1000 * 60 * 5,
         },
       );
 
@@ -508,28 +506,23 @@ export class QualysAPIClient {
     };
 
     const hostDetailsQueue = new PQueue({
-      concurrency: 5,
+      concurrency: 3,
     });
 
     for (const ids of chunk(
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETAILS_PAGE_SIZE,
     )) {
-      await hostDetailsQueue.add(async () => {
-        let hosts: assets.HostAsset[] | undefined;
-
-        try {
-          hosts = await fetchHostDetails(ids);
-        } catch (err) {
-          if (!options?.onPageError) throw err;
-          options.onPageError(ids, err);
-          return;
-        }
-
-        for (const host of hosts) {
-          await iteratee(host);
-        }
-      });
+      hostDetailsQueue
+        .add(async () => {
+          const hosts = await fetchHostDetails(ids);
+          for (const host of hosts) {
+            await iteratee(host);
+          }
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
 
     await hostDetailsQueue.onIdle();
@@ -714,9 +707,9 @@ export class QualysAPIClient {
     });
   }
 
-  private hashBody(body: string) {
+  private hashAPIRequest(init: RequestInit) {
     const shasum = crypto.createHash('sha1');
-    shasum.update(body);
+    shasum.update(init.body ? JSON.stringify(init.body) : uuid());
     return shasum.digest('hex');
   }
 
@@ -726,11 +719,11 @@ export class QualysAPIClient {
   ): Promise<Response> {
     const apiResponse = await executeAPIRequest(this.events, {
       url: info as string,
+      hash: this.hashAPIRequest(init),
       exec: () => fetch(info, init),
       retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
       rateLimitState: { ...this.rateLimitState },
-      bodyHash: init.body && this.hashBody(JSON.stringify(init.body)),
     });
 
     // NOTE: This is NOT thread safe at this time.

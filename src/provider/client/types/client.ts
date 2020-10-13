@@ -6,6 +6,7 @@ export enum ClientEvents {
 
 export type ClientEvent = {
   url: string;
+  hash: string;
   retryConfig: RetryConfig;
   retryable: boolean;
   retryAttempts: number;
@@ -15,9 +16,7 @@ export type ClientEvent = {
   totalAttempts: number;
 };
 
-export type ClientRequestEvent = ClientEvent & {
-  bodyHash?: string;
-};
+export type ClientRequestEvent = ClientEvent;
 
 export type ClientDelayedRequestEvent = ClientRequestEvent & {
   /**
