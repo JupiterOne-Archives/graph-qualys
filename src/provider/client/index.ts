@@ -1,7 +1,9 @@
+import * as crypto from 'crypto';
 import EventEmitter from 'events';
 import xmlParser from 'fast-xml-parser';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
+import PQueue from 'p-queue';
 import querystring from 'querystring';
 import { URLSearchParams } from 'url';
 
@@ -32,8 +34,6 @@ import {
 } from './types/vmpc';
 import { toArray } from './util';
 import { buildFilterXml } from './was/util';
-import PQueue from 'p-queue';
-import * as crypto from 'crypto';
 
 export * from './types';
 
@@ -273,7 +273,8 @@ export class QualysAPIClient {
     iteratee: ResourceIteratee<was.WebAppFinding>,
     options?: {
       pagination?: { limit: number };
-      onPageError?: (pageIds: number[], err: Error) => void;
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchWebAppFindings = async (ids: number[]) => {
@@ -326,21 +327,16 @@ export class QualysAPIClient {
     });
 
     for (const ids of chunk(webAppIds, options?.pagination?.limit || 300)) {
-      await webAppFindingsQueue.add(async () => {
-        let findings: was.WebAppFinding[] | undefined;
-
-        try {
-          findings = await fetchWebAppFindings(ids);
-        } catch (err) {
-          if (!options?.onPageError) throw err;
-          options.onPageError(ids, err);
-          return;
-        }
-
-        for (const finding of findings) {
-          await iteratee(finding);
-        }
-      });
+      webAppFindingsQueue
+        .add(async () => {
+          const findings = await fetchWebAppFindings(ids);
+          for (const finding of findings) {
+            await iteratee(finding);
+          }
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
 
     await webAppFindingsQueue.onIdle();
@@ -459,7 +455,8 @@ export class QualysAPIClient {
     iteratee: ResourceIteratee<assets.HostAsset>,
     options?: {
       pagination?: { limit: number };
-      onPageError?: (pageIds: number[], err: Error) => void;
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchHostDetails = async (ids: QWebHostId[]) => {
@@ -515,21 +512,16 @@ export class QualysAPIClient {
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETAILS_PAGE_SIZE,
     )) {
-      await hostDetailsQueue.add(async () => {
-        let hosts: assets.HostAsset[] | undefined;
-
-        try {
-          hosts = await fetchHostDetails(ids);
-        } catch (err) {
-          if (!options?.onPageError) throw err;
-          options.onPageError(ids, err);
-          return;
-        }
-
-        for (const host of hosts) {
-          await iteratee(host);
-        }
-      });
+      hostDetailsQueue
+        .add(async () => {
+          const hosts = await fetchHostDetails(ids);
+          for (const host of hosts) {
+            await iteratee(host);
+          }
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
 
     await hostDetailsQueue.onIdle();

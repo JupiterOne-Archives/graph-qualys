@@ -129,7 +129,7 @@ export async function fetchScannedHostDetails({
       }
     },
     {
-      onPageError(pageIds, err) {
+      onRequestError(pageIds, err) {
         logger.error(
           { pageIds, err },
           'Error ingesting page of scanned host details',
