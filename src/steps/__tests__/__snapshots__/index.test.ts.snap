@@ -186,7 +186,7 @@ Object {
     },
     Object {
       "_class": "SCANS",
-      "_key": "qualys-service:vmdr|scans|arn:aws:ec2:us-east-1:191097756250:instance/i-02751173c463c34e8",
+      "_key": "qualys-service:vmdr|scans|qualys-host:107800671",
       "_mapping": Object {
         "relationshipDirection": "FORWARD",
         "sourceEntityKey": "qualys-service:vmdr",

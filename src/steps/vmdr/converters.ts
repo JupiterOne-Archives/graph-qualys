@@ -3,6 +3,7 @@ import {
   createIntegrationEntity,
   createMappedRelationship,
   Entity,
+  generateRelationshipKey,
   isPublicIp,
   parseTimePropertyValue,
   Relationship,
@@ -50,7 +51,7 @@ export function createServiceScansDiscoveredHostRelationship(
       targetEntity: {
         _class: 'Host',
         _type: ENTITY_TYPE_DISCOVERED_HOST,
-        _key: `qualys-host:${host.qwebHostId!}`,
+        _key: generateHostAssetKey(host),
 
         // Add to the entity's `id` property values that this host is known as
         // in the Qualys system. These values are also added to the
@@ -94,6 +95,12 @@ export function createServiceScansEC2HostRelationship(
   const instanceArn = getEC2HostArn(host);
 
   return createMappedRelationship({
+    // Ensure unique key based on host identity, not EC2 ARN.
+    _key: generateRelationshipKey(
+      RelationshipClass.SCANS,
+      serviceEntity,
+      generateHostAssetKey(host),
+    ),
     _class: RelationshipClass.SCANS,
     // TODO require _type https://github.com/JupiterOne/sdk/issues/347
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
@@ -269,20 +276,22 @@ export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
   }
 }
 
-export function getEC2InstanceId(
-  hostAsset: assets.HostAsset,
-): string | undefined {
+function generateHostAssetKey(host: assets.HostAsset): string {
+  return `qualys-host:${host.qwebHostId!}`;
+}
+
+function getEC2InstanceId(hostAsset: assets.HostAsset): string | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
   if ('EC_2' === ec2?.type) {
     return ec2.instanceId;
   }
 }
 
-export function getHostName(host: assets.HostAsset): string {
+function getHostName(host: assets.HostAsset): string {
   return host.dnsHostName || host.fqdn || host.address || String(host.id!);
 }
 
-export function getHostIPAddresses(host: assets.HostAsset) {
+function getHostIPAddresses(host: assets.HostAsset) {
   return {
     ipAddress: host.address,
     publicIpAddress:
@@ -292,9 +301,7 @@ export function getHostIPAddresses(host: assets.HostAsset) {
   };
 }
 
-export function determinePlatform(
-  hostAsset: assets.HostAsset,
-): string | undefined {
+function determinePlatform(hostAsset: assets.HostAsset): string | undefined {
   let os = hostAsset.os;
   if (!os) {
     return undefined;

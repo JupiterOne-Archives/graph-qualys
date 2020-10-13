@@ -190,7 +190,6 @@ export async function fetchScannedHostFindings({
             findingKey,
             host,
             detection,
-            // TODO handle no map, getting `Cannot read property '2507587' of undefined`
             hostTargetsMap[host.ID!],
           ),
         );
