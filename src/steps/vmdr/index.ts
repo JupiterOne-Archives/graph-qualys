@@ -78,17 +78,17 @@ export async function fetchScannedHostIds({
 
   await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 
-  await logger.publishEvent({
+  loggerFetch.info(
+    { numScannedHostIds: hostIds.length },
+    'Finished fetching scanned host IDs',
+  );
+
+  loggerFetch.publishEvent({
     name: 'stats',
     description: `Found ${hostIds.length} hosts with filters: ${JSON.stringify(
       filters,
     )}`,
   });
-
-  loggerFetch.info(
-    { numScannedHostIds: hostIds.length, filters },
-    'Finished fetching scanned host IDs',
-  );
 }
 
 /**
@@ -110,7 +110,7 @@ export async function fetchScannedHostDetails({
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   let totalHostsProcessed = 0;
-  let totalPageErrors = 0;
+  const totalPageErrors = 0;
   const errorCorrelationId = uuid();
 
   const hostAssetTargetsMap: HostAssetTargetsMap = {};
@@ -152,7 +152,7 @@ export async function fetchScannedHostDetails({
     },
   );
 
-  await logger.publishEvent({
+  logger.publishEvent({
     name: 'stats',
     description: `Processed ${totalHostsProcessed} host details${
       totalPageErrors > 0

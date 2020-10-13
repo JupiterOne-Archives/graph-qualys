@@ -66,17 +66,17 @@ export async function fetchScannedWebApps({
 
   await jobState.setData(DATA_SCANNED_WEBAPP_IDS, scannedWebAppIds);
 
-  await logger.publishEvent({
+  logger.info(
+    { numScannedWebAppIds: scannedWebAppIds.length, filters },
+    'Scanned web app IDs collected',
+  );
+
+  logger.publishEvent({
     name: 'stats',
     description: `Found ${
       scannedWebAppIds.length
     } web applications with filters: ${JSON.stringify(filters)}`,
   });
-
-  logger.info(
-    { numScannedWebAppIds: scannedWebAppIds.length, filters },
-    'Scanned web app IDs collected',
-  );
 }
 
 export async function fetchScannedWebAppFindings({
@@ -146,7 +146,12 @@ export async function fetchScannedWebAppFindings({
     },
   );
 
-  await logger.publishEvent({
+  logger.info(
+    { numWebAppFindingsProcessed },
+    'Processed web application findings',
+  );
+
+  logger.publishEvent({
     name: 'stats',
     description: `Processed ${numWebAppFindingsProcessed} web application findings${
       numPageErrors > 0
@@ -154,11 +159,6 @@ export async function fetchScannedWebAppFindings({
         : ''
     }`,
   });
-
-  logger.info(
-    { numWebAppFindingsProcessed },
-    'Processed web application findings',
-  );
 }
 
 export const webApplicationSteps: IntegrationStep<QualysIntegrationConfig>[] = [
