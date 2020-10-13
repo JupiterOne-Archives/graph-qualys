@@ -152,10 +152,9 @@ export function createHostFindingEntity(
 
   return createIntegrationEntity({
     entityData: {
-      source: {
-        host,
-        detection,
-      },
+      // Do NOT include the host in every Finding, there will be a relationship to it.
+      // Esp. avoid storing the DETECTION_LIST by accident, it will exhaust disk storage.
+      source: detection,
       assign: {
         ...convertProperties(detection),
 
@@ -303,8 +302,7 @@ function getHostIPAddresses(host: assets.HostAsset) {
 
 function determinePlatform(hostAsset: assets.HostAsset): string | undefined {
   let os = hostAsset.os;
-
-  if (typeof os !== 'string') {
+  if (!os) {
     return undefined;
   }
 
