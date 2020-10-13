@@ -434,7 +434,8 @@ export class QualysAPIClient {
     hostIds: QWebHostId[],
     iteratee: ResourceIteratee<assets.HostAsset>,
     options?: {
-      pagination: { limit: number };
+      pagination?: { limit: number };
+      onPageError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchHostDetails = async (ids: QWebHostId[]) => {
@@ -458,6 +459,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
+          timeout: 1000 * 60 * 3,
         },
       );
 
@@ -485,7 +487,15 @@ export class QualysAPIClient {
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETAILS_PAGE_SIZE,
     )) {
-      const hosts = await fetchHostDetails(ids);
+      let hosts: assets.HostAsset[] | undefined;
+      try {
+        hosts = await fetchHostDetails(ids);
+      } catch (err) {
+        if (!options?.onPageError) throw err;
+        options.onPageError(ids, err);
+        continue;
+      }
+
       for (const host of hosts) {
         await iteratee(host);
       }
@@ -660,6 +670,7 @@ export class QualysAPIClient {
     init: RequestInit,
   ): Promise<Response> {
     return this.executeAPIRequest(info, {
+      timeout: 0,
       ...init,
       headers: {
         ...init.headers,
@@ -667,7 +678,6 @@ export class QualysAPIClient {
         authorization: this.qualysAuthorization(),
       },
       size: 0,
-      timeout: 0,
     });
   }
 

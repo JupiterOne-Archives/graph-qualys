@@ -31,8 +31,20 @@ export async function executeAPIRequest<T>(
   };
 
   while (attemptExecution) {
-    const apiResponse = await attemptAPIRequest(events, requestAttempt);
-    requestAttempt = apiResponse.request;
+    let apiResponse: APIResponse | undefined;
+
+    try {
+      apiResponse = await attemptAPIRequest(events, requestAttempt);
+      requestAttempt = apiResponse.request;
+    } catch (err) {
+      if (err.type === 'request-timeout') {
+        requestAttempt.retryAttempts += 1;
+        requestAttempt.totalAttempts += 1;
+        requestAttempt.retryable = true;
+      } else {
+        throw err;
+      }
+    }
 
     attemptExecution =
       !requestAttempt.completed &&
@@ -40,7 +52,7 @@ export async function executeAPIRequest<T>(
       requestAttempt.retryAttempts < retryConfig.maxAttempts &&
       requestAttempt.retryable;
 
-    if (!attemptExecution) {
+    if (!attemptExecution && apiResponse) {
       return apiResponse;
     }
   }

@@ -102,30 +102,41 @@ export async function fetchScannedHostDetails({
 
   const hostAssetTargetsMap: HostAssetTargetsMap = {};
 
-  await apiClient.iterateHostDetails(hostIds, async (host) => {
-    if (getEC2HostArn(host)) {
-      await jobState.addRelationship(
-        createServiceScansEC2HostRelationship(vdmrServiceEntity, host),
-      );
-    } else {
-      await jobState.addRelationship(
-        createServiceScansDiscoveredHostRelationship(vdmrServiceEntity, host),
-      );
-    }
+  await apiClient.iterateHostDetails(
+    hostIds,
+    async (host) => {
+      if (getEC2HostArn(host)) {
+        await jobState.addRelationship(
+          createServiceScansEC2HostRelationship(vdmrServiceEntity, host),
+        );
+      } else {
+        await jobState.addRelationship(
+          createServiceScansDiscoveredHostRelationship(vdmrServiceEntity, host),
+        );
+      }
 
-    // Ensure that `DATA_HOST_TARGETS` is updated for each host so that should
-    // a partial set be ingested, we don't lose what we've seen for later
-    // steps.
-    if (host.qwebHostId) {
-      hostAssetTargetsMap[host.qwebHostId] = getTargetsFromHostAsset(host);
-      await jobState.setData(DATA_HOST_TARGETS, hostAssetTargetsMap);
-    } else {
-      logger.info(
-        { host: { id: host.id } },
-        'Unable to store targets for host asset. This may affect global mappings.',
-      );
-    }
-  });
+      // Ensure that `DATA_HOST_TARGETS` is updated for each host so that should
+      // a partial set be ingested, we don't lose what we've seen for later
+      // steps.
+      if (host.qwebHostId) {
+        hostAssetTargetsMap[host.qwebHostId] = getTargetsFromHostAsset(host);
+        await jobState.setData(DATA_HOST_TARGETS, hostAssetTargetsMap);
+      } else {
+        logger.info(
+          { host: { id: host.id } },
+          'Unable to store targets for host asset. This may affect global mappings.',
+        );
+      }
+    },
+    {
+      onPageError: (pageIds, err) => {
+        logger.error(
+          { pageIds, err },
+          'Error ingesting page of scanned host details',
+        );
+      },
+    },
+  );
 }
 
 /**
