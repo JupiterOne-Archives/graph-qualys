@@ -708,8 +708,23 @@ export class QualysAPIClient {
   }
 
   private hashAPIRequest(init: RequestInit) {
+    let fingerprint: string | undefined;
+
+    if (typeof init.body?.toString === 'function') {
+      fingerprint = init.body.toString();
+    } else if (typeof init.body === 'string') {
+      fingerprint = init.body;
+    } else if (init.body) {
+      fingerprint = JSON.stringify(init.body);
+    }
+
+    fingerprint = fingerprint?.trim();
+    if (!fingerprint || fingerprint === '' || fingerprint === '{}') {
+      fingerprint = uuid();
+    }
+
     const shasum = crypto.createHash('sha1');
-    shasum.update(init.body ? JSON.stringify(init.body) : uuid());
+    shasum.update(fingerprint);
     return shasum.digest('hex');
   }
 
