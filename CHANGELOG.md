@@ -2,15 +2,30 @@
 
 ## [Unreleased]
 
-## 4.2.6 2020-10-12
+### Added
+
+- Job event log `stats` entries to provide some count information
+- Handle failure to fetch a page of web app findings (timeout, max retries)
+- Handle failure to fetch a page of host details (timeout, max retries)
 
 ### Changed
 
-- Additional logging per API request
-- Add queuing mechanism for web app findings and host detail requests
-- Set 3 minute timeout on host details and web app findings page requests
+- Additional logging per API request to ensure paginated requests are advancing
+  through large sets of data
+- Add concurrency mechanism for web app findings and host detail requests
+- Set 5 minute timeout on host details and web app findings page requests
 - Allow passing in `VM_SCAN_SINCE_MS` environment variable that is used to
   custom configure a date range for debugging.
+
+### Fixed
+
+- Missing `Application.displayName` for `web_app` entities
+- Duplicate key for `Finding - IS -> Vulnerability` relationships
+- Duplicate key for `Service - SCANS -> Host` relationships
+- Error converting Host `os` property when it is not a string (the type
+  advertised in the docs)
+- Syntax error in `getTargetsForDetectionHost` cause step to fail
+- All host details and detections added to raw data of every host Finding entity
 
 ## 4.2.5 2020-10-12
 
