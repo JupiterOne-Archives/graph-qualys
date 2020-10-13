@@ -299,7 +299,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
-          timeout: 1000 * 60 * 3,
+          timeout: 1000 * 60 * 5,
         },
       );
 
@@ -481,7 +481,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
-          timeout: 1000 * 60 * 3,
+          timeout: 1000 * 60 * 5,
         },
       );
 
