@@ -194,6 +194,7 @@ export async function fetchScannedHostFindings({
       for (const detection of detections) {
         const findingKey = buildKey({
           qid: detection.QID,
+          type: detection.TYPE,
           port: detection.PORT,
           protocol: detection.PROTOCOL,
           ssl: detection.SSL,

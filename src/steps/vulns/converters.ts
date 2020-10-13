@@ -26,9 +26,13 @@ import {
 export function createFindingVulnerabilityMappedRelationships(
   findingEntity: Entity,
   targetEntityProperties: TargetEntityProperties[],
-): MappedRelationship[] {
-  return targetEntityProperties.map((targetEntity) =>
-    createMappedRelationship({
+): { relationships: MappedRelationship[]; duplicates: MappedRelationship[] } {
+  const seenRelationshipKeys = new Set<string>();
+  const duplicates: MappedRelationship[] = [];
+  const relationships: MappedRelationship[] = [];
+
+  for (const targetEntity of targetEntityProperties) {
+    const relationship = createMappedRelationship({
       _class: RelationshipClass.IS,
       _type: generateRelationshipType(
         RelationshipClass.IS,
@@ -41,8 +45,17 @@ export function createFindingVulnerabilityMappedRelationships(
         targetFilterKeys: [['_type', '_key']],
         targetEntity,
       },
-    }),
-  );
+    });
+
+    if (seenRelationshipKeys.has(relationship._key)) {
+      duplicates.push(relationship);
+      continue;
+    }
+
+    relationships.push(relationship);
+    seenRelationshipKeys.add(relationship._key);
+  }
+  return { relationships, duplicates };
 }
 
 /**
@@ -51,7 +64,7 @@ export function createFindingVulnerabilityMappedRelationships(
  * When a vuln is related to one or more CVEs, the properties will map to
  * `_type: ENTITY_TYPE_CVE_VULNERABILITY, _key: '<cve id>'`. In the case where a
  * vulnerability has no CVEs, the properties will map to `_type:
- * ENTITY_TYPE_QUALYS_VULNERABILITY, _key: 'qualys-vuln-<qid>'`.
+ * ENTITY_TYPE_QUALYS_VULNERABILITY, _key: 'vuln-qid:<qid>'`.
  *
  * @param qualysHost the host name of the Qualys server, i.e.
  * qg3.apps.qualys.com, to be used in building `webLink` values to the Qualys UI

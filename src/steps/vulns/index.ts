@@ -65,12 +65,22 @@ export async function fetchFindingVulnerabilities({
             'Previous ingestion steps failed to store Finding in job state for _key',
           );
         } else {
-          await jobState.addRelationships(
-            createFindingVulnerabilityMappedRelationships(
-              findingEntity,
-              targetEntities,
-            ),
+          const {
+            relationships,
+            duplicates,
+          } = createFindingVulnerabilityMappedRelationships(
+            findingEntity,
+            targetEntities,
           );
+
+          await jobState.addRelationships(relationships);
+
+          if (duplicates.length > 0) {
+            logger.warn(
+              { qid: vuln.QID, duplicateKeys: duplicates.map((e) => e._key) },
+              'Finding appears to have duplicate related vulnerabilities, need to create a better Finding._key?',
+            );
+          }
         }
       }
     } else {
