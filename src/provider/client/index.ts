@@ -270,6 +270,10 @@ export class QualysAPIClient {
   public async iterateWebAppFindings(
     webAppIds: number[],
     iteratee: ResourceIteratee<was.WebAppFinding>,
+    options?: {
+      pagination?: { limit: number };
+      onPageError?: (pageIds: number[], err: Error) => void;
+    },
   ): Promise<void> {
     const fetchWebAppFindings = async (ids: number[]) => {
       const endpoint = '/qps/rest/3.0/search/was/finding/';
@@ -292,6 +296,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
+          timeout: 1000 * 60 * 3,
         },
       );
 
@@ -315,12 +320,29 @@ export class QualysAPIClient {
       return toArray(jsonFromXml.ServiceResponse?.data?.Finding);
     };
 
-    for (const ids of chunk(webAppIds, 300)) {
-      const findings = await fetchWebAppFindings(ids);
-      for (const finding of findings) {
-        await iteratee(finding);
-      }
+    const webAppFindingsQueue = new PQueue({
+      concurrency: 5,
+    });
+
+    for (const ids of chunk(webAppIds, options?.pagination?.limit || 300)) {
+      await webAppFindingsQueue.add(async () => {
+        let findings: was.WebAppFinding[] | undefined;
+
+        try {
+          findings = await fetchWebAppFindings(ids);
+        } catch (err) {
+          if (!options?.onPageError) throw err;
+          options.onPageError(ids, err);
+          return;
+        }
+
+        for (const finding of findings) {
+          await iteratee(finding);
+        }
+      });
     }
+
+    await webAppFindingsQueue.onIdle();
   }
 
   /**

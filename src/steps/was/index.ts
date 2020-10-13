@@ -87,39 +87,50 @@ export async function fetchScannedWebAppFindings({
 
   const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
 
-  await apiClient.iterateWebAppFindings(scannedWebAppIds, async (finding) => {
-    const findingEntity = await jobState.addEntity(
-      createWebAppFindingEntity(finding),
-    );
-
-    await jobState.addRelationship(
-      createDirectRelationship({
-        _class: RelationshipClass.IDENTIFIED,
-        from: serviceEntity,
-        to: findingEntity,
-      }),
-    );
-
-    if (finding.qid) {
-      vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-        finding.qid,
-        findingEntity._key,
+  await apiClient.iterateWebAppFindings(
+    scannedWebAppIds,
+    async (finding) => {
+      const findingEntity = await jobState.addEntity(
+        createWebAppFindingEntity(finding),
       );
 
-      // Ensure that finding keys are updated for each finding
-      // so that should a partial set be ingested, we don't lose what we've seen
-      // for later steps.
-      await jobState.setData(
-        DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-        vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+      await jobState.addRelationship(
+        createDirectRelationship({
+          _class: RelationshipClass.IDENTIFIED,
+          from: serviceEntity,
+          to: findingEntity,
+        }),
       );
-    } else {
-      logger.info(
-        { finding: { id: finding.id, uniqueId: finding.uniqueId } },
-        'Web app finding has no QID',
-      );
-    }
-  });
+
+      if (finding.qid) {
+        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+          finding.qid,
+          findingEntity._key,
+        );
+
+        // Ensure that finding keys are updated for each finding
+        // so that should a partial set be ingested, we don't lose what we've seen
+        // for later steps.
+        await jobState.setData(
+          DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+          vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+        );
+      } else {
+        logger.info(
+          { finding: { id: finding.id, uniqueId: finding.uniqueId } },
+          'Web app finding has no QID',
+        );
+      }
+    },
+    {
+      onPageError(pageIds, err) {
+        logger.error(
+          { pageIds, err },
+          'Error ingesting page of web app findings',
+        );
+      },
+    },
+  );
 }
 
 export const webApplicationSteps: IntegrationStep<QualysIntegrationConfig>[] = [
