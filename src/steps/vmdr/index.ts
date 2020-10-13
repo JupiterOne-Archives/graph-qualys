@@ -1,3 +1,5 @@
+import { v4 as uuid } from 'uuid';
+
 import {
   createDirectRelationship,
   Entity,
@@ -76,8 +78,15 @@ export async function fetchScannedHostIds({
 
   await jobState.setData(DATA_SCANNED_HOST_IDS, hostIds);
 
+  await logger.publishEvent({
+    name: 'stats',
+    description: `Found ${hostIds.length} hosts with filters: ${JSON.stringify(
+      filters,
+    )}`,
+  });
+
   loggerFetch.info(
-    { numScannedHostIds: hostIds.length },
+    { numScannedHostIds: hostIds.length, filters },
     'Finished fetching scanned host IDs',
   );
 }
@@ -100,8 +109,11 @@ export async function fetchScannedHostDetails({
   )) as Entity;
   const apiClient = createQualysAPIClient(logger, instance.config);
 
-  const hostAssetTargetsMap: HostAssetTargetsMap = {};
+  let totalHostsProcessed = 0;
+  let totalPageErrors = 0;
+  const errorCorrelationId = uuid();
 
+  const hostAssetTargetsMap: HostAssetTargetsMap = {};
   await apiClient.iterateHostDetails(
     hostIds,
     async (host) => {
@@ -127,16 +139,27 @@ export async function fetchScannedHostDetails({
           'Unable to store targets for host asset. This may affect global mappings.',
         );
       }
+
+      totalHostsProcessed++;
     },
     {
       onRequestError(pageIds, err) {
         logger.error(
-          { pageIds, err },
+          { pageIds, err, errorCorrelationId },
           'Error ingesting page of scanned host details',
         );
       },
     },
   );
+
+  await logger.publishEvent({
+    name: 'stats',
+    description: `Processed ${totalHostsProcessed} host details${
+      totalPageErrors > 0
+        ? `, encountered ${totalPageErrors} errors (errorId="${errorCorrelationId}")`
+        : ''
+    }`,
+  });
 }
 
 /**
@@ -212,6 +235,11 @@ export async function fetchScannedHostFindings({
       );
     },
   );
+
+  // await logger.publishEvent({
+  //   name: 'stats',
+  //   description: `Processed ${vulnerabilityFindingKeysCollector.totalFindings()} host detections`,
+  // });
 }
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [

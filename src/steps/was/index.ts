@@ -1,3 +1,5 @@
+import { v4 as uuid } from 'uuid';
+
 import {
   createDirectRelationship,
   createMappedRelationship,
@@ -34,8 +36,9 @@ export async function fetchScannedWebApps({
     DATA_WAS_SERVICE_ENTITY,
   )) as Entity;
 
-  const scannedWebAppIds: number[] = [];
+  const filters = { isScanned: true };
 
+  const scannedWebAppIds: number[] = [];
   await apiClient.iterateWebApps(
     async (webApp) => {
       scannedWebAppIds.push(webApp.id!);
@@ -58,16 +61,20 @@ export async function fetchScannedWebApps({
         }),
       );
     },
-    { filters: { isScanned: true } },
+    { filters },
   );
 
   await jobState.setData(DATA_SCANNED_WEBAPP_IDS, scannedWebAppIds);
 
-  // `filter` reflects parameters used to limit the set of web apps processed by the
-  // integration. A value of `'all'` means no filters were used so that all
-  // web apps are processed.
+  await logger.publishEvent({
+    name: 'stats',
+    description: `Found ${
+      scannedWebAppIds.length
+    } web applications with filters: ${JSON.stringify(filters)}`,
+  });
+
   logger.info(
-    { numScannedWebAppIds: scannedWebAppIds.length, filter: 'isScanned' },
+    { numScannedWebAppIds: scannedWebAppIds.length, filters },
     'Scanned web app IDs collected',
   );
 }
@@ -86,8 +93,11 @@ export async function fetchScannedWebAppFindings({
     DATA_WAS_SERVICE_ENTITY,
   )) as Entity;
 
-  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
+  let numWebAppFindingsProcessed = 0;
+  let numPageErrors = 0;
+  const errorCorrelationId = uuid();
 
+  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateWebAppFindings(
     scannedWebAppIds,
     async (finding) => {
@@ -122,15 +132,32 @@ export async function fetchScannedWebAppFindings({
           'Web app finding has no QID',
         );
       }
+
+      numWebAppFindingsProcessed++;
     },
     {
       onRequestError(pageIds, err) {
         logger.error(
-          { pageIds, err },
+          { pageIds, err, errorCorrelationId },
           'Error ingesting page of web app findings',
         );
+        numPageErrors++;
       },
     },
+  );
+
+  await logger.publishEvent({
+    name: 'stats',
+    description: `Processed ${numWebAppFindingsProcessed} web application findings${
+      numPageErrors > 0
+        ? `, encountered ${numPageErrors} errors (errorId="${errorCorrelationId}")`
+        : ''
+    }`,
+  });
+
+  logger.info(
+    { numWebAppFindingsProcessed },
+    'Processed web application findings',
   );
 }
 
