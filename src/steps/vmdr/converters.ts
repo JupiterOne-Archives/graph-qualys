@@ -303,7 +303,8 @@ function getHostIPAddresses(host: assets.HostAsset) {
 
 function determinePlatform(hostAsset: assets.HostAsset): string | undefined {
   let os = hostAsset.os;
-  if (!os) {
+
+  if (typeof os !== 'string') {
     return undefined;
   }
 
