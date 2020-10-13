@@ -9,6 +9,8 @@
 - Additional logging per API request
 - Add queuing mechanism for web app findings and host detail requests
 - Set 3 minute timeout on host details and web app findings page requests
+- Allow passing in `VM_SCAN_SINCE_MS` environment variable that is used to
+  custom configure a date range for debugging.
 
 ## 4.2.5 2020-10-12
 
