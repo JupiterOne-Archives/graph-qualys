@@ -154,7 +154,11 @@ export function createHostFindingEntity(
     entityData: {
       // Do NOT include the host in every Finding, there will be a relationship to it.
       // Esp. avoid storing the DETECTION_LIST by accident, it will exhaust disk storage.
-      source: detection,
+      // source: detection, // TODO fix data uploads to support gzipped, large raw data
+      source: {
+        status: 'SKIPPED',
+        reason: 'Raw data for detection entities currently disabled',
+      },
       assign: {
         ...convertProperties(detection),
 

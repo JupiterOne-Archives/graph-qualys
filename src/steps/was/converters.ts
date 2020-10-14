@@ -16,7 +16,11 @@ import { ENTITY_TYPE_WEBAPP_FINDING } from './constants';
 export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
   return createIntegrationEntity({
     entityData: {
-      source: finding,
+      // source: finding,
+      source: {
+        status: 'SKIPPED',
+        reason: 'Raw data for detection entities currently disabled',
+      },
       assign: {
         ...convertProperties(finding),
 
