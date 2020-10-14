@@ -12,7 +12,9 @@
 
 - Additional logging per API request to ensure paginated requests are advancing
   through large sets of data
-- Add concurrency mechanism for web app findings and host detail requests
+- Add concurrency mechanism for web app findings requests
+- Add concurrency mechanism for host detail requests
+- Add concurrency mechanism for host detections requests
 - Set 5 minute timeout on host details and web app findings page requests
 - Allow passing in `VM_SCAN_SINCE_MS` environment variable that is used to
   custom configure a date range for debugging.

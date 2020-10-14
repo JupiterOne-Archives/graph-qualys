@@ -34,14 +34,30 @@ import {
   ListQualysVulnerabilitiesResponse,
 } from './types/vmpc';
 import { ListWebAppFindingsFilters } from './types/was';
-import { toArray } from './util';
+import { calculateConcurrency, toArray } from './util';
 import { buildServiceRequestBody } from './was/util';
 
 export * from './types';
 
+/**
+ * Number of host IDs to fetch per request.
+ */
 const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
+
+/**
+ * Number of hosts to fetch details for per request.
+ */
 const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
-const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 250;
+
+/**
+ * Number of hosts to fetch detections for per request. This is NOT the number
+ * of detections, an important distinction!
+ */
+const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 1000;
+
+/**
+ * Number of Qualys vulnerabilities to fetch details for per request.
+ */
 const DEFAULT_VULNERABILITIES_PAGE_SIZE = 250;
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
@@ -586,6 +602,15 @@ export class QualysAPIClient {
    * vulnerability database by QID, but the findings of vulnerabilities for a
    * host.
    *
+   * > Maximum benefit has seen when the batch size is set evenly throughout the
+   * > number of parallel threads used. For example, a host detection call
+   * > resulting in a return of 100k assets, and using 10 threads in parallel,
+   * > would benefit the most by using a batch size of (100,000 / 10) = 10,000.
+   * > To reduce having one thread slow down the entire process by hitting a
+   * > congested server, you can break this out further into batches of 5,000
+   * > hosts, resulting in 20 output files.
+   * >   - https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
+   *
    * @param hostIds the set of QWEB host IDs to fetch detections
    * @param iteratee receives each host and its detections
    */
@@ -597,11 +622,13 @@ export class QualysAPIClient {
     }>,
     options?: {
       pagination?: { limit: number };
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
-    const fetchHostDetections = async (ids: QWebHostId[]) => {
-      const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
+    const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
 
+    const fetchHostDetections = async (ids: QWebHostId[]) => {
       const params = new URLSearchParams({
         action: 'list',
         show_tags: '1',
@@ -632,14 +659,30 @@ export class QualysAPIClient {
       }
     };
 
-    // Starting simple, sequential requests for pages. Once client supports
-    // concurrency, add to queue to allow concurrency control.
+    const requestQueue = new PQueue({
+      concurrency: calculateConcurrency(this.rateLimitState),
+    });
+
+    this.onResponse((event) => {
+      if (event.url === endpoint) {
+        requestQueue.concurrency = calculateConcurrency(this.rateLimitState);
+      }
+    });
+
     for (const ids of chunk(
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
     )) {
-      await fetchHostDetections(ids);
+      requestQueue
+        .add(async () => {
+          await fetchHostDetections(ids);
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
+
+    await requestQueue.onIdle();
   }
 
   /**

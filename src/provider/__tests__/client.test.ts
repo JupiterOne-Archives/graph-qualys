@@ -1069,16 +1069,20 @@ describe('iterateHostDetections', () => {
       requestCount++;
     });
 
-    await expect(
-      createClient().iterateHostDetections(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/Bad Request/);
+    const onRequestError = jest.fn();
+    await createClient().iterateHostDetections(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
 
     expect(requestCount).toBe(1);
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
   test('some', async () => {

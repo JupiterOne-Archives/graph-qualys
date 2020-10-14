@@ -156,7 +156,7 @@ export async function fetchScannedHostDetails({
     name: 'stats',
     description: `Processed ${totalHostsProcessed} host details${
       totalPageErrors > 0
-        ? `, encountered ${totalPageErrors} errors (errorId="${errorCorrelationId}")`
+        ? `, encountered errors on ${totalPageErrors} pages (errorId="${errorCorrelationId}")`
         : ''
     }`,
   });
@@ -184,8 +184,11 @@ export async function fetchScannedHostFindings({
     DATA_VMDR_SERVICE_ENTITY,
   )) as Entity;
 
-  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
+  let totalHostsProcessed = 0;
+  const totalPageErrors = 0;
+  const errorCorrelationId = uuid();
 
+  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
@@ -234,13 +237,27 @@ export async function fetchScannedHostFindings({
         DATA_HOST_VULNERABILITY_FINDING_KEYS,
         vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
       );
+
+      totalHostsProcessed++;
+    },
+    {
+      onRequestError(pageIds, err) {
+        logger.error(
+          { pageIds, err, errorCorrelationId },
+          'Error ingesting detections processing page of hosts',
+        );
+      },
     },
   );
 
-  // await logger.publishEvent({
-  //   name: 'stats',
-  //   description: `Processed ${vulnerabilityFindingKeysCollector.totalFindings()} host detections`,
-  // });
+  logger.publishEvent({
+    name: 'stats',
+    description: `Processed detections for ${totalHostsProcessed} hosts${
+      totalPageErrors > 0
+        ? `, encountered errors on ${totalPageErrors} pages (errorId="${errorCorrelationId}")`
+        : ''
+    }`,
+  });
 }
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
