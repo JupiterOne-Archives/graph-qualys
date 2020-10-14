@@ -26,6 +26,8 @@
   advertised in the docs)
 - Syntax error in `getTargetsForDetectionHost` cause step to fail
 - All host details and detections added to raw data of every host Finding entity
+- Pagination of web app findings
+- Generation of XML filters for web app API requests
 
 ## 4.2.5 2020-10-12
 

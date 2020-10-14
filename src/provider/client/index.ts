@@ -33,8 +33,9 @@ import {
   ListHostDetectionsResponse,
   ListQualysVulnerabilitiesResponse,
 } from './types/vmpc';
+import { ListWebAppFindingsFilters } from './types/was';
 import { toArray } from './util';
-import { buildFilterXml } from './was/util';
+import { buildServiceRequestBody } from './was/util';
 
 export * from './types';
 
@@ -195,19 +196,6 @@ export class QualysAPIClient {
   ): Promise<void> {
     const endpoint = '/qps/rest/3.0/search/was/webapp';
 
-    const filterXml = options?.filters ? buildFilterXml(options.filters) : '';
-
-    const body = ({ limit, offset }: { limit: number; offset: number }) => {
-      return `
-        <ServiceRequest>
-          <preferences>
-            <limitResults>${limit}</limitResults>
-            <startFromOffset>${offset}</startFromOffset>
-          </preferences>
-          ${filterXml}
-        </ServiceRequest>`;
-    };
-
     // The WAS APIs have no rate limits on them; iterate in smaller batches to
     // keep memory pressure low.
     const limit = options?.pagination?.limit || 100;
@@ -222,7 +210,11 @@ export class QualysAPIClient {
           headers: {
             'Content-Type': 'text/xml',
           },
-          body: body({ limit, offset }),
+          body: buildServiceRequestBody({
+            limit,
+            offset,
+            filters: options?.filters,
+          }),
         },
       );
 
@@ -273,67 +265,77 @@ export class QualysAPIClient {
     webAppIds: number[],
     iteratee: ResourceIteratee<was.WebAppFinding>,
     options?: {
-      pagination?: { limit: number };
+      filters?: was.ListWebAppFindingsFilters;
+      pagination?: { limit: number; offset?: number };
       // TODO make this a required argument and update tests
       onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchWebAppFindings = async (ids: number[]) => {
       const endpoint = '/qps/rest/3.0/search/was/finding/';
+      const filters: ListWebAppFindingsFilters = {
+        ...options?.filters,
+        'webApp.id': ids,
+      };
 
-      const body = `
-      <ServiceRequest>
-        <preferences>
-          <limitResults>${ids.length}</limitResults>
-        </preferences>
-        <filters>
-          <Criteria field="webApp.id" operator="IN">${ids.join(',')}</Criteria>
-        </filters>
-      </ServiceRequest>`;
+      // The WAS APIs have no rate limits on them; iterate in smaller batches to
+      // keep memory pressure low.
+      const limit = options?.pagination?.limit || 250;
+      let offset = options?.pagination?.offset || 1;
 
-      const response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(endpoint, {}),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/xml',
+      let hasMoreRecords = true;
+      do {
+        const response = await this.executeAuthenticatedAPIRequest(
+          this.qualysUrl(endpoint, {}),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'text/xml',
+            },
+            body: buildServiceRequestBody({ limit, offset, filters }),
+            timeout: 1000 * 60 * 5,
           },
-          body,
-          timeout: 1000 * 60 * 5,
-        },
-      );
+        );
 
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as was.ListWebAppFindingsResponse;
+        const responseText = await response.text();
+        const jsonFromXml = xmlParser.parse(
+          responseText,
+        ) as was.ListWebAppFindingsResponse;
 
-      const responseCode = jsonFromXml.ServiceResponse?.responseCode;
-      if (responseCode && responseCode !== 'SUCCESS') {
-        throw new IntegrationProviderAPIError({
-          cause: new Error(
-            `Unexpected responseCode in ServiceResponse: ${responseCode}`,
-          ),
-          endpoint,
-          status: response.status,
-          statusText: responseCode,
-        });
-      }
+        const responseCode = jsonFromXml.ServiceResponse?.responseCode;
+        if (responseCode && responseCode !== 'SUCCESS') {
+          throw new IntegrationProviderAPIError({
+            cause: new Error(
+              `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+            ),
+            endpoint,
+            status: response.status,
+            statusText: responseCode,
+          });
+        }
 
-      return toArray(jsonFromXml.ServiceResponse?.data?.Finding);
+        for (const finding of toArray(
+          jsonFromXml.ServiceResponse?.data?.Finding,
+        )) {
+          await iteratee(finding);
+        }
+
+        hasMoreRecords = !!jsonFromXml.ServiceResponse?.hasMoreRecords;
+
+        if (hasMoreRecords) {
+          offset += limit;
+        }
+      } while (hasMoreRecords);
     };
 
     const webAppFindingsQueue = new PQueue({
       concurrency: 3,
     });
 
-    for (const ids of chunk(webAppIds, options?.pagination?.limit || 300)) {
+    for (const ids of chunk(webAppIds, 10)) {
       webAppFindingsQueue
         .add(async () => {
-          const findings = await fetchWebAppFindings(ids);
-          for (const finding of findings) {
-            await iteratee(finding);
-          }
+          await fetchWebAppFindings(ids);
         })
         .catch((err) => {
           options?.onRequestError?.(ids, err);

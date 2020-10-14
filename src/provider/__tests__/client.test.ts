@@ -594,23 +594,137 @@ describe('iterateWebAppFindings', () => {
     expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
-  test('some', async () => {
+  test('mocked', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'iterateWebAppFindings',
+      name: 'iterateWebAppFindingsMocked',
+    });
+
+    const set1Responses = [
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+ <responseCode>SUCCESS</responseCode>
+ <count>2</count>
+ <hasMoreRecords>true</hasMoreRecords>
+ <data>
+ <Finding>
+ <id>156582</id>
+ <uniqueId>8a2c4d51-6d28-2b92-e053-2943720a74ab</uniqueId>
+ <qid>150124</qid>
+ <severity>3</severity>
+ <url>
+ <![CDATA[http://funkytown.vuln.qa.qualys.com/cassium/xss/]]>
+ </url>
+ <status>ACTIVE</status>
+ <firstDetectedDate>2017-04-28T09:36:13Z</firstDetectedDate>
+ <lastDetectedDate>2018-02-21T09:03:32Z</lastDetectedDate>
+ <lastTestedDate>2018-02-21T09:03:32Z</lastTestedDate>
+ <timesDetected>3</timesDetected>
+ </Finding>
+ <Finding>
+ <id>156583</id>
+ <uniqueId>22222222-6d28-2b92-e053-2943720a74ab</uniqueId>
+ <qid>150125</qid>
+ <severity>3</severity>
+ <url>
+ <![CDATA[http://funkytown.vuln.qa.qualys.com/cassium/xss/]]>
+ </url>
+ <status>ACTIVE</status>
+ <firstDetectedDate>2017-04-28T09:36:13Z</firstDetectedDate>
+ <lastDetectedDate>2018-02-21T09:03:32Z</lastDetectedDate>
+ <lastTestedDate>2018-02-21T09:03:32Z</lastTestedDate>
+ <timesDetected>3</timesDetected>
+ </Finding>
+ </data>
+</ServiceResponse>
+      `,
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+ <responseCode>SUCCESS</responseCode>
+ <count>1</count>
+ <hasMoreRecords>false</hasMoreRecords>
+ <data>
+ <Finding>
+ <id>156584</id>
+ <uniqueId>33333333-6d28-2b92-e053-2943720a74ab</uniqueId>
+ <qid>150126</qid>
+ <severity>3</severity>
+ <url>
+ <![CDATA[http://funkytown.vuln.qa.qualys.com/cassium/xss/]]>
+ </url>
+ <status>ACTIVE</status>
+ <firstDetectedDate>2017-04-28T09:36:13Z</firstDetectedDate>
+ <lastDetectedDate>2018-02-21T09:03:32Z</lastDetectedDate>
+ <lastTestedDate>2018-02-21T09:03:32Z</lastTestedDate>
+ <timesDetected>3</timesDetected>
+ </Finding>
+ </data>
+</ServiceResponse>
+      `,
+    ].reverse();
+
+    const set2Responses = [
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+ <responseCode>SUCCESS</responseCode>
+ <count>0</count>
+ <hasMoreRecords>false</hasMoreRecords>
+</ServiceResponse>
+      `,
+    ].reverse();
+
+    recording.server.any().intercept((req, res) => {
+      if (/1,2,3,4,5,6,7,8,9,10/.test(req.body)) {
+        if (set1Responses.length === 0)
+          throw 'No more responses to give from set1Responses';
+        res.status(200).send(set1Responses.pop());
+      }
+
+      if (/11,12/.test(req.body)) {
+        if (set2Responses.length === 0)
+          throw 'No more responses to give from set2Responses';
+        res.status(200).send(set2Responses.pop());
+      }
     });
 
     const client = createClient();
-    const webappIds = await client.fetchScannedWebAppIds();
-
     const findings: was.WebAppFinding[] = [];
 
-    await client.iterateWebAppFindings(webappIds, (webapp) => {
-      findings.push(webapp);
-    });
+    await client.iterateWebAppFindings(
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      (webapp) => {
+        findings.push(webapp);
+      },
+      { pagination: { limit: 2 } },
+    );
 
-    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.length).toEqual(3);
   });
+
+  // TODO enable once trial account is working again, re-record with pagination
+  // test('some', async () => {
+  //   recording = setupQualysRecording({
+  //     directory: __dirname,
+  //     name: 'iterateWebAppFindings',
+  //   });
+
+  //   const client = createClient();
+  //   const webappIds = await client.fetchScannedWebAppIds();
+
+  //   const findings: was.WebAppFinding[] = [];
+
+  //   await client.iterateWebAppFindings(webappIds, (webapp) => {
+  //     findings.push(webapp);
+  //   });
+
+  //   expect(findings.length).toBeGreaterThan(0);
+  // });
 });
 
 describe('fetchScannedHostIds', () => {

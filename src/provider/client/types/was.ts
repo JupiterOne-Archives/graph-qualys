@@ -1,5 +1,5 @@
 import { QualyNumericSeverity } from '../../../types';
-import { PossibleArray, ISODateString } from './util';
+import { ISODateString, PossibleArray } from './util';
 
 export type ListWebAppsFilterInputParameter =
   | 'id'
@@ -15,7 +15,10 @@ export type ListWebAppsFilterInputParameter =
   | 'lastScan.date';
 
 export type ListWebAppsFilters = Partial<
-  Record<ListWebAppsFilterInputParameter, string | boolean | number>
+  Record<
+    ListWebAppsFilterInputParameter,
+    string | string[] | boolean | number | number[]
+  >
 >;
 
 export type ListWebAppsPagination = { limit: number; offset?: number };
@@ -54,6 +57,15 @@ export type Tags = {
 };
 
 // https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd
+
+export type ListWebAppFindingsFilterInputParameter = 'webApp.id';
+
+export type ListWebAppFindingsFilters = Partial<
+  Record<
+    ListWebAppFindingsFilterInputParameter,
+    string | string[] | boolean | number | number[]
+  >
+>;
 
 export type ListWebAppFindingsResponse = {
   ServiceResponse?: ServiceResponse<WebAppFindingsData>;
