@@ -151,8 +151,27 @@ export class QualysAPIClient {
     this.events.on(ClientEvents.DELAYED_REQUEST, eventHandler);
   }
 
-  public onResponse(eventHandler: (event: ClientResponseEvent) => void): void {
-    this.events.on(ClientEvents.RESPONSE, eventHandler);
+  public onResponse(
+    eventHandler: (event: ClientResponseEvent) => void,
+    options?: { path?: string },
+  ): (...args: any[]) => void {
+    if (options?.path) {
+      const path = options.path;
+      const registeredHandler = (event: ClientResponseEvent) => {
+        if (event.url.includes(path)) {
+          eventHandler(event);
+        }
+      };
+      this.events.on(ClientEvents.RESPONSE, registeredHandler);
+      return registeredHandler;
+    } else {
+      this.events.on(ClientEvents.RESPONSE, eventHandler);
+      return eventHandler;
+    }
+  }
+
+  public removeResponseListener(listener: (...args: any[]) => void): void {
+    this.events.removeListener(ClientEvents.RESPONSE, listener);
   }
 
   public async verifyAuthentication(): Promise<void> {
@@ -659,15 +678,20 @@ export class QualysAPIClient {
       }
     };
 
+    // Start with the standard subscription level until we know the current
+    // state after we get a response.
+    let rateLimitState = STANDARD_RATE_LIMIT_STATE;
     const requestQueue = new PQueue({
-      concurrency: calculateConcurrency(this.rateLimitState),
+      concurrency: calculateConcurrency(rateLimitState),
     });
 
-    this.onResponse((event) => {
-      if (event.url === endpoint) {
-        requestQueue.concurrency = calculateConcurrency(this.rateLimitState);
-      }
-    });
+    const concurrencyResponseHandler = this.onResponse(
+      (event) => {
+        rateLimitState = event.rateLimitState;
+        requestQueue.concurrency = calculateConcurrency(rateLimitState);
+      },
+      { path: endpoint },
+    );
 
     for (const ids of chunk(
       hostIds,
@@ -683,6 +707,8 @@ export class QualysAPIClient {
     }
 
     await requestQueue.onIdle();
+
+    this.removeResponseListener(concurrencyResponseHandler);
   }
 
   /**
@@ -786,6 +812,7 @@ export class QualysAPIClient {
     });
 
     // NOTE: This is NOT thread safe at this time.
+    // TODO: Do not track on the instance, should be endpoint-specific state
     this.rateLimitState = apiResponse.rateLimitState;
 
     if (!apiResponse.completed && apiResponse.request.retryable) {
