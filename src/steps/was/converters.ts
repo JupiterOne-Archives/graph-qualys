@@ -18,8 +18,9 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
     entityData: {
       // source: finding,
       source: {
-        status: 'SKIPPED',
-        reason: 'Raw data for detection entities currently disabled',
+        uploadStatus: 'SKIPPED',
+        uploadStatusReason:
+          'Raw data for detection entities currently disabled',
       },
       assign: {
         ...convertProperties(finding),

@@ -156,8 +156,9 @@ export function createHostFindingEntity(
       // Esp. avoid storing the DETECTION_LIST by accident, it will exhaust disk storage.
       // source: detection, // TODO fix data uploads to support gzipped, large raw data
       source: {
-        status: 'SKIPPED',
-        reason: 'Raw data for detection entities currently disabled',
+        uploadStatus: 'SKIPPED',
+        uploadStatusReason:
+          'Raw data for detection entities currently disabled',
       },
       assign: {
         ...convertProperties(detection),
