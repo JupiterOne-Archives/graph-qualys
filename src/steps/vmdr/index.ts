@@ -13,7 +13,6 @@ import { QWebHostId } from '../../provider/client';
 import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
-import { getVmScanSinceDate } from '../../util/date';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
@@ -47,7 +46,7 @@ export async function fetchScannedHostIds({
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   const filters: ListScannedHostIdsFilters = {
-    vm_scan_since: getVmScanSinceDate(),
+    vm_scan_since: instance.config.minScannedSinceISODate,
   };
 
   const loggerFetch = logger.child({ filters });

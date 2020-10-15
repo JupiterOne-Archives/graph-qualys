@@ -36,7 +36,10 @@ export async function fetchScannedWebApps({
     DATA_WAS_SERVICE_ENTITY,
   )) as Entity;
 
-  const filters = { isScanned: true };
+  const filters = {
+    isScanned: true,
+    'lastScan.date': instance.config.minScannedSinceISODate,
+  };
 
   const scannedWebAppIds: number[] = [];
   await apiClient.iterateWebApps(

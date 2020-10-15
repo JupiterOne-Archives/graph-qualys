@@ -1,0 +1,1 @@
+export const DEFAULT_SCANNED_SINCE_DAYS = 7;

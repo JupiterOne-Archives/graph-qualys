@@ -1,4 +1,4 @@
-import { getVmScanSinceDate } from './date';
+import { getScannedSinceDate } from './date';
 
 describe('#getVmScanSinceDate', () => {
   beforeEach(() => {
@@ -7,20 +7,20 @@ describe('#getVmScanSinceDate', () => {
     jest.resetAllMocks();
   });
 
-  test('should default to 30 days', () => {
+  test('provided days', () => {
     jest.spyOn(Date, 'now').mockImplementationOnce(() => 1602528224084);
-    expect(getVmScanSinceDate()).toEqual('2020-09-12T18:43:44Z');
+    expect(getScannedSinceDate(30)).toEqual('2020-09-12T18:43:44Z');
   });
 
-  test('should allow configuring range in days using environment variable', () => {
+  test('VM_SCAN_SINCE_DAYS environment variable', () => {
     jest.spyOn(Date, 'now').mockImplementationOnce(() => 1602528224084);
     process.env.VM_SCAN_SINCE_DAYS = '7';
-    expect(getVmScanSinceDate()).toEqual('2020-10-05T18:43:44Z');
+    expect(getScannedSinceDate(30)).toEqual('2020-10-05T18:43:44Z');
   });
 
-  test('should allow configuring range in milliseconds using environment variable', () => {
+  test('VM_SCAN_SINCE_MS environment variable', () => {
     jest.spyOn(Date, 'now').mockImplementationOnce(() => 1602528224084);
     process.env.VM_SCAN_SINCE_MS = '3600000';
-    expect(getVmScanSinceDate()).toEqual('2020-10-12T17:43:44Z');
+    expect(getScannedSinceDate(30)).toEqual('2020-10-12T17:43:44Z');
   });
 });

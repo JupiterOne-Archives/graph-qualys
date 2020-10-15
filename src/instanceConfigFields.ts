@@ -125,21 +125,14 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
    * Adds scanned web apps request filter parameter `"lastScan.date"` by
    * calculating the time since the current execution start time.
    *
-   * The integration should store the time since it began ingesting this data so
-   * that if this setting is changed, it can determine that it must go back
-   * further to satisfy the request.
-   *
-   * Uncommenting this setting will have no effect without code changes; it's
-   * here for documenation.
-   *
-   * TODO: Request only web apps scanned since days
-   *
-   * TODO: Request only hosts scanned since days
+   * TODO: The integration should store the time since it began ingesting this
+   * data so that if this setting is changed, it can determine that it must go
+   * back further to satisfy the request.
    */
-  // minScannedSinceDays: {
-  //   type: 'string',
-  //   // default: 7
-  // },
+  minScannedSinceDays: {
+    type: 'string',
+    // default: DEFAULT_SCANNED_SINCE_DAYS
+  },
 
   /**
    * Adds host detections request filter parameter `"detection_updated_since"`

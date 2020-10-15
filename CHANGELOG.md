@@ -7,6 +7,8 @@
 - Job event log `stats` entries to provide some count information
 - Handle failure to fetch a page of web app findings (timeout, max retries)
 - Handle failure to fetch a page of host details (timeout, max retries)
+- Integration instance config `minScannedSinceDays` to control how far back to
+  find scanned web apps and hosts, limiting findings to these apps/hosts
 
 ### Changed
 
