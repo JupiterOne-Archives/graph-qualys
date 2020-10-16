@@ -1,5 +1,4 @@
 import {
-  convertProperties,
   createIntegrationEntity,
   createMappedRelationship,
   Entity,
@@ -161,8 +160,6 @@ export function createHostFindingEntity(
           'Raw data for detection entities currently disabled',
       },
       assign: {
-        ...convertProperties(detection),
-
         _type: ENTITY_TYPE_HOST_FINDING,
         _key: key,
         _class: 'Finding',

@@ -23,6 +23,9 @@
 - Add concurrency mechanism for host detections requests
 - Set 5 minute timeout on host details and web app findings page requests
 - Renamed `SCANNED_SINCE_DAYS` to `MIN_SCANNED_SINCE_DAYS`
+- Removed used of `...convertProperties` when creating `Finding` entities to
+  avoid excessive amounts of data that are not defined by the data model and are
+  often rejected by J1 for size limits
 
 ### Fixed
 

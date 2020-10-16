@@ -1,5 +1,4 @@
 import {
-  convertProperties,
   createIntegrationEntity,
   Entity,
   parseTimePropertyValue,
@@ -23,8 +22,6 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
           'Raw data for detection entities currently disabled',
       },
       assign: {
-        ...convertProperties(finding),
-
         _type: ENTITY_TYPE_WEBAPP_FINDING,
         _key: finding.uniqueId,
         _class: 'Finding',
