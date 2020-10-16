@@ -33,6 +33,7 @@ import {
   ListHostDetectionsResponse,
   ListQualysVulnerabilitiesResponse,
 } from './types/vmpc';
+import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
 import { ListWebAppFindingsFilters } from './types/was';
 import { calculateConcurrency, toArray } from './util';
 import { buildServiceRequestBody } from './was/util';
@@ -60,9 +61,38 @@ const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 1000;
  */
 const DEFAULT_VULNERABILITIES_PAGE_SIZE = 250;
 
+const CONCURRENCY_LIMIT_RESPONSE_ERROR_CODE = 1960;
+const RATE_LIMIT_RESPONSE_ERROR_CODE = 1965;
+
+const RETRYABLE_409_CODES = [
+  CONCURRENCY_LIMIT_RESPONSE_ERROR_CODE,
+  RATE_LIMIT_RESPONSE_ERROR_CODE,
+];
+
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
-  noRetry: [400, 401, 403, 404, 413],
+  noRetryStatusCodes: [400, 401, 403, 404, 413],
+  canRetry: async (response) => {
+    if (response.status === 409) {
+      try {
+        const body = await response.text();
+        const errorResponse = xmlParser.parse(body) as QualysV2ApiErrorResponse;
+        if (errorResponse.SIMPLE_RETURN) {
+          return {
+            retryable: RETRYABLE_409_CODES.includes(
+              errorResponse.SIMPLE_RETURN.RESPONSE.CODE,
+            ),
+            reason: errorResponse.SIMPLE_RETURN.RESPONSE.TEXT,
+          };
+        }
+      } catch (err) {
+        return {
+          retryable: false,
+          reason: `Could not read 409 response body: ${err.message}`,
+        };
+      }
+    }
+  },
 };
 
 /**
@@ -837,11 +867,16 @@ export class QualysAPIClient {
     }
 
     if (apiResponse.status >= 400) {
+      let statusText = apiResponse.statusText;
+      if (apiResponse.request.retryDecision) {
+        statusText = `${statusText} ${apiResponse.request.retryDecision.reason}`;
+      }
+
       const err = new Error(
         `API request error for ${info}: ${apiResponse.statusText}`,
       );
       Object.assign(err, {
-        statusText: apiResponse.statusText,
+        statusText,
         status: apiResponse.status,
         code: apiResponse.status,
       });

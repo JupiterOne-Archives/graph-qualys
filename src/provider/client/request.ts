@@ -3,6 +3,7 @@ import EventEmitter from 'events';
 import { Response } from 'node-fetch';
 
 import {
+  CanRetryDecision,
   ClientDelayedRequestEvent,
   ClientEvent,
   ClientEvents,
@@ -74,6 +75,7 @@ type APIRequest = {
 type APIRequestAttempt = APIRequest & {
   completed: boolean;
   retryable: boolean;
+  retryDecision?: CanRetryDecision;
   totalAttempts: number;
   retryAttempts: number;
   rateLimitedAttempts: number;
@@ -152,7 +154,24 @@ async function attemptAPIRequest(
     ? request.rateLimitedAttempts + 1
     : request.rateLimitedAttempts;
 
-  const retryable = !retryConfig.noRetry.includes(response.status);
+  const retryStatusCodePermitted = !retryConfig.noRetryStatusCodes.includes(
+    response.status,
+  );
+
+  let retryDecision: CanRetryDecision = {
+    retryable: retryStatusCodePermitted,
+    reason: `Response status code is${
+      retryStatusCodePermitted ? '' : ' not'
+    } retryable`,
+  };
+
+  if (retryDecision.retryable && retryConfig.canRetry) {
+    const canRetryDecision = await retryConfig.canRetry(response);
+    if (canRetryDecision) {
+      retryDecision = canRetryDecision;
+    }
+  }
+
   const retryAttempts =
     !completed && !rateLimited
       ? request.retryAttempts + 1
@@ -164,7 +183,8 @@ async function attemptAPIRequest(
     request: {
       ...request,
       completed,
-      retryable,
+      retryable: retryDecision.retryable,
+      retryDecision,
       rateLimitState: responseRateLimitState,
       totalAttempts,
       retryAttempts,
@@ -183,7 +203,7 @@ async function attemptAPIRequest(
     status: response.status,
     statusText: response.statusText,
     completed,
-    retryable,
+    retryable: retryDecision.retryable,
     retryConfig: request.retryConfig,
     retryAttempts,
     rateLimitConfig: request.rateLimitConfig,

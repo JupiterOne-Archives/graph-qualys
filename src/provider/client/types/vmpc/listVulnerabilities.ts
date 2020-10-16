@@ -1,16 +1,6 @@
 import { QualyNumericSeverity } from '../../../../types';
 import { QWebHostId } from '../index';
-import { ISODateString, PossibleArray } from '../util';
-
-export type QualysVulnerabilitiesErrorResponse = {
-  SIMPLE_RETURN: {
-    RESPONSE: {
-      DATETIME: ISODateString;
-      CODE: number;
-      TEXT: string;
-    };
-  };
-};
+import { PossibleArray } from '../util';
 
 // https://qualysapi.qualys.com/api/2.0/fo/knowledge_base/vuln/knowledge_base_vuln_list_output.dtd
 export type ListQualysVulnerabilitiesResponse = {

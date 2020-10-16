@@ -40,6 +40,7 @@
 - All host details and detections added to raw data of every host Finding entity
 - Pagination of web app findings
 - Generation of XML filters for web app API requests
+- Handle non-rate limit `409` responses and report reason for not retrying
 
 ## 4.2.5 2020-10-12
 

@@ -1331,6 +1331,36 @@ describe('executeAPIRequest', () => {
       </RESPONSE>
     </SIMPLE_RETURN>`;
 
+  const incompleteRegistrationXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>2003</CODE>
+      <TEXT>  Registration must be completed before API requests will be served for this account</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>SECONDS_TO_WAIT</KEY>
+      <VALUE>68928</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
+
+  const secureIdRequiredXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>2011</CODE>
+      <TEXT>   SecureID authentication is required for this account, so API access is blocked</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>SECONDS_TO_WAIT</KEY>
+      <VALUE>68928</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
+
   test('waits towait-sec on 409 rate limit response', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
@@ -1522,7 +1552,7 @@ describe('executeAPIRequest', () => {
   test('does not retry authentication error', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'executeAPIRequestUnauthRequest',
+      name: 'executeAPIRequestUnauthorized',
       options: { recordFailedRequests: true },
     });
 
@@ -1541,6 +1571,60 @@ describe('executeAPIRequest', () => {
 
     await expect(client.verifyAuthentication()).rejects.toThrow(
       /401 Unauthorized/,
+    );
+
+    expect(requestCount).toBe(1);
+  });
+
+  test('does not retry incomplete registration error', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestIncompleteRegistration',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(409).send(incompleteRegistrationXMLBody);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /409 Conflict.*?Registration must be completed/,
+    );
+
+    expect(requestCount).toBe(1);
+  });
+
+  test('does not retry secure ID required error', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestSecureIdRequired',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(409).send(secureIdRequiredXMLBody);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /409 Conflict.*?SecureID authentication is required/,
     );
 
     expect(requestCount).toBe(1);
