@@ -62,7 +62,7 @@ const DEFAULT_VULNERABILITIES_PAGE_SIZE = 250;
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
-  noRetry: [400, 401, 403, 413],
+  noRetry: [400, 401, 403, 404, 413],
 };
 
 /**
