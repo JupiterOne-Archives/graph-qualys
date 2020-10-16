@@ -22,7 +22,7 @@
 - Add concurrency mechanism for host detail requests
 - Add concurrency mechanism for host detections requests
 - Set 5 minute timeout on host details and web app findings page requests
-- Renamed `SCANNED_SINCE_DAYS` to `MIN_SCANNED_SINCE_DAYS`
+- Renamed `VM_SCAN_SINCE_DAYS` to `MIN_SCANNED_SINCE_DAYS`
 - Removed used of `...convertProperties` when creating `Finding` entities to
   avoid excessive amounts of data that are not defined by the data model and are
   often rejected by J1 for size limits
@@ -67,7 +67,7 @@
 
 ### Changed
 
-- Allow passing in `SCANNED_SINCE_DAYS` environment variable that is used to
+- Allow passing in `VM_SCAN_SINCE_DAYS` environment variable that is used to
   custom configure a date range for debugging.
 
 ## 4.2.1 2020-10-12
