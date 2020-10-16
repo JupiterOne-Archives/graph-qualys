@@ -26,6 +26,7 @@
 - Removed used of `...convertProperties` when creating `Finding` entities to
   avoid excessive amounts of data that are not defined by the data model and are
   often rejected by J1 for size limits
+- `Finding.open` is set by checking for `!fixed` status
 
 ### Fixed
 

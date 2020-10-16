@@ -45,7 +45,8 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
         targets: toStringArray([finding.webApp?.name]),
 
         category: 'app-scan',
-        open: 'FIXED' !== finding.status,
+        status: finding.status,
+        open: !finding.status || !/fixed/i.test(finding.status),
       },
     },
   });

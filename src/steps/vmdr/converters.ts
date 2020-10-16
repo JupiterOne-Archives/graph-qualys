@@ -194,7 +194,9 @@ export function createHostFindingEntity(
         isIgnored: detection.IS_IGNORED,
 
         category: 'system-scan',
-        open: true,
+
+        // See comments in `instanceConfigFields.ts`, `vmdrFindingStatuses`
+        open: !detection.STATUS || !/fixed/i.test(detection.STATUS),
 
         targets: getTargetsForDetectionHost(host, hostTargets),
 
