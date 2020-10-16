@@ -707,6 +707,44 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
     expect(findings.length).toEqual(3);
   });
 
+  test('mocked, with date filter', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindingsMocked',
+    });
+
+    let receivedBody: string | undefined;
+    recording.server.any().intercept((req, res) => {
+      receivedBody = req.body;
+
+      res.status(200).send(`
+        <?xml version="1.0" encoding="UTF-8"?>
+  <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+   <responseCode>SUCCESS</responseCode>
+   <count>0</count>
+   <hasMoreRecords>false</hasMoreRecords>
+  </ServiceResponse>
+        `);
+    });
+
+    const client = createClient();
+    const findings: was.WebAppFinding[] = [];
+
+    await client.iterateWebAppFindings(
+      [1],
+      (webapp) => {
+        findings.push(webapp);
+      },
+      { filters: { lastDetectedDate: '2020-09-11T23:00:30Z' } },
+    );
+
+    expect(findings.length).toEqual(0);
+    expect(receivedBody).toMatch(
+      /<Criteria field="lastDetectedDate" operator="EQUALS">2020-09-11T23:00:30Z<\/Criteria>/,
+    );
+  });
+
   // TODO enable once trial account is working again, re-record with pagination
   // test('some', async () => {
   //   recording = setupQualysRecording({
@@ -1146,6 +1184,52 @@ describe('iterateHostDetections', () => {
     );
 
     expect(hosts.length).toBe(2);
+  });
+
+  test('some mocked, date filter', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetectionsMocked',
+    });
+
+    const detectionsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'detections.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const requests = [
+      /detection_updated_since=2020-09-11T23%3A00%3A30Z/,
+    ].reverse();
+
+    recording.server.any().intercept((req, res) => {
+      const expectedBody = requests.pop();
+      if (!expectedBody) throw 'no more requests expected';
+      expect(req.method).toBe('POST');
+      expect(req.body).toMatch(expectedBody);
+      res.status(200).type('application/xml').send(detectionsXml);
+    });
+
+    const hosts: vmpc.DetectionHost[] = [];
+    await createClient().iterateHostDetections(
+      [1],
+      ({ host, detections }) => {
+        hosts.push(host);
+      },
+      {
+        filters: { detection_updated_since: '2020-09-11T23:00:30Z' },
+      },
+    );
+
+    expect(hosts.length).toBeGreaterThan(0);
   });
 });
 

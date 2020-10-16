@@ -9,6 +9,10 @@
 - Handle failure to fetch a page of host details (timeout, max retries)
 - Integration instance config `minScannedSinceDays` to control how far back to
   find scanned web apps and hosts, limiting findings to these apps/hosts
+- Integration instance config `minFindingsSinceDays` to control how far back to
+  find scanned web app findings and host detections
+- Allow passing in `MIN_FINDINGS_SINCE_DAYS` environment variable that is used
+  to custom configure a date range for debugging
 
 ### Changed
 
@@ -18,8 +22,7 @@
 - Add concurrency mechanism for host detail requests
 - Add concurrency mechanism for host detections requests
 - Set 5 minute timeout on host details and web app findings page requests
-- Allow passing in `VM_SCAN_SINCE_MS` environment variable that is used to
-  custom configure a date range for debugging.
+- Renamed `SCANNED_SINCE_DAYS` to `MIN_SCANNED_SINCE_DAYS`
 
 ### Fixed
 
@@ -58,7 +61,7 @@
 
 ### Changed
 
-- Allow passing in `VM_SCAN_SINCE_DAYS` environment variable that is used to
+- Allow passing in `SCANNED_SINCE_DAYS` environment variable that is used to
   custom configure a date range for debugging.
 
 ## 4.2.1 2020-10-12

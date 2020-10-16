@@ -139,6 +139,9 @@ export async function fetchScannedWebAppFindings({
       numWebAppFindingsProcessed++;
     },
     {
+      filters: {
+        lastDetectedDate: instance.config.minFindingsSinceISODate,
+      },
       onRequestError(pageIds, err) {
         logger.error(
           { pageIds, err, errorCorrelationId },

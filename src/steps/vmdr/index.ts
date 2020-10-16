@@ -33,6 +33,7 @@ import {
   getTargetsFromHostAsset,
 } from './converters';
 import { HostAssetTargetsMap } from './types';
+import { config } from '../../../test/config';
 
 /**
  * Fetches the set of scanned host IDs that will be processed by the
@@ -240,6 +241,9 @@ export async function fetchScannedHostFindings({
       totalHostsProcessed++;
     },
     {
+      filters: {
+        detection_updated_since: config.minFindingsSinceISODate,
+      },
       onRequestError(pageIds, err) {
         logger.error(
           { pageIds, err, errorCorrelationId },

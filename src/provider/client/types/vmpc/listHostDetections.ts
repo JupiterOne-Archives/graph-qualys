@@ -3,6 +3,16 @@ import { QWebHostId } from '../index';
 import { ISODateString, PossibleArray } from '../util';
 
 // https://qualysapi.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
+
+export type ListHostDetectionsFilterInputParameter = 'detection_updated_since';
+
+export type ListHostDetectionsFilters = Partial<
+  Record<
+    ListHostDetectionsFilterInputParameter,
+    string | string[] | boolean | number | number[]
+  >
+>;
+
 export type ListHostDetectionsResponse = {
   HOST_LIST_VM_DETECTION_OUTPUT?: ListHostDetectionOutput;
 };

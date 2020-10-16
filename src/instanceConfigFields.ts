@@ -141,21 +141,14 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
    * Adds web app findings request filter parameter `"lastDetectedDate"` by
    * calculating the time since the current execution start time.
    *
-   * The integration should store the time since it began ingesting this data so
-   * that if this setting is changed, it can determine that it must go back
-   * further to satisfy the request.
-   *
-   * Uncommenting this setting will have no effect without code changes; it's
-   * here for documenation.
-   *
-   * TODO: Request only web app findings since days
-   *
-   * TODO: Request only host detections since days
+   * TODO: The integration should store the time since it began ingesting this
+   * data so that if this setting is changed, it can determine that it must go
+   * back further to satisfy the request.
    */
-  // minFindingsSinceDays: {
-  //   type: 'string',
-  //   // default: 7
-  // },
+  minFindingsSinceDays: {
+    type: 'string',
+    // default: DEFAULT_FINDINGS_SINCE_DAYS
+  },
 };
 
 export default instanceConfigFields;
