@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.3.1 2020-10-20
+
 ### Fixed
 
 - Avoid `fetchScannedHostDetails` step failure when no hosts found
