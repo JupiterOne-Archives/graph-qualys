@@ -1,8 +1,8 @@
 import {
-  convertProperties,
   createIntegrationEntity,
   createMappedRelationship,
   Entity,
+  generateRelationshipKey,
   isPublicIp,
   parseTimePropertyValue,
   Relationship,
@@ -50,7 +50,7 @@ export function createServiceScansDiscoveredHostRelationship(
       targetEntity: {
         _class: 'Host',
         _type: ENTITY_TYPE_DISCOVERED_HOST,
-        _key: `qualys-host:${host.qwebHostId!}`,
+        _key: generateHostAssetKey(host),
 
         // Add to the entity's `id` property values that this host is known as
         // in the Qualys system. These values are also added to the
@@ -94,6 +94,12 @@ export function createServiceScansEC2HostRelationship(
   const instanceArn = getEC2HostArn(host);
 
   return createMappedRelationship({
+    // Ensure unique key based on host identity, not EC2 ARN.
+    _key: generateRelationshipKey(
+      RelationshipClass.SCANS,
+      serviceEntity,
+      generateHostAssetKey(host),
+    ),
     _class: RelationshipClass.SCANS,
     // TODO require _type https://github.com/JupiterOne/sdk/issues/347
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
@@ -145,13 +151,15 @@ export function createHostFindingEntity(
 
   return createIntegrationEntity({
     entityData: {
+      // Do NOT include the host in every Finding, there will be a relationship to it.
+      // Esp. avoid storing the DETECTION_LIST by accident, it will exhaust disk storage.
+      // source: detection, // TODO fix data uploads to support gzipped, large raw data
       source: {
-        host,
-        detection,
+        uploadStatus: 'SKIPPED',
+        uploadStatusReason:
+          'Raw data for detection entities currently disabled',
       },
       assign: {
-        ...convertProperties(detection),
-
         _type: ENTITY_TYPE_HOST_FINDING,
         _key: key,
         _class: 'Finding',
@@ -186,7 +194,9 @@ export function createHostFindingEntity(
         isIgnored: detection.IS_IGNORED,
 
         category: 'system-scan',
-        open: true,
+
+        // See comments in `instanceConfigFields.ts`, `vmdrFindingStatuses`
+        open: !detection.STATUS || !/fixed/i.test(detection.STATUS),
 
         targets: getTargetsForDetectionHost(host, hostTargets),
 
@@ -233,7 +243,11 @@ export function getTargetsForDetectionHost(
   const targets = new Set(
     toStringArray([host.ID, host.IP, host.EC2_INSTANCE_ID]),
   );
-  if (assetTargets) assetTargets.forEach(targets.add);
+  if (assetTargets) {
+    for (const target of assetTargets) {
+      targets.add(target);
+    }
+  }
   return [...targets];
 }
 
@@ -265,20 +279,22 @@ export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
   }
 }
 
-export function getEC2InstanceId(
-  hostAsset: assets.HostAsset,
-): string | undefined {
+function generateHostAssetKey(host: assets.HostAsset): string {
+  return `qualys-host:${host.qwebHostId!}`;
+}
+
+function getEC2InstanceId(hostAsset: assets.HostAsset): string | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
   if ('EC_2' === ec2?.type) {
     return ec2.instanceId;
   }
 }
 
-export function getHostName(host: assets.HostAsset): string {
+function getHostName(host: assets.HostAsset): string {
   return host.dnsHostName || host.fqdn || host.address || String(host.id!);
 }
 
-export function getHostIPAddresses(host: assets.HostAsset) {
+function getHostIPAddresses(host: assets.HostAsset) {
   return {
     ipAddress: host.address,
     publicIpAddress:
@@ -288,9 +304,7 @@ export function getHostIPAddresses(host: assets.HostAsset) {
   };
 }
 
-export function determinePlatform(
-  hostAsset: assets.HostAsset,
-): string | undefined {
+function determinePlatform(hostAsset: assets.HostAsset): string | undefined {
   let os = hostAsset.os;
   if (!os) {
     return undefined;

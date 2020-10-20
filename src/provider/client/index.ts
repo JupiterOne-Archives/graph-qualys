@@ -1,9 +1,12 @@
+import * as crypto from 'crypto';
 import EventEmitter from 'events';
 import xmlParser from 'fast-xml-parser';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
+import PQueue from 'p-queue';
 import querystring from 'querystring';
 import { URLSearchParams } from 'url';
+import { v4 as uuid } from 'uuid';
 
 import {
   IntegrationProviderAPIError,
@@ -30,19 +33,66 @@ import {
   ListHostDetectionsResponse,
   ListQualysVulnerabilitiesResponse,
 } from './types/vmpc';
-import { toArray } from './util';
-import { buildFilterXml } from './was/util';
+import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
+import { ListWebAppFindingsFilters } from './types/was';
+import { calculateConcurrency, toArray } from './util';
+import { buildServiceRequestBody } from './was/util';
 
 export * from './types';
 
+/**
+ * Number of host IDs to fetch per request.
+ */
 const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
-const DEFAULT_HOST_DETAILS_PAGE_SIZE = 1000;
+
+/**
+ * Number of hosts to fetch details for per request.
+ */
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
+
+/**
+ * Number of hosts to fetch detections for per request. This is NOT the number
+ * of detections, an important distinction!
+ */
 const DEFAULT_HOST_DETECTIONS_PAGE_SIZE = 1000;
-const DEFAULT_VULNERABILITIES_PAGE_SIZE = 1000;
+
+/**
+ * Number of Qualys vulnerabilities to fetch details for per request.
+ */
+const DEFAULT_VULNERABILITIES_PAGE_SIZE = 250;
+
+const CONCURRENCY_LIMIT_RESPONSE_ERROR_CODE = 1960;
+const RATE_LIMIT_RESPONSE_ERROR_CODE = 1965;
+
+const RETRYABLE_409_CODES = [
+  CONCURRENCY_LIMIT_RESPONSE_ERROR_CODE,
+  RATE_LIMIT_RESPONSE_ERROR_CODE,
+];
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
-  noRetry: [400, 401, 403, 413],
+  noRetryStatusCodes: [400, 401, 403, 404, 413],
+  canRetry: async (response) => {
+    if (response.status === 409) {
+      try {
+        const body = await response.text();
+        const errorResponse = xmlParser.parse(body) as QualysV2ApiErrorResponse;
+        if (errorResponse.SIMPLE_RETURN) {
+          return {
+            retryable: RETRYABLE_409_CODES.includes(
+              errorResponse.SIMPLE_RETURN.RESPONSE.CODE,
+            ),
+            reason: errorResponse.SIMPLE_RETURN.RESPONSE.TEXT,
+          };
+        }
+      } catch (err) {
+        return {
+          retryable: false,
+          reason: `Could not read 409 response body: ${err.message}`,
+        };
+      }
+    }
+  },
 };
 
 /**
@@ -131,8 +181,27 @@ export class QualysAPIClient {
     this.events.on(ClientEvents.DELAYED_REQUEST, eventHandler);
   }
 
-  public onResponse(eventHandler: (event: ClientResponseEvent) => void): void {
-    this.events.on(ClientEvents.RESPONSE, eventHandler);
+  public onResponse(
+    eventHandler: (event: ClientResponseEvent) => void,
+    options?: { path?: string },
+  ): (...args: any[]) => void {
+    if (options?.path) {
+      const path = options.path;
+      const registeredHandler = (event: ClientResponseEvent) => {
+        if (event.url.includes(path)) {
+          eventHandler(event);
+        }
+      };
+      this.events.on(ClientEvents.RESPONSE, registeredHandler);
+      return registeredHandler;
+    } else {
+      this.events.on(ClientEvents.RESPONSE, eventHandler);
+      return eventHandler;
+    }
+  }
+
+  public removeResponseListener(listener: (...args: any[]) => void): void {
+    this.events.removeListener(ClientEvents.RESPONSE, listener);
   }
 
   public async verifyAuthentication(): Promise<void> {
@@ -192,19 +261,6 @@ export class QualysAPIClient {
   ): Promise<void> {
     const endpoint = '/qps/rest/3.0/search/was/webapp';
 
-    const filterXml = options?.filters ? buildFilterXml(options.filters) : '';
-
-    const body = ({ limit, offset }: { limit: number; offset: number }) => {
-      return `
-        <ServiceRequest>
-          <preferences>
-            <limitResults>${limit}</limitResults>
-            <startFromOffset>${offset}</startFromOffset>
-          </preferences>
-          ${filterXml}
-        </ServiceRequest>`;
-    };
-
     // The WAS APIs have no rate limits on them; iterate in smaller batches to
     // keep memory pressure low.
     const limit = options?.pagination?.limit || 100;
@@ -219,7 +275,11 @@ export class QualysAPIClient {
           headers: {
             'Content-Type': 'text/xml',
           },
-          body: body({ limit, offset }),
+          body: buildServiceRequestBody({
+            limit,
+            offset,
+            filters: options?.filters,
+          }),
         },
       );
 
@@ -269,57 +329,85 @@ export class QualysAPIClient {
   public async iterateWebAppFindings(
     webAppIds: number[],
     iteratee: ResourceIteratee<was.WebAppFinding>,
+    options?: {
+      filters?: was.ListWebAppFindingsFilters;
+      pagination?: { limit: number; offset?: number };
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
+    },
   ): Promise<void> {
     const fetchWebAppFindings = async (ids: number[]) => {
       const endpoint = '/qps/rest/3.0/search/was/finding/';
+      const filters: ListWebAppFindingsFilters = {
+        ...options?.filters,
+        'webApp.id': ids,
+      };
 
-      const body = `
-      <ServiceRequest>
-        <preferences>
-          <limitResults>${ids.length}</limitResults>
-        </preferences>
-        <filters>
-          <Criteria field="webApp.id" operator="IN">${ids.join(',')}</Criteria>
-        </filters>
-      </ServiceRequest>`;
+      // The WAS APIs have no rate limits on them; iterate in smaller batches to
+      // keep memory pressure low.
+      const limit = options?.pagination?.limit || 250;
+      let offset = options?.pagination?.offset || 1;
 
-      const response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(endpoint, {}),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/xml',
+      let hasMoreRecords = true;
+      do {
+        const response = await this.executeAuthenticatedAPIRequest(
+          this.qualysUrl(endpoint, {}),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'text/xml',
+            },
+            body: buildServiceRequestBody({ limit, offset, filters }),
+            timeout: 1000 * 60 * 5,
           },
-          body,
-        },
-      );
+        );
 
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as was.ListWebAppFindingsResponse;
+        const responseText = await response.text();
+        const jsonFromXml = xmlParser.parse(
+          responseText,
+        ) as was.ListWebAppFindingsResponse;
 
-      const responseCode = jsonFromXml.ServiceResponse?.responseCode;
-      if (responseCode && responseCode !== 'SUCCESS') {
-        throw new IntegrationProviderAPIError({
-          cause: new Error(
-            `Unexpected responseCode in ServiceResponse: ${responseCode}`,
-          ),
-          endpoint,
-          status: response.status,
-          statusText: responseCode,
-        });
-      }
+        const responseCode = jsonFromXml.ServiceResponse?.responseCode;
+        if (responseCode && responseCode !== 'SUCCESS') {
+          throw new IntegrationProviderAPIError({
+            cause: new Error(
+              `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+            ),
+            endpoint,
+            status: response.status,
+            statusText: responseCode,
+          });
+        }
 
-      return toArray(jsonFromXml.ServiceResponse?.data?.Finding);
+        for (const finding of toArray(
+          jsonFromXml.ServiceResponse?.data?.Finding,
+        )) {
+          await iteratee(finding);
+        }
+
+        hasMoreRecords = !!jsonFromXml.ServiceResponse?.hasMoreRecords;
+
+        if (hasMoreRecords) {
+          offset += limit;
+        }
+      } while (hasMoreRecords);
     };
 
-    for (const ids of chunk(webAppIds, 300)) {
-      const findings = await fetchWebAppFindings(ids);
-      for (const finding of findings) {
-        await iteratee(finding);
-      }
+    const webAppFindingsQueue = new PQueue({
+      concurrency: 3,
+    });
+
+    for (const ids of chunk(webAppIds, 10)) {
+      webAppFindingsQueue
+        .add(async () => {
+          await fetchWebAppFindings(ids);
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
+
+    await webAppFindingsQueue.onIdle();
   }
 
   /**
@@ -434,7 +522,9 @@ export class QualysAPIClient {
     hostIds: QWebHostId[],
     iteratee: ResourceIteratee<assets.HostAsset>,
     options?: {
-      pagination: { limit: number };
+      pagination?: { limit: number };
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchHostDetails = async (ids: QWebHostId[]) => {
@@ -458,6 +548,7 @@ export class QualysAPIClient {
             'Content-Type': 'text/xml',
           },
           body,
+          timeout: 1000 * 60 * 5,
         },
       );
 
@@ -481,15 +572,27 @@ export class QualysAPIClient {
       return toArray(jsonFromXml.ServiceResponse?.data?.HostAsset);
     };
 
+    const hostDetailsQueue = new PQueue({
+      concurrency: 3,
+    });
+
     for (const ids of chunk(
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETAILS_PAGE_SIZE,
     )) {
-      const hosts = await fetchHostDetails(ids);
-      for (const host of hosts) {
-        await iteratee(host);
-      }
+      hostDetailsQueue
+        .add(async () => {
+          const hosts = await fetchHostDetails(ids);
+          for (const host of hosts) {
+            await iteratee(host);
+          }
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
+
+    await hostDetailsQueue.onIdle();
   }
 
   /**
@@ -548,6 +651,15 @@ export class QualysAPIClient {
    * vulnerability database by QID, but the findings of vulnerabilities for a
    * host.
    *
+   * > Maximum benefit has seen when the batch size is set evenly throughout the
+   * > number of parallel threads used. For example, a host detection call
+   * > resulting in a return of 100k assets, and using 10 threads in parallel,
+   * > would benefit the most by using a batch size of (100,000 / 10) = 10,000.
+   * > To reduce having one thread slow down the entire process by hitting a
+   * > congested server, you can break this out further into batches of 5,000
+   * > hosts, resulting in 20 output files.
+   * >   - https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
+   *
    * @param hostIds the set of QWEB host IDs to fetch detections
    * @param iteratee receives each host and its detections
    */
@@ -558,13 +670,24 @@ export class QualysAPIClient {
       detections: vmpc.HostDetection[];
     }>,
     options?: {
+      filters?: vmpc.ListHostDetectionsFilters;
       pagination?: { limit: number };
+      // TODO make this a required argument and update tests
+      onRequestError?: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
-    const fetchHostDetections = async (ids: QWebHostId[]) => {
-      const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
+    const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
 
+    const filters: Record<string, string> = {};
+    if (options?.filters) {
+      for (const [k, v] of Object.entries(options.filters)) {
+        filters[k] = String(v);
+      }
+    }
+
+    const fetchHostDetections = async (ids: QWebHostId[]) => {
       const params = new URLSearchParams({
+        ...filters,
         action: 'list',
         show_tags: '1',
         show_igs: '1',
@@ -594,14 +717,37 @@ export class QualysAPIClient {
       }
     };
 
-    // Starting simple, sequential requests for pages. Once client supports
-    // concurrency, add to queue to allow concurrency control.
+    // Start with the standard subscription level until we know the current
+    // state after we get a response.
+    let rateLimitState = STANDARD_RATE_LIMIT_STATE;
+    const requestQueue = new PQueue({
+      concurrency: calculateConcurrency(rateLimitState),
+    });
+
+    const concurrencyResponseHandler = this.onResponse(
+      (event) => {
+        rateLimitState = event.rateLimitState;
+        requestQueue.concurrency = calculateConcurrency(rateLimitState);
+      },
+      { path: endpoint },
+    );
+
     for (const ids of chunk(
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
     )) {
-      await fetchHostDetections(ids);
+      requestQueue
+        .add(async () => {
+          await fetchHostDetections(ids);
+        })
+        .catch((err) => {
+          options?.onRequestError?.(ids, err);
+        });
     }
+
+    await requestQueue.onIdle();
+
+    this.removeResponseListener(concurrencyResponseHandler);
   }
 
   /**
@@ -660,6 +806,7 @@ export class QualysAPIClient {
     init: RequestInit,
   ): Promise<Response> {
     return this.executeAPIRequest(info, {
+      timeout: 0,
       ...init,
       headers: {
         ...init.headers,
@@ -667,8 +814,27 @@ export class QualysAPIClient {
         authorization: this.qualysAuthorization(),
       },
       size: 0,
-      timeout: 0,
     });
+  }
+
+  private hashAPIRequest(init: RequestInit) {
+    let fingerprint: string | undefined;
+
+    if (typeof init.body?.toString === 'function') {
+      fingerprint = init.body.toString();
+    } else if (typeof init.body === 'string') {
+      fingerprint = init.body;
+    } else if (init.body) {
+      fingerprint = JSON.stringify(init.body);
+    }
+
+    if (!fingerprint || fingerprint === '{}') {
+      fingerprint = uuid();
+    }
+
+    const shasum = crypto.createHash('sha1');
+    shasum.update(fingerprint);
+    return shasum.digest('hex');
   }
 
   private async executeAPIRequest(
@@ -677,6 +843,7 @@ export class QualysAPIClient {
   ): Promise<Response> {
     const apiResponse = await executeAPIRequest(this.events, {
       url: info as string,
+      hash: this.hashAPIRequest(init),
       exec: () => fetch(info, init),
       retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
@@ -684,6 +851,7 @@ export class QualysAPIClient {
     });
 
     // NOTE: This is NOT thread safe at this time.
+    // TODO: Do not track on the instance, should be endpoint-specific state
     this.rateLimitState = apiResponse.rateLimitState;
 
     if (!apiResponse.completed && apiResponse.request.retryable) {
@@ -699,11 +867,16 @@ export class QualysAPIClient {
     }
 
     if (apiResponse.status >= 400) {
+      let statusText = apiResponse.statusText;
+      if (apiResponse.request.retryDecision) {
+        statusText = `${statusText} ${apiResponse.request.retryDecision.reason}`;
+      }
+
       const err = new Error(
         `API request error for ${info}: ${apiResponse.statusText}`,
       );
       Object.assign(err, {
-        statusText: apiResponse.statusText,
+        statusText,
         status: apiResponse.status,
         code: apiResponse.status,
       });

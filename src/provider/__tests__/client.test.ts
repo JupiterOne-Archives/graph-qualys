@@ -71,6 +71,7 @@ describe('events', () => {
       retryable: true,
       totalAttempts: 0,
       url,
+      hash: expect.any(String),
     });
   });
 
@@ -111,6 +112,7 @@ describe('events', () => {
       retryable: true,
       totalAttempts: 1,
       url,
+      hash: expect.any(String),
       completed: true,
       status: 200,
       statusText: 'OK',
@@ -146,6 +148,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 0,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -156,6 +159,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -166,6 +170,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 2,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -176,6 +181,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 3,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -186,6 +192,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 4,
         url,
+        hash: expect.any(String),
       },
     ]);
 
@@ -202,6 +209,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -215,6 +223,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 2,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -228,6 +237,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 3,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -241,6 +251,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 4,
         url,
+        hash: expect.any(String),
       },
       {
         completed: false,
@@ -254,6 +265,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 5,
         url,
+        hash: expect.any(String),
       },
     ]);
   });
@@ -305,6 +317,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 0,
         url,
+        hash: expect.any(String),
       },
       {
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
@@ -320,6 +333,7 @@ describe('events', () => {
         retryable: true,
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
     ]);
 
@@ -339,6 +353,7 @@ describe('events', () => {
         delay: 1000,
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
     ]);
 
@@ -360,6 +375,7 @@ describe('events', () => {
         statusText: 'Conflict',
         totalAttempts: 1,
         url,
+        hash: expect.any(String),
       },
       {
         completed: true,
@@ -378,6 +394,7 @@ describe('events', () => {
         statusText: 'OK',
         totalAttempts: 2,
         url,
+        hash: expect.any(String),
       },
     ]);
   });
@@ -563,33 +580,189 @@ describe('iterateWebAppFindings', () => {
       options: { recordFailedRequests: true },
     });
 
-    await expect(
-      createClient().iterateWebAppFindings(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/INVALID_REQUEST/);
+    const onRequestError = jest.fn();
+    await createClient().iterateWebAppFindings(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
-  test('some', async () => {
+  test('mocked', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'iterateWebAppFindings',
+      name: 'iterateWebAppFindingsMocked',
+    });
+
+    const set1Responses = [
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+ <responseCode>SUCCESS</responseCode>
+ <count>2</count>
+ <hasMoreRecords>true</hasMoreRecords>
+ <data>
+ <Finding>
+ <id>156582</id>
+ <uniqueId>8a2c4d51-6d28-2b92-e053-2943720a74ab</uniqueId>
+ <qid>150124</qid>
+ <severity>3</severity>
+ <url>
+ <![CDATA[http://funkytown.vuln.qa.qualys.com/cassium/xss/]]>
+ </url>
+ <status>ACTIVE</status>
+ <firstDetectedDate>2017-04-28T09:36:13Z</firstDetectedDate>
+ <lastDetectedDate>2018-02-21T09:03:32Z</lastDetectedDate>
+ <lastTestedDate>2018-02-21T09:03:32Z</lastTestedDate>
+ <timesDetected>3</timesDetected>
+ </Finding>
+ <Finding>
+ <id>156583</id>
+ <uniqueId>22222222-6d28-2b92-e053-2943720a74ab</uniqueId>
+ <qid>150125</qid>
+ <severity>3</severity>
+ <url>
+ <![CDATA[http://funkytown.vuln.qa.qualys.com/cassium/xss/]]>
+ </url>
+ <status>ACTIVE</status>
+ <firstDetectedDate>2017-04-28T09:36:13Z</firstDetectedDate>
+ <lastDetectedDate>2018-02-21T09:03:32Z</lastDetectedDate>
+ <lastTestedDate>2018-02-21T09:03:32Z</lastTestedDate>
+ <timesDetected>3</timesDetected>
+ </Finding>
+ </data>
+</ServiceResponse>
+      `,
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+ <responseCode>SUCCESS</responseCode>
+ <count>1</count>
+ <hasMoreRecords>false</hasMoreRecords>
+ <data>
+ <Finding>
+ <id>156584</id>
+ <uniqueId>33333333-6d28-2b92-e053-2943720a74ab</uniqueId>
+ <qid>150126</qid>
+ <severity>3</severity>
+ <url>
+ <![CDATA[http://funkytown.vuln.qa.qualys.com/cassium/xss/]]>
+ </url>
+ <status>ACTIVE</status>
+ <firstDetectedDate>2017-04-28T09:36:13Z</firstDetectedDate>
+ <lastDetectedDate>2018-02-21T09:03:32Z</lastDetectedDate>
+ <lastTestedDate>2018-02-21T09:03:32Z</lastTestedDate>
+ <timesDetected>3</timesDetected>
+ </Finding>
+ </data>
+</ServiceResponse>
+      `,
+    ].reverse();
+
+    const set2Responses = [
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+ <responseCode>SUCCESS</responseCode>
+ <count>0</count>
+ <hasMoreRecords>false</hasMoreRecords>
+</ServiceResponse>
+      `,
+    ].reverse();
+
+    recording.server.any().intercept((req, res) => {
+      if (/1,2,3,4,5,6,7,8,9,10/.test(req.body)) {
+        if (set1Responses.length === 0)
+          throw 'No more responses to give from set1Responses';
+        res.status(200).send(set1Responses.pop());
+      }
+
+      if (/11,12/.test(req.body)) {
+        if (set2Responses.length === 0)
+          throw 'No more responses to give from set2Responses';
+        res.status(200).send(set2Responses.pop());
+      }
     });
 
     const client = createClient();
-    const webappIds = await client.fetchScannedWebAppIds();
-
     const findings: was.WebAppFinding[] = [];
 
-    await client.iterateWebAppFindings(webappIds, (webapp) => {
-      findings.push(webapp);
+    await client.iterateWebAppFindings(
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      (webapp) => {
+        findings.push(webapp);
+      },
+      { pagination: { limit: 2 } },
+    );
+
+    expect(findings.length).toEqual(3);
+  });
+
+  test('mocked, with date filter', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindingsMocked',
     });
 
-    expect(findings.length).toBeGreaterThan(0);
+    let receivedBody: string | undefined;
+    recording.server.any().intercept((req, res) => {
+      receivedBody = req.body;
+
+      res.status(200).send(`
+        <?xml version="1.0" encoding="UTF-8"?>
+  <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+   <responseCode>SUCCESS</responseCode>
+   <count>0</count>
+   <hasMoreRecords>false</hasMoreRecords>
+  </ServiceResponse>
+        `);
+    });
+
+    const client = createClient();
+    const findings: was.WebAppFinding[] = [];
+
+    await client.iterateWebAppFindings(
+      [1],
+      (webapp) => {
+        findings.push(webapp);
+      },
+      { filters: { lastDetectedDate: '2020-09-11T23:00:30Z' } },
+    );
+
+    expect(findings.length).toEqual(0);
+    expect(receivedBody).toMatch(
+      /<Criteria field="lastDetectedDate" operator="EQUALS">2020-09-11T23:00:30Z<\/Criteria>/,
+    );
   });
+
+  // TODO enable once trial account is working again, re-record with pagination
+  // test('some', async () => {
+  //   recording = setupQualysRecording({
+  //     directory: __dirname,
+  //     name: 'iterateWebAppFindings',
+  //   });
+
+  //   const client = createClient();
+  //   const webappIds = await client.fetchScannedWebAppIds();
+
+  //   const findings: was.WebAppFinding[] = [];
+
+  //   await client.iterateWebAppFindings(webappIds, (webapp) => {
+  //     findings.push(webapp);
+  //   });
+
+  //   expect(findings.length).toBeGreaterThan(0);
+  // });
 });
 
 describe('fetchScannedHostIds', () => {
@@ -773,14 +946,18 @@ describe('iterateHostDetails', () => {
       options: { recordFailedRequests: true },
     });
 
-    await expect(
-      createClient().iterateHostDetails(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/INVALID_REQUEST/);
+    const onRequestError = jest.fn();
+    await createClient().iterateHostDetails(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
   test('some', async () => {
@@ -930,16 +1107,20 @@ describe('iterateHostDetections', () => {
       requestCount++;
     });
 
-    await expect(
-      createClient().iterateHostDetections(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/Bad Request/);
+    const onRequestError = jest.fn();
+    await createClient().iterateHostDetections(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
 
     expect(requestCount).toBe(1);
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(['abc123'], expect.any(Error));
   });
 
   test('some', async () => {
@@ -968,7 +1149,17 @@ describe('iterateHostDetections', () => {
     });
 
     const detectionsXml = fs
-      .readFileSync(path.join(__dirname, 'fixtures', 'detections.xml'))
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'detections.xml',
+        ),
+      )
       .toString('utf8');
 
     const requests = [/%2C298%2C299$/, /ids=300%2C301$/].reverse();
@@ -993,6 +1184,52 @@ describe('iterateHostDetections', () => {
     );
 
     expect(hosts.length).toBe(2);
+  });
+
+  test('some mocked, date filter', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateHostDetectionsMocked',
+    });
+
+    const detectionsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'detections.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const requests = [
+      /detection_updated_since=2020-09-11T23%3A00%3A30Z/,
+    ].reverse();
+
+    recording.server.any().intercept((req, res) => {
+      const expectedBody = requests.pop();
+      if (!expectedBody) throw 'no more requests expected';
+      expect(req.method).toBe('POST');
+      expect(req.body).toMatch(expectedBody);
+      res.status(200).type('application/xml').send(detectionsXml);
+    });
+
+    const hosts: vmpc.DetectionHost[] = [];
+    await createClient().iterateHostDetections(
+      [1],
+      ({ host, detections }) => {
+        hosts.push(host);
+      },
+      {
+        filters: { detection_updated_since: '2020-09-11T23:00:30Z' },
+      },
+    );
+
+    expect(hosts.length).toBeGreaterThan(0);
   });
 });
 
@@ -1085,6 +1322,36 @@ describe('executeAPIRequest', () => {
       <DATETIME>2017-04-12T14:52:39Z </DATETIME>
       <CODE>1965</CODE>
       <TEXT> This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>SECONDS_TO_WAIT</KEY>
+      <VALUE>68928</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
+
+  const incompleteRegistrationXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>2003</CODE>
+      <TEXT>  Registration must be completed before API requests will be served for this account</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>SECONDS_TO_WAIT</KEY>
+      <VALUE>68928</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
+
+  const secureIdRequiredXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>2011</CODE>
+      <TEXT>   SecureID authentication is required for this account, so API access is blocked</TEXT>
       <ITEM_LIST>
       <ITEM>
       <KEY>SECONDS_TO_WAIT</KEY>
@@ -1285,7 +1552,7 @@ describe('executeAPIRequest', () => {
   test('does not retry authentication error', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'executeAPIRequestUnauthRequest',
+      name: 'executeAPIRequestUnauthorized',
       options: { recordFailedRequests: true },
     });
 
@@ -1304,6 +1571,60 @@ describe('executeAPIRequest', () => {
 
     await expect(client.verifyAuthentication()).rejects.toThrow(
       /401 Unauthorized/,
+    );
+
+    expect(requestCount).toBe(1);
+  });
+
+  test('does not retry incomplete registration error', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestIncompleteRegistration',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(409).send(incompleteRegistrationXMLBody);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /409 Conflict.*?Registration must be completed/,
+    );
+
+    expect(requestCount).toBe(1);
+  });
+
+  test('does not retry secure ID required error', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequestSecureIdRequired',
+      options: { recordFailedRequests: true },
+    });
+
+    let requestCount = 0;
+    recording.server.any().intercept((_req, res) => {
+      requestCount++;
+      res.status(409).send(secureIdRequiredXMLBody);
+    });
+
+    const client = new QualysAPIClient({
+      config,
+      retryConfig: {
+        maxAttempts: 2,
+      },
+    });
+
+    await expect(client.verifyAuthentication()).rejects.toThrow(
+      /409 Conflict.*?SecureID authentication is required/,
     );
 
     expect(requestCount).toBe(1);

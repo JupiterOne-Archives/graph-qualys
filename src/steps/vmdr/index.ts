@@ -1,3 +1,5 @@
+import { v4 as uuid } from 'uuid';
+
 import {
   createDirectRelationship,
   Entity,
@@ -11,7 +13,6 @@ import { QWebHostId } from '../../provider/client';
 import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
-import { getVmScanSinceDate } from '../../util/date';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
@@ -45,7 +46,7 @@ export async function fetchScannedHostIds({
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   const filters: ListScannedHostIdsFilters = {
-    vm_scan_since: getVmScanSinceDate(),
+    vm_scan_since: instance.config.minScannedSinceISODate,
   };
 
   const loggerFetch = logger.child({ filters });
@@ -80,6 +81,13 @@ export async function fetchScannedHostIds({
     { numScannedHostIds: hostIds.length },
     'Finished fetching scanned host IDs',
   );
+
+  loggerFetch.publishEvent({
+    name: 'stats',
+    description: `Found ${hostIds.length} hosts with filters: ${JSON.stringify(
+      filters,
+    )}`,
+  });
 }
 
 /**
@@ -100,31 +108,56 @@ export async function fetchScannedHostDetails({
   )) as Entity;
   const apiClient = createQualysAPIClient(logger, instance.config);
 
+  let totalHostsProcessed = 0;
+  const totalPageErrors = 0;
+  const errorCorrelationId = uuid();
+
   const hostAssetTargetsMap: HostAssetTargetsMap = {};
+  await apiClient.iterateHostDetails(
+    hostIds,
+    async (host) => {
+      if (getEC2HostArn(host)) {
+        await jobState.addRelationship(
+          createServiceScansEC2HostRelationship(vdmrServiceEntity, host),
+        );
+      } else {
+        await jobState.addRelationship(
+          createServiceScansDiscoveredHostRelationship(vdmrServiceEntity, host),
+        );
+      }
 
-  await apiClient.iterateHostDetails(hostIds, async (host) => {
-    if (getEC2HostArn(host)) {
-      await jobState.addRelationship(
-        createServiceScansEC2HostRelationship(vdmrServiceEntity, host),
-      );
-    } else {
-      await jobState.addRelationship(
-        createServiceScansDiscoveredHostRelationship(vdmrServiceEntity, host),
-      );
-    }
+      // Ensure that `DATA_HOST_TARGETS` is updated for each host so that should
+      // a partial set be ingested, we don't lose what we've seen for later
+      // steps.
+      if (host.qwebHostId) {
+        hostAssetTargetsMap[host.qwebHostId] = getTargetsFromHostAsset(host);
+        await jobState.setData(DATA_HOST_TARGETS, hostAssetTargetsMap);
+      } else {
+        logger.info(
+          { host: { id: host.id } },
+          'Unable to store targets for host asset. This may affect global mappings.',
+        );
+      }
 
-    // Ensure that `DATA_HOST_TARGETS` is updated for each host so that should
-    // a partial set be ingested, we don't lose what we've seen for later
-    // steps.
-    if (host.qwebHostId) {
-      hostAssetTargetsMap[host.qwebHostId] = getTargetsFromHostAsset(host);
-      await jobState.setData(DATA_HOST_TARGETS, hostAssetTargetsMap);
-    } else {
-      logger.info(
-        { host: { id: host.id } },
-        'Unable to store targets for host asset. This may affect global mappings.',
-      );
-    }
+      totalHostsProcessed++;
+    },
+    {
+      onRequestError(pageIds, err) {
+        logger.error(
+          { pageIds, err, errorCorrelationId },
+          'Error ingesting page of scanned host details',
+        );
+      },
+    },
+  );
+
+  logger.publishEvent({
+    name: 'stats',
+    description: `Processed ${totalHostsProcessed} host details${
+      totalPageErrors > 0
+        ? `, encountered errors on ${totalPageErrors} pages (errorId="${errorCorrelationId}")`
+        : ''
+    }`,
   });
 }
 
@@ -150,8 +183,11 @@ export async function fetchScannedHostFindings({
     DATA_VMDR_SERVICE_ENTITY,
   )) as Entity;
 
-  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
+  let totalHostsProcessed = 0;
+  const totalPageErrors = 0;
+  const errorCorrelationId = uuid();
 
+  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
@@ -160,6 +196,7 @@ export async function fetchScannedHostFindings({
       for (const detection of detections) {
         const findingKey = buildKey({
           qid: detection.QID,
+          type: detection.TYPE,
           port: detection.PORT,
           protocol: detection.PROTOCOL,
           ssl: detection.SSL,
@@ -179,7 +216,6 @@ export async function fetchScannedHostFindings({
             findingKey,
             host,
             detection,
-            // TODO handle no map, getting `Cannot read property '2507587' of undefined`
             hostTargetsMap[host.ID!],
           ),
         );
@@ -200,8 +236,30 @@ export async function fetchScannedHostFindings({
         DATA_HOST_VULNERABILITY_FINDING_KEYS,
         vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
       );
+
+      totalHostsProcessed++;
+    },
+    {
+      filters: {
+        detection_updated_since: instance.config.minFindingsSinceISODate,
+      },
+      onRequestError(pageIds, err) {
+        logger.error(
+          { pageIds, err, errorCorrelationId },
+          'Error ingesting detections processing page of hosts',
+        );
+      },
     },
   );
+
+  logger.publishEvent({
+    name: 'stats',
+    description: `Processed detections for ${totalHostsProcessed} hosts${
+      totalPageErrors > 0
+        ? `, encountered errors on ${totalPageErrors} pages (errorId="${errorCorrelationId}")`
+        : ''
+    }`,
+  });
 }
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [

@@ -52,7 +52,7 @@ for (const testInput of [
         qualysUsername: 'fake username',
         qualysPassword: 'fake password',
         qualysApiUrl: 'fake URL',
-      },
+      } as QualysIntegrationConfig,
     }) as IntegrationStepExecutionContext<QualysIntegrationConfig>;
 
     const qualysApiError = new QualysClientApiError({

@@ -34,7 +34,8 @@ export type HostAsset = {
   lastSystemBoot?: ISODateString;
   lastLoggedOnUser?: string;
   fqdn?: string;
-  os?: string;
+  // Documented as string, but incoming value may not be!
+  os?: any;
   dnsHostName?: string;
   agentInfo?: AgentInfo;
   networkGuid?: string;

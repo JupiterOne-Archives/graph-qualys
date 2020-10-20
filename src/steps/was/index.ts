@@ -1,3 +1,5 @@
+import { v4 as uuid } from 'uuid';
+
 import {
   createDirectRelationship,
   createMappedRelationship,
@@ -34,8 +36,12 @@ export async function fetchScannedWebApps({
     DATA_WAS_SERVICE_ENTITY,
   )) as Entity;
 
-  const scannedWebAppIds: number[] = [];
+  const filters = {
+    isScanned: true,
+    'lastScan.date': instance.config.minScannedSinceISODate,
+  };
 
+  const scannedWebAppIds: number[] = [];
   await apiClient.iterateWebApps(
     async (webApp) => {
       scannedWebAppIds.push(webApp.id!);
@@ -52,23 +58,28 @@ export async function fetchScannedWebApps({
               _class: 'Application',
               _type: 'web_app',
               name: webApp.name,
+              displayName: webApp.name,
             },
           },
         }),
       );
     },
-    { filters: { isScanned: true } },
+    { filters },
   );
 
   await jobState.setData(DATA_SCANNED_WEBAPP_IDS, scannedWebAppIds);
 
-  // `filter` reflects parameters used to limit the set of web apps processed by the
-  // integration. A value of `'all'` means no filters were used so that all
-  // web apps are processed.
   logger.info(
-    { numScannedWebAppIds: scannedWebAppIds.length, filter: 'isScanned' },
+    { numScannedWebAppIds: scannedWebAppIds.length, filters },
     'Scanned web app IDs collected',
   );
+
+  logger.publishEvent({
+    name: 'stats',
+    description: `Found ${
+      scannedWebAppIds.length
+    } web applications with filters: ${JSON.stringify(filters)}`,
+  });
 }
 
 export async function fetchScannedWebAppFindings({
@@ -85,40 +96,74 @@ export async function fetchScannedWebAppFindings({
     DATA_WAS_SERVICE_ENTITY,
   )) as Entity;
 
+  let numWebAppFindingsProcessed = 0;
+  let numPageErrors = 0;
+  const errorCorrelationId = uuid();
+
   const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
-
-  await apiClient.iterateWebAppFindings(scannedWebAppIds, async (finding) => {
-    const findingEntity = await jobState.addEntity(
-      createWebAppFindingEntity(finding),
-    );
-
-    await jobState.addRelationship(
-      createDirectRelationship({
-        _class: RelationshipClass.IDENTIFIED,
-        from: serviceEntity,
-        to: findingEntity,
-      }),
-    );
-
-    if (finding.qid) {
-      vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-        finding.qid,
-        findingEntity._key,
+  await apiClient.iterateWebAppFindings(
+    scannedWebAppIds,
+    async (finding) => {
+      const findingEntity = await jobState.addEntity(
+        createWebAppFindingEntity(finding),
       );
 
-      // Ensure that finding keys are updated for each finding
-      // so that should a partial set be ingested, we don't lose what we've seen
-      // for later steps.
-      await jobState.setData(
-        DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-        vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+      await jobState.addRelationship(
+        createDirectRelationship({
+          _class: RelationshipClass.IDENTIFIED,
+          from: serviceEntity,
+          to: findingEntity,
+        }),
       );
-    } else {
-      logger.info(
-        { finding: { id: finding.id, uniqueId: finding.uniqueId } },
-        'Web app finding has no QID',
-      );
-    }
+
+      if (finding.qid) {
+        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+          finding.qid,
+          findingEntity._key,
+        );
+
+        // Ensure that finding keys are updated for each finding
+        // so that should a partial set be ingested, we don't lose what we've seen
+        // for later steps.
+        await jobState.setData(
+          DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+          vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+        );
+      } else {
+        logger.info(
+          { finding: { id: finding.id, uniqueId: finding.uniqueId } },
+          'Web app finding has no QID',
+        );
+      }
+
+      numWebAppFindingsProcessed++;
+    },
+    {
+      filters: {
+        lastDetectedDate: instance.config.minFindingsSinceISODate,
+      },
+      onRequestError(pageIds, err) {
+        logger.error(
+          { pageIds, err, errorCorrelationId },
+          'Error ingesting page of web app findings',
+        );
+        numPageErrors++;
+      },
+    },
+  );
+
+  logger.info(
+    { numWebAppFindingsProcessed },
+    'Processed web application findings',
+  );
+
+  logger.publishEvent({
+    name: 'stats',
+    description: `Processed ${numWebAppFindingsProcessed} web application findings${
+      numPageErrors > 0
+        ? `, encountered ${numPageErrors} errors (errorId="${errorCorrelationId}")`
+        : ''
+    }`,
   });
 }
 

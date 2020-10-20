@@ -8,6 +8,32 @@ export type QualysIntegrationConfig = {
    * @example https://qualysapi.qg3.apps.qualys.com
    */
   qualysApiUrl: string;
+
+  /**
+   * The minimum number of days since execution time (now) to use when searching
+   * for scanned web applications and hosts.
+   */
+  minScannedSinceDays: number;
+
+  /**
+   * The minimum number of days since execution time (now) to use when searching
+   * for web app findings and host detections.
+   */
+  minFindingsSinceDays: number;
+
+  /******* Calculated values, established during `validateInvocation` ********/
+
+  /**
+   * The date to use when searching for scanned web applications and hosts,
+   * calculated from `minScannedSinceDays`.
+   */
+  minScannedSinceISODate: string;
+
+  /**
+   * The date to use when searching for web application findings and host detections,
+   * calculated from `minFindingsSinceDays`.
+   */
+  minFindingsSinceISODate: string;
 };
 
 export type PossibleArray<T> = T | T[];

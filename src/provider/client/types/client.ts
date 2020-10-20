@@ -1,3 +1,5 @@
+import { Response } from 'node-fetch';
+
 export enum ClientEvents {
   REQUEST = 'ClientEvents.REQUEST',
   RESPONSE = 'ClientEvents.RESPONSE',
@@ -6,6 +8,7 @@ export enum ClientEvents {
 
 export type ClientEvent = {
   url: string;
+  hash: string;
   retryConfig: RetryConfig;
   retryable: boolean;
   retryAttempts: number;
@@ -30,6 +33,11 @@ export type ClientResponseEvent = ClientEvent & {
   completed: boolean;
 };
 
+export type CanRetryDecision = {
+  retryable: boolean;
+  reason: string;
+};
+
 export type RetryConfig = {
   /**
    * The maximum number of times to retry an unexpected failed request.
@@ -37,9 +45,22 @@ export type RetryConfig = {
   maxAttempts: number;
 
   /**
-   * Response codes that should not be retried.
+   * Response status codes that should not be retried. Do not include status
+   * codes that require more response processing with `canRetry`.
    */
-  noRetry: number[];
+  noRetryStatusCodes: number[];
+
+  /**
+   * Optional function to determine whether a request can be retried. This is
+   * invoked when `noRetryStatusCodes` does not include the response status
+   * code.
+   *
+   * An `undefined` value means the decision could not be made and retry is
+   * permitted. This allows for expressing the fact that we have not written
+   * code to handle every possible case, but the ones we do handle can be
+   * communicated.
+   */
+  canRetry?: (response: Response) => Promise<CanRetryDecision | undefined>;
 };
 
 export type RateLimitConfig = {

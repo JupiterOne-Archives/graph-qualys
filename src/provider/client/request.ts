@@ -3,6 +3,7 @@ import EventEmitter from 'events';
 import { Response } from 'node-fetch';
 
 import {
+  CanRetryDecision,
   ClientDelayedRequestEvent,
   ClientEvent,
   ClientEvents,
@@ -31,8 +32,20 @@ export async function executeAPIRequest<T>(
   };
 
   while (attemptExecution) {
-    const apiResponse = await attemptAPIRequest(events, requestAttempt);
-    requestAttempt = apiResponse.request;
+    let apiResponse: APIResponse | undefined;
+
+    try {
+      apiResponse = await attemptAPIRequest(events, requestAttempt);
+      requestAttempt = apiResponse.request;
+    } catch (err) {
+      if (err.type === 'request-timeout') {
+        requestAttempt.retryAttempts += 1;
+        requestAttempt.totalAttempts += 1;
+        requestAttempt.retryable = true;
+      } else {
+        throw err;
+      }
+    }
 
     attemptExecution =
       !requestAttempt.completed &&
@@ -40,7 +53,7 @@ export async function executeAPIRequest<T>(
       requestAttempt.retryAttempts < retryConfig.maxAttempts &&
       requestAttempt.retryable;
 
-    if (!attemptExecution) {
+    if (!attemptExecution && apiResponse) {
       return apiResponse;
     }
   }
@@ -52,6 +65,7 @@ export async function executeAPIRequest<T>(
 
 type APIRequest = {
   url: string;
+  hash: string;
   exec: () => Promise<Response>;
   retryConfig: RetryConfig;
   rateLimitConfig: RateLimitConfig;
@@ -61,6 +75,7 @@ type APIRequest = {
 type APIRequestAttempt = APIRequest & {
   completed: boolean;
   retryable: boolean;
+  retryDecision?: CanRetryDecision;
   totalAttempts: number;
   retryAttempts: number;
   rateLimitedAttempts: number;
@@ -106,6 +121,7 @@ async function attemptAPIRequest(
 
   const requestEvent: ClientEvent = {
     url: request.url,
+    hash: request.hash,
     retryConfig: request.retryConfig,
     retryable: request.retryable,
     retryAttempts: request.retryAttempts,
@@ -138,7 +154,24 @@ async function attemptAPIRequest(
     ? request.rateLimitedAttempts + 1
     : request.rateLimitedAttempts;
 
-  const retryable = !retryConfig.noRetry.includes(response.status);
+  const retryStatusCodePermitted = !retryConfig.noRetryStatusCodes.includes(
+    response.status,
+  );
+
+  let retryDecision: CanRetryDecision = {
+    retryable: retryStatusCodePermitted,
+    reason: `Response status code is${
+      retryStatusCodePermitted ? '' : ' not'
+    } retryable`,
+  };
+
+  if (retryDecision.retryable && retryConfig.canRetry) {
+    const canRetryDecision = await retryConfig.canRetry(response);
+    if (canRetryDecision) {
+      retryDecision = canRetryDecision;
+    }
+  }
+
   const retryAttempts =
     !completed && !rateLimited
       ? request.retryAttempts + 1
@@ -150,7 +183,8 @@ async function attemptAPIRequest(
     request: {
       ...request,
       completed,
-      retryable,
+      retryable: retryDecision.retryable,
+      retryDecision,
       rateLimitState: responseRateLimitState,
       totalAttempts,
       retryAttempts,
@@ -165,10 +199,11 @@ async function attemptAPIRequest(
 
   emitResponseEvent(events, {
     url: request.url,
+    hash: request.hash,
     status: response.status,
     statusText: response.statusText,
     completed,
-    retryable,
+    retryable: retryDecision.retryable,
     retryConfig: request.retryConfig,
     retryAttempts,
     rateLimitConfig: request.rateLimitConfig,
