@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.3.0 2020-10-20
+
 ### Added
 
 - Job event log `stats` entries to provide some count information
