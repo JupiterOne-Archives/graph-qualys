@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Avoid `fetchScannedHostDetails` step failure when no hosts found
+- Avoid `fetchScannedHostFindings` step failure when no hosts found, or when
+  details could not be loaded for hosts
+
 ## 4.3.0 2020-10-20
 
 ### Added
