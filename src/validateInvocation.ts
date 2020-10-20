@@ -57,7 +57,15 @@ export default async function validateInvocation({
   );
   config.minFindingsSinceISODate = isoDate(config.minFindingsSinceDays);
 
-  const client = createQualysAPIClient(logger, instance.config);
+  // TODO: The SDK should be logging this information; the serializer for
+  // integrationInstanceConfig will prevent logging masked or fields not
+  // declared in the instanceConfigFields.
+  logger.info(
+    { integrationInstanceConfig: config },
+    'Configuration values validated, verifying authentication...',
+  );
+
+  const client = createQualysAPIClient(logger, config);
   await client.verifyAuthentication();
 }
 
