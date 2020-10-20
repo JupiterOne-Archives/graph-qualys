@@ -22,7 +22,6 @@
     "prepush": "yarn test:ci",
     "build": "tsc -p tsconfig.dist.json --declaration",
     "prepack": "yarn build",
-    "prepublishOnly": "yarn build",
     "start:fake-knowledge-base-server": "./tools/bin/run-command fake-knowledge-base"
   },
   "dependencies": {
