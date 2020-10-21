@@ -102,7 +102,8 @@ export async function fetchScannedHostDetails({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
-  const hostIds = (await jobState.getData(DATA_SCANNED_HOST_IDS)) as number[];
+  const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
+    []) as number[];
   const vdmrServiceEntity = (await jobState.getData(
     DATA_VMDR_SERVICE_ENTITY,
   )) as Entity;
@@ -153,7 +154,9 @@ export async function fetchScannedHostDetails({
 
   logger.publishEvent({
     name: 'stats',
-    description: `Processed ${totalHostsProcessed} host details${
+    description: `Processed details for ${totalHostsProcessed} of ${
+      hostIds.length
+    } hosts${
       totalPageErrors > 0
         ? `, encountered errors on ${totalPageErrors} pages (errorId="${errorCorrelationId}")`
         : ''
@@ -174,10 +177,10 @@ export async function fetchScannedHostFindings({
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
 
-  const hostIds = (await jobState.getData(DATA_SCANNED_HOST_IDS)) as number[];
-  const hostTargetsMap = (await jobState.getData(
-    DATA_HOST_TARGETS,
-  )) as HostAssetTargetsMap;
+  const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
+    []) as number[];
+  const hostTargetsMap = ((await jobState.getData(DATA_HOST_TARGETS)) ||
+    {}) as HostAssetTargetsMap;
 
   const serviceEntity = (await jobState.getData(
     DATA_VMDR_SERVICE_ENTITY,
@@ -254,7 +257,9 @@ export async function fetchScannedHostFindings({
 
   logger.publishEvent({
     name: 'stats',
-    description: `Processed detections for ${totalHostsProcessed} hosts${
+    description: `Processed detections for ${totalHostsProcessed} of ${
+      hostIds.length
+    } hosts${
       totalPageErrors > 0
         ? `, encountered errors on ${totalPageErrors} pages (errorId="${errorCorrelationId}")`
         : ''

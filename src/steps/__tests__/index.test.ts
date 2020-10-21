@@ -98,3 +98,55 @@ test('steps', async () => {
     },
   });
 });
+
+test('fetchScannedHostDetails', async () => {
+  recording = setupQualysRecording({
+    directory: __dirname,
+    name: 'fetchScannedHostDetails',
+  });
+
+  const nowTimestamp = 1599865230000; // '2020-09-11T23:00:30Z';
+  jest.spyOn(Date, 'now').mockImplementation(() => nowTimestamp);
+
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
+    instanceConfig: config,
+  });
+
+  await fetchAccountDetails(context);
+  await fetchServices(context);
+  await fetchScannedHostDetails(context);
+
+  expect({
+    numCollectedEntities: context.jobState.collectedEntities.length,
+    numCollectedRelationships: context.jobState.collectedRelationships.length,
+    collectedEntities: context.jobState.collectedEntities,
+    collectedRelationships: context.jobState.collectedRelationships,
+    encounteredTypes: context.jobState.encounteredTypes,
+  }).toMatchSnapshot('fetchScannedHostDetails');
+});
+
+test('fetchScannedHostFindings', async () => {
+  recording = setupQualysRecording({
+    directory: __dirname,
+    name: 'fetchScannedHostFindings',
+  });
+
+  const nowTimestamp = 1599865230000; // '2020-09-11T23:00:30Z';
+  jest.spyOn(Date, 'now').mockImplementation(() => nowTimestamp);
+
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
+    instanceConfig: config,
+  });
+
+  await fetchAccountDetails(context);
+  await fetchServices(context);
+  await fetchScannedHostFindings(context);
+
+  expect({
+    numCollectedEntities: context.jobState.collectedEntities.length,
+    numCollectedRelationships: context.jobState.collectedRelationships.length,
+    collectedEntities: context.jobState.collectedEntities,
+    collectedRelationships: context.jobState.collectedRelationships,
+    encounteredTypes: context.jobState.encounteredTypes,
+  }).toMatchSnapshot('fetchScannedHostFindings');
+});
