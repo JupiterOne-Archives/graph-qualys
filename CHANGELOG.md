@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## 4.4.0 - 2020-10-29
+
+### Changed
+
+- Upgrade SDK v4
+
 ## 4.3.1 2020-10-20
 
 ### Fixed
