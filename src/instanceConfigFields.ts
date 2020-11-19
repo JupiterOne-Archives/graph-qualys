@@ -13,7 +13,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
   },
 
   // TODO: Support multiselect, default selections, no selection
-  // TODO: Support numeric values, default value
+  // TODO: Use field definitions from open source projects to remove duplication
 
   /**
    * Adds finding request filter parameter `"type"`.
@@ -35,7 +35,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
   // wasFindingSeverityLevels: {
   //   type: 'string',
   //   // options: [1,2,3,4,5],
-  //   // default: [3,4,5]
+  //   // defaultValue: [3,4,5]
   // },
 
   /**
@@ -50,7 +50,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
   // wasIgnoredReasons: {
   //   type: 'string',
   //   // options: ['FALSE_POSITIVE', 'RISK_ACCEPTED', 'NOT_APPLICABLE']
-  //   // default: []
+  //   // defaultValue: []
   // },
 
   /**
@@ -64,7 +64,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
   // vmdrFindingSeverities: {
   //   type: 'string',
   //   // options: [1,2,3,4,5]
-  //   // default: [3,4,5]
+  //   // defaultValue: [3,4,5]
   // },
 
   /**
@@ -88,7 +88,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
   // vmdrFindingStatuses: {
   //   type:'string',
   //   options: ['New', 'Active', 'Re-Opened', 'Fixed'],
-  //   default: ['New', 'Active', 'Re-Opened']
+  //   defaultValue: ['New', 'Active', 'Re-Opened']
   // },
 
   /**
@@ -103,7 +103,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
   // vmdrFindingTypes: {
   //   type: 'string',
   //   // options: ['Confirmed', 'Potential', 'Information'],
-  //   // default: ['Confirmed', 'Potential', 'Information'],
+  //   // defaultValue: ['Confirmed', 'Potential', 'Information'],
   // },
 
   /**
@@ -115,7 +115,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
    */
   // vmdrFindingIngored: {
   //   type: 'boolean',
-  //   default: false
+  //   defaultValue: false
   // }
 
   /**
@@ -131,7 +131,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
    */
   minScannedSinceDays: {
     type: 'string',
-    // default: DEFAULT_SCANNED_SINCE_DAYS
+    // defaultValue: DEFAULT_SCANNED_SINCE_DAYS
   },
 
   /**
@@ -147,7 +147,7 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
    */
   minFindingsSinceDays: {
     type: 'string',
-    // default: DEFAULT_FINDINGS_SINCE_DAYS
+    // defaultValue: DEFAULT_FINDINGS_SINCE_DAYS
   },
 };
 
