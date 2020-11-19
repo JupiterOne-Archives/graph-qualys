@@ -1,4 +1,4 @@
-import { getQualysHost } from '../';
+import { getQualysHost } from './';
 
 describe('getQualysHost', () => {
   test('good', () => {

@@ -5,8 +5,8 @@ import path from 'path';
 import { Recording } from '@jupiterone/integration-sdk-testing';
 import { Request } from '@pollyjs/core';
 
-import { config } from '../../../test/config';
-import { setupQualysRecording } from '../../../test/recording';
+import { config } from '../../test/config';
+import { setupQualysRecording } from '../../test/recording';
 import {
   assets,
   ClientDelayedRequestEvent,
@@ -19,7 +19,7 @@ import {
   STANDARD_RATE_LIMIT_STATE,
   vmpc,
   was,
-} from '../client';
+} from './client';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -1150,15 +1150,7 @@ describe('iterateHostDetections', () => {
 
     const detectionsXml = fs
       .readFileSync(
-        path.join(
-          __dirname,
-          '..',
-          '..',
-          '..',
-          'test',
-          'fixtures',
-          'detections.xml',
-        ),
+        path.join(__dirname, '..', '..', 'test', 'fixtures', 'detections.xml'),
       )
       .toString('utf8');
 
@@ -1194,15 +1186,7 @@ describe('iterateHostDetections', () => {
 
     const detectionsXml = fs
       .readFileSync(
-        path.join(
-          __dirname,
-          '..',
-          '..',
-          '..',
-          'test',
-          'fixtures',
-          'detections.xml',
-        ),
+        path.join(__dirname, '..', '..', 'test', 'fixtures', 'detections.xml'),
       )
       .toString('utf8');
 
