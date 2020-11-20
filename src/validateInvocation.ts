@@ -24,6 +24,7 @@ const REQUIRED_PROPERTIES = [
 export default async function validateInvocation({
   logger,
   instance,
+  history,
 }: IntegrationExecutionContext<QualysIntegrationConfig>): Promise<void> {
   const config = instance.config;
 
@@ -43,19 +44,39 @@ export default async function validateInvocation({
     );
   }
 
+  const now = Date.now();
+  const lastSuccessfulExecutionTime =
+    history?.lastSuccessfulExecution?.startedOn || 0;
+
   assignPropertyAsNumberFromEnvOrConfig(
     config,
     'minScannedSinceDays',
     DEFAULT_SCANNED_SINCE_DAYS,
   );
-  config.minScannedSinceISODate = isoDate(config.minScannedSinceDays);
+  const minScannedSinceTime = sinceDaysTime({
+    now,
+    sinceDays: config.minScannedSinceDays,
+  });
+  if (lastSuccessfulExecutionTime > minScannedSinceTime) {
+    config.minScannedSinceISODate = isoDate(lastSuccessfulExecutionTime);
+  } else {
+    config.minScannedSinceISODate = isoDate(minScannedSinceTime);
+  }
 
   assignPropertyAsNumberFromEnvOrConfig(
     config,
     'minFindingsSinceDays',
     DEFAULT_FINDINGS_SINCE_DAYS,
   );
-  config.minFindingsSinceISODate = isoDate(config.minFindingsSinceDays);
+  const minFindingsSinceTime = sinceDaysTime({
+    now,
+    sinceDays: config.minFindingsSinceDays,
+  });
+  if (lastSuccessfulExecutionTime > minFindingsSinceTime) {
+    config.minFindingsSinceISODate = isoDate(lastSuccessfulExecutionTime);
+  } else {
+    config.minFindingsSinceISODate = isoDate(minFindingsSinceTime);
+  }
 
   // TODO: The SDK should be logging this information; the serializer for
   // integrationInstanceConfig will prevent logging masked or fields not
@@ -104,8 +125,10 @@ function assignPropertyAsNumberFromEnvOrConfig(
 
 const MILLISECONDS_ONE_DAY = 1000 * 60 * 60 * 24;
 
-function isoDate(sinceDays: number) {
-  return new Date(Date.now() - sinceDays * MILLISECONDS_ONE_DAY)
-    .toISOString()
-    .replace(/\.\d{1,3}/, '');
+function sinceDaysTime(input: { now: number; sinceDays: number }): number {
+  return input.now - input.sinceDays * MILLISECONDS_ONE_DAY;
+}
+
+function isoDate(time: number) {
+  return new Date(time).toISOString().replace(/\.\d{1,3}/, '');
 }
