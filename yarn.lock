@@ -491,12 +491,12 @@
   dependencies:
     ajv "^6.12.0"
 
-"@jupiterone/integration-sdk-cli@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-cli/-/integration-sdk-cli-4.1.0.tgz#ec0e01acf6a371f5d718c8e33ae691e047329f11"
-  integrity sha512-CBRDCa7RDBBbfvYClWKapWLfPaSlwWllTMyig92maGOs1ehp+1lagUqgGjOV6C8XONplVWIGsFgKxAwYtqB8CA==
+"@jupiterone/integration-sdk-cli@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-cli/-/integration-sdk-cli-4.2.0.tgz#6958862329ed492ac684d122e8853fff87c2cef4"
+  integrity sha512-T17XMWiYedYj24JfhrWLcAh+TbEjCiKaMwivokRLyxZJVho1tU/qczUHfjY/uFIk40IkvwAEKssfEl40qRPr9w==
   dependencies:
-    "@jupiterone/integration-sdk-runtime" "^4.1.0"
+    "@jupiterone/integration-sdk-runtime" "^4.2.0"
     commander "^5.0.0"
     globby "^11.0.0"
     lodash "^4.17.19"
@@ -504,22 +504,22 @@
     upath "^1.2.0"
     vis "^4.21.0-EOL"
 
-"@jupiterone/integration-sdk-core@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-core/-/integration-sdk-core-4.1.0.tgz#71e6368cadc8502d99bb665603b2efcb2b2c8eec"
-  integrity sha512-g+zC81WDA7/8ZIiOB5b7eTb1S5L8sbCXBeqwSfsYO9Lh57kKy5JAQ7SR8C/pg4KzRVyq/puANS2WGzYy4/bZIQ==
+"@jupiterone/integration-sdk-core@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-core/-/integration-sdk-core-4.2.0.tgz#a90bd37b14530e2da373c8fc4d9c0b660e0cf274"
+  integrity sha512-5p91KagldvdMgmHcYBpLRO4sl3BasM/SuwwioDAJFo+F0G/WdkZaJuKTqU6bZpQf+vsTPXFe/HHk1JZ1SOJU0A==
   dependencies:
     "@jupiterone/data-model" "^0.15.0"
     lodash "^4.17.15"
     uuid "^7.0.3"
 
-"@jupiterone/integration-sdk-dev-tools@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-dev-tools/-/integration-sdk-dev-tools-4.1.0.tgz#2ab21b3f371f044764139ab5a42d75dec9fadcd7"
-  integrity sha512-g0svTy6INnZODp68gMYWhDa+eCWXPz1mybHioNOOHpRx21tibqlh+xivqsmKhuN6DzvIbmH7A/pX2qLvOVDOfQ==
+"@jupiterone/integration-sdk-dev-tools@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-dev-tools/-/integration-sdk-dev-tools-4.2.0.tgz#ab5591c2289ffd0df6021e2b411ba4ef30b8e5e4"
+  integrity sha512-0IUgj7yAQbITS/hmB24Rot+I4Pu8alfbeRLfqqCKjGxRsuf1OdcicgEM+pvrBtbnhhRvpvlzJ40e+QHK/GQ2IA==
   dependencies:
-    "@jupiterone/integration-sdk-cli" "^4.1.0"
-    "@jupiterone/integration-sdk-testing" "^4.1.0"
+    "@jupiterone/integration-sdk-cli" "^4.2.0"
+    "@jupiterone/integration-sdk-testing" "^4.2.0"
     "@types/jest" "^25.2.3"
     "@types/node" "^14.0.5"
     "@typescript-eslint/eslint-plugin" "^3.8.0"
@@ -535,12 +535,12 @@
     ts-node "^8.10.2"
     typescript "^3.9.3"
 
-"@jupiterone/integration-sdk-runtime@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-runtime/-/integration-sdk-runtime-4.1.0.tgz#30dc9b7b6c2ac37140a02326bf8c7badd2294fdb"
-  integrity sha512-/KjmNPTuMpEUNUGlscIDEPk/Z2A9Vy2HawwmMehITJedU57SciK46pKeTzbKgjbJaRKCQf94tJ66m5D5VWgSNQ==
+"@jupiterone/integration-sdk-runtime@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-runtime/-/integration-sdk-runtime-4.2.0.tgz#fc06d8471e20de533ea60414fd66d5f396e899de"
+  integrity sha512-hwTR4jiRyXDD6cBy+/9b1KKxxPhG9z+qhbqUmBOat5ZyceV7QZlcI7f2zz9c1FqhNfA81XlZoMS0Tan3yZQ4Pg==
   dependencies:
-    "@jupiterone/integration-sdk-core" "^4.1.0"
+    "@jupiterone/integration-sdk-core" "^4.2.0"
     "@lifeomic/alpha" "^1.1.3"
     async-sema "^3.1.0"
     axios "^0.19.2"
@@ -557,13 +557,13 @@
     rimraf "^3.0.2"
     uuid "^7.0.3"
 
-"@jupiterone/integration-sdk-testing@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-testing/-/integration-sdk-testing-4.1.0.tgz#60098bf05088249dd56ccda7c20475b12acbc473"
-  integrity sha512-K8l2r/FN4dJylXa5obb43wCZyIodUVf58nf8Lz3Y2ZX5ekRsMGVXS5vYkejrmY+uWEKOzqTr8XlJ4DqIM/Xb8g==
+"@jupiterone/integration-sdk-testing@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@jupiterone/integration-sdk-testing/-/integration-sdk-testing-4.2.0.tgz#cba24381fbcae804878f2456dc514cfd765d472f"
+  integrity sha512-OBxwYDUKrHJqrJLIMN95NYuYJR8D7ZcFZHz988H77cyFrRxPYUGnn2BAc+0/tpF6yj/2V6m0Mp2aiUpVpHpmMg==
   dependencies:
-    "@jupiterone/integration-sdk-core" "^4.1.0"
-    "@jupiterone/integration-sdk-runtime" "^4.1.0"
+    "@jupiterone/integration-sdk-core" "^4.2.0"
+    "@jupiterone/integration-sdk-runtime" "^4.2.0"
     "@pollyjs/adapter-node-http" "^4.0.4"
     "@pollyjs/core" "^4.0.4"
     "@pollyjs/persister-fs" "^4.0.4"
