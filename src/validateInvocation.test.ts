@@ -118,6 +118,17 @@ describe('minScannedSinceDays', () => {
     );
   });
 
+  test('numeric float allows less than one day', async () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({ minScannedSinceDays: 0.166 }),
+    });
+    await validateInvocation(context);
+    expect(context.instance.config.minScannedSinceDays).toEqual(0.166);
+    expect(context.instance.config.minScannedSinceISODate).toEqual(
+      '2020-10-12T14:44:41Z',
+    );
+  });
+
   test('MIN_SCANNED_SINCE_DAYS environment variable', async () => {
     process.env.MIN_SCANNED_SINCE_DAYS = '91';
     const context = createMockExecutionContext<QualysIntegrationConfig>({
@@ -257,6 +268,17 @@ describe('minFindingsSinceDays', () => {
     expect(context.instance.config.minFindingsSinceDays).toEqual(91);
     expect(context.instance.config.minFindingsSinceISODate).toEqual(
       '2020-07-13T18:43:44Z',
+    );
+  });
+
+  test('numeric float allows less than one day', async () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({ minFindingsSinceDays: 0.166 }),
+    });
+    await validateInvocation(context);
+    expect(context.instance.config.minFindingsSinceDays).toEqual(0.166);
+    expect(context.instance.config.minFindingsSinceISODate).toEqual(
+      '2020-10-12T14:44:41Z',
     );
   });
 
