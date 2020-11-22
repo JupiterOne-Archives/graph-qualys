@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade `@jupiterone/integration-sdk-*@4.2.0`
+- `context.history` is used to ingest scans/findings since last successful
+  execution
+- Mark apps, hosts, and findings as partial data sets so that previous findings
+  are not deleted during synchronization
+
 ## 4.5.0 - 2020-10-29
 
 ### Added
@@ -12,7 +20,7 @@
 
 ### Changed
 
-- Upgrade SDK v4
+- Upgrade `@jupiterone/integration-sdk-*@4.0.0`
 
 ## 4.3.1 2020-10-20
 
