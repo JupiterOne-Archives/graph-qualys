@@ -78,11 +78,21 @@ export default async function validateInvocation({
     config.minFindingsSinceISODate = isoDate(minFindingsSinceTime);
   }
 
-  // TODO: The SDK should be logging this information; the serializer for
-  // integrationInstanceConfig will prevent logging masked or fields not
-  // declared in the instanceConfigFields.
   logger.info(
-    { integrationInstanceConfig: config },
+    {
+      // TODO: The SDK should be safely logging; the serializer for
+      // integrationInstanceConfig will prevent logging masked fields or fields
+      // not declared in the instanceConfigFields.
+      integrationInstanceConfig: config,
+
+      lastSuccessfulExecutionTime: lastSuccessfulExecutionTime
+        ? isoDate(lastSuccessfulExecutionTime)
+        : undefined,
+
+      // TODO: Remove these once virtual instanceConfigFields is supported
+      minScannedSinceISODate: config.minScannedSinceISODate,
+      minFindingsSinceISODate: config.minFindingsSinceISODate,
+    },
     'Configuration values validated, verifying authentication...',
   );
 

@@ -134,6 +134,12 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
     // defaultValue: DEFAULT_SCANNED_SINCE_DAYS
   },
 
+  // TODO Add support for virtual fields
+  // minScannedSinceISODate: {
+  //   type: 'string',
+  //   // virtual: true,
+  // },
+
   /**
    * Adds host detections request filter parameter `"detection_updated_since"`
    * by calculating the time since the current execution start time.
@@ -149,6 +155,12 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
     type: 'string',
     // defaultValue: DEFAULT_FINDINGS_SINCE_DAYS
   },
+
+  // TODO Add support for virtual fields
+  // minFindingsSinceISODate: {
+  //   type: 'string',
+  //   // virtual: true,
+  // },
 };
 
 export default instanceConfigFields;
