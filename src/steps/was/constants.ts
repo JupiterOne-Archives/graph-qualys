@@ -1,6 +1,8 @@
 import {
   generateRelationshipType,
   RelationshipClass,
+  StepEntityMetadata,
+  StepRelationshipMetadata,
 } from '@jupiterone/integration-sdk-core';
 
 import { ENTITY_TYPE_SERVICE_WAS } from '../services';
@@ -28,25 +30,28 @@ export const MAPPED_RELATIONSHIP_TYPE_WAS_SCANS_WEBAPP = generateRelationshipTyp
   ENTITY_TYPE_WEBAPP,
 );
 
-export const WasEntities = {
+export const WasEntities: Record<string, StepEntityMetadata> = {
   WEBAPP_FINDING: {
     _type: ENTITY_TYPE_WEBAPP_FINDING,
     _class: 'Finding',
     resourceName: 'Web App Finding',
+    partial: true,
   },
 };
 
-export const WasRelationships = {
+export const WasRelationships: Record<string, StepRelationshipMetadata> = {
   SERVICE_WEBAPP_FINDING: {
     _type: RELATIONSHIP_TYPE_SERVICE_WEBAPP_FINDING,
     _class: RelationshipClass.IDENTIFIED,
     sourceType: ENTITY_TYPE_SERVICE_WAS,
     targetType: ENTITY_TYPE_WEBAPP_FINDING,
+    partial: true,
   },
   SERVICE_SCANS_WEBAPP: {
     _type: MAPPED_RELATIONSHIP_TYPE_WAS_SCANS_WEBAPP,
     _class: RelationshipClass.SCANS,
     sourceType: ENTITY_TYPE_SERVICE_WAS,
     targetType: ENTITY_TYPE_WEBAPP,
+    partial: true,
   },
 };

@@ -1,6 +1,7 @@
 import {
   generateRelationshipType,
   RelationshipClass,
+  StepRelationshipMetadata,
 } from '@jupiterone/integration-sdk-core';
 
 import { ENTITY_TYPE_HOST_FINDING } from '../vmdr/constants';
@@ -39,29 +40,33 @@ export const MAPPED_RELATIONSHIP_TYPE_WEBAPP_FINDING_QUALYS_VULNERABILITY = gene
   ENTITY_TYPE_QUALYS_VULNERABILITY,
 );
 
-export const VulnRelationships = {
+export const VulnRelationships: Record<string, StepRelationshipMetadata> = {
   HOST_FINDING_QUALYS_VULN: {
     _type: MAPPED_RELATIONSHIP_TYPE_HOST_FINDING_QUALYS_VULNERABILITY,
     _class: RelationshipClass.IS,
     sourceType: ENTITY_TYPE_HOST_FINDING,
     targetType: ENTITY_TYPE_QUALYS_VULNERABILITY,
+    partial: true,
   },
   HOST_FINDING_CVE_VULN: {
     _type: MAPPED_RELATIONSHIP_TYPE_HOST_FINDING_CVE_VULNERABILITY,
     _class: RelationshipClass.IS,
     sourceType: ENTITY_TYPE_HOST_FINDING,
     targetType: ENTITY_TYPE_CVE_VULNERABILITY,
+    partial: true,
   },
   WEBAPP_FINDING_QUALYS_VULN: {
     _type: MAPPED_RELATIONSHIP_TYPE_WEBAPP_FINDING_QUALYS_VULNERABILITY,
     _class: RelationshipClass.IS,
     sourceType: ENTITY_TYPE_WEBAPP_FINDING,
     targetType: ENTITY_TYPE_QUALYS_VULNERABILITY,
+    partial: true,
   },
   WEBAPP_FINDING_CVE_VULN: {
     _type: MAPPED_RELATIONSHIP_TYPE_WEBAPP_FINDING_CVE_VULNERABILITY,
     _class: RelationshipClass.IS,
     sourceType: ENTITY_TYPE_WEBAPP_FINDING,
     targetType: ENTITY_TYPE_CVE_VULNERABILITY,
+    partial: true,
   },
 };
