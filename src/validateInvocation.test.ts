@@ -20,6 +20,7 @@ beforeEach(() => {
   jest.spyOn(Date, 'now').mockImplementation(() => 1602528224084);
   (createQualysAPIClient as jest.Mock).mockReturnValue({
     verifyAuthentication: jest.fn(),
+    validateApiUrl: jest.fn(),
   });
 });
 

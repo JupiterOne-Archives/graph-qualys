@@ -11,6 +11,7 @@ import { v4 as uuid } from 'uuid';
 import {
   IntegrationProviderAPIError,
   IntegrationProviderAuthenticationError,
+  IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
 import { QualysIntegrationConfig } from '../../types';
@@ -225,6 +226,15 @@ export class QualysAPIClient {
         status: err.status,
         statusText: err.statusText,
       });
+    }
+  }
+
+  public validateApiUrl(): void {
+    const apiUrlPrefix = 'https://qualysapi';
+    if (!this.config.qualysApiUrl.startsWith(apiUrlPrefix)) {
+      throw new IntegrationValidationError(
+        `Api url does not begin with ${apiUrlPrefix}. Please ensure you are providing the api url specified by your Qualys platform host as seen under the "API URLs" section here: https://www.qualys.com/platform-identification/`,
+      );
     }
   }
 

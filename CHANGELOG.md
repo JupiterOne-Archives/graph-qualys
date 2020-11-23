@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## 4.5.0 - 2020-10-29
+
+### Added
+
+- Configuration check that the api url starts with qualysapi
+
 ## 4.4.0 - 2020-10-29
 
 ### Changed
