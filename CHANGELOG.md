@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.6.0 - 2020-11-23
+
 ### Changed
 
 - Upgrade `@jupiterone/integration-sdk-*@4.2.0`
@@ -9,6 +11,10 @@
   execution
 - Mark apps, hosts, and findings as partial data sets so that previous findings
   are not deleted during synchronization
+
+### Fixed
+
+- Integration does not detect expired trial accounts
 
 ## 4.5.0 - 2020-10-29
 
