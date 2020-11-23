@@ -228,15 +228,20 @@ export class QualysAPIClient {
         statusText: err.statusText,
       });
     }
-    const responseText = await response.text();
-    const jsonFromXml = xmlParser.parse(responseText) as
-      | string
-      | was.ActivityLogErrorResponse;
-    if (_.isObject(jsonFromXml)) {
-      const { CODE, TEXT } = jsonFromXml.SIMPLE_RETURN.RESPONSE;
-      throw new IntegrationValidationError(
-        `Unexpected responseCode in authentication verification: ${CODE}: ${TEXT}`,
-      );
+
+    const isXML = /text\/xml/.test(response.headers.get('content-type'));
+    if (isXML) {
+      const responseText = await response.text();
+      const jsonFromXml = xmlParser.parse(
+        responseText,
+      ) as QualysV2ApiErrorResponse;
+      const { CODE, TEXT } = (jsonFromXml as any)?.SIMPLE_RETURN?.RESPONSE;
+      const isError = CODE && TEXT;
+      if (isError) {
+        throw new IntegrationValidationError(
+          `Unexpected responseCode in authentication verification: ${CODE}: ${TEXT}`,
+        );
+      }
     }
   }
 
