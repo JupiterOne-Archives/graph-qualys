@@ -11,6 +11,7 @@ import { v4 as uuid } from 'uuid';
 import {
   IntegrationProviderAPIError,
   IntegrationProviderAuthenticationError,
+  IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
 import { QualysIntegrationConfig } from '../../types';
