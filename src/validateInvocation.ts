@@ -67,6 +67,7 @@ export default async function validateInvocation({
 
   const client = createQualysAPIClient(logger, config);
   await client.verifyAuthentication();
+  client.validateApiUrl();
 }
 
 function readPropertyFromEnv(propertyName: string): string | undefined {

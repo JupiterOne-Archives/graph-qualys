@@ -228,6 +228,15 @@ export class QualysAPIClient {
     }
   }
 
+  public validateApiUrl(): void {
+    const apiUrlPrefix = 'https://qualysapi';
+    if (!this.config.qualysApiUrl.startsWith(apiUrlPrefix)) {
+      throw new IntegrationValidationError(
+        `Api url does not begin with ${apiUrlPrefix}. Please ensure you are providing the api url specified by your Qualys platform host as seen under the "API URLs" section here: https://www.qualys.com/platform-identification/`,
+      );
+    }
+  }
+
   public async fetchPortalInfo(): Promise<PortalInfo | undefined> {
     const endpoint = '/qps/rest/portal/version';
 

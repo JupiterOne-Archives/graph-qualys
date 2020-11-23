@@ -20,6 +20,7 @@ import {
   vmpc,
   was,
 } from './client';
+import { IntegrationValidationError } from '@jupiterone/integration-sdk-core';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -434,6 +435,20 @@ describe('verifyAuthentication', () => {
     await expect(
       createClient().verifyAuthentication(),
     ).resolves.not.toThrowError();
+  });
+});
+
+describe('validateApiUrl', () => {
+  test('invalid', () => {
+    const invalidApiUrl = 'https://qualysguard.qg3.apps.qualys.com';
+    const client = new QualysAPIClient({
+      config: { ...config, qualysApiUrl: invalidApiUrl },
+    });
+    expect(() => client.validateApiUrl()).toThrow(IntegrationValidationError);
+  });
+
+  test('valid', () => {
+    expect(() => createClient().validateApiUrl()).not.toThrowError();
   });
 });
 
