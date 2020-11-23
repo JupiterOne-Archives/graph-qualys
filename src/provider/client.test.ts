@@ -436,6 +436,18 @@ describe('verifyAuthentication', () => {
       createClient().verifyAuthentication(),
     ).resolves.not.toThrowError();
   });
+
+  test('expired', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'verifyAuthenticationExpired',
+      options: { recordFailedRequests: true },
+    });
+
+    const rejects = expect(createClient().verifyAuthentication()).rejects;
+    await rejects.toBeInstanceOf(IntegrationValidationError);
+    await rejects.toThrow(/authentication/);
+  });
 });
 
 describe('validateApiUrl', () => {
