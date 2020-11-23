@@ -444,9 +444,9 @@ describe('verifyAuthentication', () => {
       options: { recordFailedRequests: true },
     });
 
-    await expect(createClient().verifyAuthentication()).rejects.toBeInstanceOf(
-      IntegrationValidationError,
-    );
+    const rejects = expect(createClient().verifyAuthentication()).rejects;
+    await rejects.toBeInstanceOf(IntegrationValidationError);
+    await rejects.toThrow(/authentication/);
   });
 });
 
