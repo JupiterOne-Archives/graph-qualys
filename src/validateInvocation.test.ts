@@ -1,3 +1,7 @@
+import {
+  Execution,
+  IntegrationExecutionContext,
+} from '@jupiterone/integration-sdk-core';
 import { createMockExecutionContext } from '@jupiterone/integration-sdk-testing';
 
 import {
@@ -10,11 +14,16 @@ import validateInvocation from './validateInvocation';
 
 jest.mock('./provider/createQualysAPIClient');
 
-const config = {
-  qualysApiUrl: 'https://qualysapi.qualys.com',
-  qualysUsername: 'username123',
-  qualysPassword: 'passwordabc',
-} as QualysIntegrationConfig;
+function createInstanceConfig(
+  overrides?: Partial<QualysIntegrationConfig>,
+): QualysIntegrationConfig {
+  return {
+    qualysApiUrl: 'https://qualysapi.qualys.com',
+    qualysUsername: 'username123',
+    qualysPassword: 'passwordabc',
+    ...overrides,
+  } as QualysIntegrationConfig;
+}
 
 beforeEach(() => {
   jest.spyOn(Date, 'now').mockImplementation(() => 1602528224084);
@@ -29,9 +38,15 @@ afterEach(() => {
 });
 
 describe('minScannedSinceDays', () => {
+  beforeEach(() => {
+    delete process.env.MIN_SCANNED_SINCE_DAYS;
+  });
+
   test('undefined on existing configs', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minScannedSinceDays: undefined as any },
+      instanceConfig: createInstanceConfig({
+        minScannedSinceDays: undefined as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minScannedSinceDays).toEqual(
@@ -44,7 +59,7 @@ describe('minScannedSinceDays', () => {
 
   test('empty string', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minScannedSinceDays: ' ' as any },
+      instanceConfig: createInstanceConfig({ minScannedSinceDays: ' ' as any }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minScannedSinceDays).toEqual(
@@ -57,7 +72,9 @@ describe('minScannedSinceDays', () => {
 
   test('non-numeric string', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minScannedSinceDays: ' abc' as any },
+      instanceConfig: createInstanceConfig({
+        minScannedSinceDays: ' abc' as any,
+      }),
     });
     await expect(validateInvocation(context)).rejects.toThrow(
       /minScannedSinceDays/,
@@ -66,7 +83,9 @@ describe('minScannedSinceDays', () => {
 
   test('numeric string', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minScannedSinceDays: '91' as any },
+      instanceConfig: createInstanceConfig({
+        minScannedSinceDays: '91' as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minScannedSinceDays).toEqual(91);
@@ -77,7 +96,9 @@ describe('minScannedSinceDays', () => {
 
   test('numeric string with spaces', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minScannedSinceDays: ' 91 ' as any },
+      instanceConfig: createInstanceConfig({
+        minScannedSinceDays: ' 91 ' as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minScannedSinceDays).toEqual(91);
@@ -88,7 +109,7 @@ describe('minScannedSinceDays', () => {
 
   test('numeric', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minScannedSinceDays: 91 },
+      instanceConfig: createInstanceConfig({ minScannedSinceDays: 91 }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minScannedSinceDays).toEqual(91);
@@ -97,15 +118,72 @@ describe('minScannedSinceDays', () => {
     );
   });
 
+  test('numeric float allows less than one day', async () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({ minScannedSinceDays: 0.166 }),
+    });
+    await validateInvocation(context);
+    expect(context.instance.config.minScannedSinceDays).toEqual(0.166);
+    expect(context.instance.config.minScannedSinceISODate).toEqual(
+      '2020-10-12T14:44:41Z',
+    );
+  });
+
   test('MIN_SCANNED_SINCE_DAYS environment variable', async () => {
     process.env.MIN_SCANNED_SINCE_DAYS = '91';
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: config,
+      instanceConfig: createInstanceConfig(),
     });
     await validateInvocation(context);
     expect(context.instance.config.minScannedSinceDays).toEqual(91);
     expect(context.instance.config.minScannedSinceISODate).toEqual(
       '2020-07-13T18:43:44Z',
+    );
+  });
+
+  test('last successful execution used when less than since days', async () => {
+    const lastExecution: Execution = {
+      startedOn: Date.now(),
+    };
+
+    const context: IntegrationExecutionContext<QualysIntegrationConfig> = {
+      ...createMockExecutionContext<QualysIntegrationConfig>({
+        instanceConfig: createInstanceConfig({ minScannedSinceDays: 3 }),
+      }),
+      history: {
+        lastExecution,
+        lastSuccessfulExecution: lastExecution,
+      },
+    };
+
+    await validateInvocation(context);
+
+    expect(context.instance.config.minScannedSinceDays).toEqual(3);
+    expect(context.instance.config.minScannedSinceISODate).toEqual(
+      '2020-10-12T18:43:44Z',
+    );
+  });
+
+  test('last successful execution NOT used when greater than since days', async () => {
+    const lastExecution: Execution = {
+      startedOn: Date.now() - 10 * (1000 * 60 * 60 * 24),
+    };
+
+    const context: IntegrationExecutionContext<QualysIntegrationConfig> = {
+      ...createMockExecutionContext<QualysIntegrationConfig>({
+        instanceConfig: createInstanceConfig({ minScannedSinceDays: 3 }),
+      }),
+      history: {
+        lastExecution,
+        lastSuccessfulExecution: lastExecution,
+      },
+    };
+
+    await validateInvocation(context);
+
+    expect(context.instance.config.minScannedSinceDays).toEqual(3);
+    expect(context.instance.config.minScannedSinceISODate).toEqual(
+      '2020-10-09T18:43:44Z',
     );
   });
 });
@@ -117,7 +195,9 @@ describe('minFindingsSinceDays', () => {
 
   test('undefined on existing configs', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minFindingsSinceDays: undefined as any },
+      instanceConfig: createInstanceConfig({
+        minFindingsSinceDays: undefined as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minFindingsSinceDays).toEqual(
@@ -130,7 +210,9 @@ describe('minFindingsSinceDays', () => {
 
   test('empty string', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minFindingsSinceDays: ' ' as any },
+      instanceConfig: createInstanceConfig({
+        minFindingsSinceDays: ' ' as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minFindingsSinceDays).toEqual(
@@ -143,7 +225,9 @@ describe('minFindingsSinceDays', () => {
 
   test('non-numeric string', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minFindingsSinceDays: ' abc' as any },
+      instanceConfig: createInstanceConfig({
+        minFindingsSinceDays: ' abc' as any,
+      }),
     });
     await expect(validateInvocation(context)).rejects.toThrow(
       /minFindingsSinceDays/,
@@ -152,7 +236,9 @@ describe('minFindingsSinceDays', () => {
 
   test('numeric string', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minFindingsSinceDays: '91' as any },
+      instanceConfig: createInstanceConfig({
+        minFindingsSinceDays: '91' as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minFindingsSinceDays).toEqual(91);
@@ -163,7 +249,9 @@ describe('minFindingsSinceDays', () => {
 
   test('numeric string with spaces', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minFindingsSinceDays: ' 91 ' as any },
+      instanceConfig: createInstanceConfig({
+        minFindingsSinceDays: ' 91 ' as any,
+      }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minFindingsSinceDays).toEqual(91);
@@ -174,7 +262,7 @@ describe('minFindingsSinceDays', () => {
 
   test('numeric', async () => {
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: { ...config, minFindingsSinceDays: 91 },
+      instanceConfig: createInstanceConfig({ minFindingsSinceDays: 91 }),
     });
     await validateInvocation(context);
     expect(context.instance.config.minFindingsSinceDays).toEqual(91);
@@ -183,15 +271,72 @@ describe('minFindingsSinceDays', () => {
     );
   });
 
+  test('numeric float allows less than one day', async () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({ minFindingsSinceDays: 0.166 }),
+    });
+    await validateInvocation(context);
+    expect(context.instance.config.minFindingsSinceDays).toEqual(0.166);
+    expect(context.instance.config.minFindingsSinceISODate).toEqual(
+      '2020-10-12T14:44:41Z',
+    );
+  });
+
   test('MIN_FINDINGS_SINCE_DAYS environment variable', async () => {
     process.env.MIN_FINDINGS_SINCE_DAYS = '91';
     const context = createMockExecutionContext<QualysIntegrationConfig>({
-      instanceConfig: config,
+      instanceConfig: createInstanceConfig(),
     });
     await validateInvocation(context);
     expect(context.instance.config.minFindingsSinceDays).toEqual(91);
     expect(context.instance.config.minFindingsSinceISODate).toEqual(
       '2020-07-13T18:43:44Z',
+    );
+  });
+
+  test('last successful execution used when less than since days', async () => {
+    const lastExecution: Execution = {
+      startedOn: Date.now(),
+    };
+
+    const context: IntegrationExecutionContext<QualysIntegrationConfig> = {
+      ...createMockExecutionContext<QualysIntegrationConfig>({
+        instanceConfig: createInstanceConfig({ minFindingsSinceDays: 3 }),
+      }),
+      history: {
+        lastExecution,
+        lastSuccessfulExecution: lastExecution,
+      },
+    };
+
+    await validateInvocation(context);
+
+    expect(context.instance.config.minFindingsSinceDays).toEqual(3);
+    expect(context.instance.config.minFindingsSinceISODate).toEqual(
+      '2020-10-12T18:43:44Z',
+    );
+  });
+
+  test('last successful execution NOT used when greater than since days', async () => {
+    const lastExecution: Execution = {
+      startedOn: Date.now() - 10 * (1000 * 60 * 60 * 24),
+    };
+
+    const context: IntegrationExecutionContext<QualysIntegrationConfig> = {
+      ...createMockExecutionContext<QualysIntegrationConfig>({
+        instanceConfig: createInstanceConfig({ minFindingsSinceDays: 3 }),
+      }),
+      history: {
+        lastExecution,
+        lastSuccessfulExecution: lastExecution,
+      },
+    };
+
+    await validateInvocation(context);
+
+    expect(context.instance.config.minFindingsSinceDays).toEqual(3);
+    expect(context.instance.config.minFindingsSinceISODate).toEqual(
+      '2020-10-09T18:43:44Z',
     );
   });
 });

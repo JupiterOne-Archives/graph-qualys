@@ -1,6 +1,8 @@
 import {
   generateRelationshipType,
   RelationshipClass,
+  StepEntityMetadata,
+  StepRelationshipMetadata,
 } from '@jupiterone/integration-sdk-core';
 
 import { ENTITY_TYPE_SERVICE_VMDR } from '../services';
@@ -36,31 +38,35 @@ export const MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST = generateRelationshipType(
   ENTITY_TYPE_EC2_HOST,
 );
 
-export const VmdrEntities = {
+export const VmdrEntities: Record<string, StepEntityMetadata> = {
   HOST_FINDING: {
     _type: ENTITY_TYPE_HOST_FINDING,
     _class: 'Finding',
     resourceName: 'Host Detection',
+    partial: true,
   },
 };
 
-export const VmdrRelationships = {
+export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
   SERVICE_HOST_FINDING: {
     _type: RELATIONSHIP_TYPE_SERVICE_HOST_FINDING,
     _class: RelationshipClass.IDENTIFIED,
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     targetType: ENTITY_TYPE_HOST_FINDING,
+    partial: true,
   },
   SERVICE_DISCOVERED_HOST: {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
     _class: RelationshipClass.SCANS,
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     targetType: ENTITY_TYPE_DISCOVERED_HOST,
+    partial: true,
   },
   SERVICE_EC2_HOST: {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
     _class: RelationshipClass.SCANS,
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     targetType: ENTITY_TYPE_EC2_HOST,
+    partial: true,
   },
 };
