@@ -38,6 +38,7 @@ import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
 import { ListWebAppFindingsFilters } from './types/was';
 import { calculateConcurrency, toArray } from './util';
 import { buildServiceRequestBody } from './was/util';
+import _ from 'lodash';
 
 export * from './types';
 
@@ -207,9 +208,9 @@ export class QualysAPIClient {
 
   public async verifyAuthentication(): Promise<void> {
     const endpoint = '/api/2.0/fo/activity_log/';
-
+    let response;
     try {
-      await this.executeAuthenticatedAPIRequest(
+      response = await this.executeAuthenticatedAPIRequest(
         this.qualysUrl(endpoint, {
           action: 'list',
           username: this.config.qualysUsername,
@@ -226,6 +227,16 @@ export class QualysAPIClient {
         status: err.status,
         statusText: err.statusText,
       });
+    }
+    const responseText = await response.text();
+    const jsonFromXml = xmlParser.parse(responseText) as
+      | string
+      | was.ActivityLogErrorResponse;
+    if (_.isObject(jsonFromXml)) {
+      const { CODE, TEXT } = jsonFromXml.SIMPLE_RETURN.RESPONSE;
+      throw new IntegrationValidationError(
+        `Unexpected responseCode in authentication verification: ${CODE}: ${TEXT}`,
+      );
     }
   }
 
