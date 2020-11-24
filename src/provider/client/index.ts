@@ -510,7 +510,7 @@ export class QualysAPIClient {
     };
 
     const endpoint = '/api/2.0/fo/asset/host/';
-    const nothing = 'nothing';
+    console.log('nothing');
     const response = await this.executeAuthenticatedAPIRequest(
       this.qualysUrl(endpoint, {
         action: 'list',
