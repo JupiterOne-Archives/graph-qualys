@@ -5,6 +5,7 @@ import {
 
 import { config } from '../../../test/config';
 import { setupQualysRecording } from '../../../test/recording';
+import { calculateConfig } from '../../calculateConfig';
 import { QualysIntegrationConfig } from '../../types';
 import { fetchAccountDetails } from '../account';
 import { fetchServices } from '../services';
@@ -36,6 +37,8 @@ test('steps', async () => {
   const context = createMockStepExecutionContext<QualysIntegrationConfig>({
     instanceConfig: config,
   });
+
+  context.instance.config = calculateConfig(context);
 
   await fetchAccountDetails(context);
   await fetchServices(context);

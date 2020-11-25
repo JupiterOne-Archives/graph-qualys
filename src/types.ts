@@ -1,4 +1,4 @@
-export type QualysIntegrationConfig = {
+export type UserIntegrationConfig = {
   qualysUsername: string;
   qualysPassword: string;
 
@@ -20,21 +20,35 @@ export type QualysIntegrationConfig = {
    * for web app findings and host detections.
    */
   minFindingsSinceDays: number;
+};
 
-  /******* Calculated values, established during `validateInvocation` ********/
-
+export type CalculatedIntegrationConfig = UserIntegrationConfig & {
   /**
-   * The date to use when searching for scanned web applications and hosts,
-   * calculated from `minScannedSinceDays`.
+   * The start date to use when searching for scanned web applications and
+   * hosts, calculated from `minScannedSinceDays`.
    */
   minScannedSinceISODate: string;
 
   /**
-   * The date to use when searching for web application findings and host detections,
-   * calculated from `minFindingsSinceDays`.
+   * The end date to use when searching for scanned hosts, calculated from
+   * execution start time.
+   */
+  maxScannedSinceISODate: string;
+
+  /**
+   * The start date to use when searching for web application findings and host
+   * detections, calculated from `minFindingsSinceDays`.
    */
   minFindingsSinceISODate: string;
+
+  /**
+   * The end date to use when searching for host detections, calculated from
+   * execution start time.
+   */
+  maxFindingsSinceISODate: string;
 };
+
+export type QualysIntegrationConfig = CalculatedIntegrationConfig;
 
 export type PossibleArray<T> = T | T[];
 

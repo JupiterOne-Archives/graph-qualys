@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade `@jupiterone/integration-sdk-*@5.0.0`
+- Limit processing to hosts scanned up to the start time of the current
+  execution. This helps to avoid an overlap between executions.
+
 ## 4.6.0 - 2020-11-23
 
 ### Changed

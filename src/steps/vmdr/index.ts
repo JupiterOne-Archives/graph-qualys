@@ -46,7 +46,8 @@ export async function fetchScannedHostIds({
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   const filters: ListScannedHostIdsFilters = {
-    vm_scan_since: instance.config.minScannedSinceISODate,
+    vm_scan_date_after: instance.config.minScannedSinceISODate,
+    vm_scan_date_before: instance.config.maxScannedSinceISODate,
   };
 
   const loggerFetch = logger.child({ filters });
@@ -245,6 +246,7 @@ export async function fetchScannedHostFindings({
     {
       filters: {
         detection_updated_since: instance.config.minFindingsSinceISODate,
+        detection_updated_before: instance.config.maxFindingsSinceISODate,
       },
       onRequestError(pageIds, err) {
         logger.error(

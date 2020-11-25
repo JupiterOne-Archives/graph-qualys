@@ -4,7 +4,9 @@
 import { ISODateString, PossibleArray } from '..';
 
 // Not a complete list
-type ListScannedHostIdsFilterInputParameter = 'vm_scan_since'; // YYYY-MM-DD[THH:MM:SSZ] (UTC/GMT)
+type ListScannedHostIdsFilterInputParameter =
+  | 'vm_scan_date_after'
+  | 'vm_scan_date_before'; // YYYY-MM-DD[THH:MM:SSZ] (UTC/GMT)
 
 export type ListScannedHostIdsFilters = Partial<
   Record<ListScannedHostIdsFilterInputParameter, string | boolean | number>
