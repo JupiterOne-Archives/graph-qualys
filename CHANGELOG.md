@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## 4.6.1 - 2020-11-23
+
+### Fixed
+
+- Integration retries errors that should be skipped
+
 ## 4.6.0 - 2020-11-23
 
 ### Changed
