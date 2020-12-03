@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://qualysapi.qg3.apps.qualys.com/qps/xsd/2.0/am/hostasset.xsd">
+  <responseCode>SUCCESS</responseCode>
+  <count>{{hosts.length}}</count>
+  <hasMoreRecords>false</hasMoreRecords>
+  <data>
+    {{#hosts}}{{> hostDetails}}{{/hosts}}
+  </data>
+</ServiceResponse>
