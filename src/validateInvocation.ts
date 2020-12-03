@@ -1,13 +1,12 @@
-import { URL } from 'url';
-
 import {
   IntegrationExecutionContext,
   IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
+import { calculateConfig } from './calculateConfig';
 import { createQualysAPIClient } from './provider';
 import { QualysIntegrationConfig } from './types';
-import { calculateConfig } from './calculateConfig';
+import { validateApiUrl } from './validateApiUrl';
 
 const REQUIRED_PROPERTIES = [
   'qualysUsername',
@@ -20,37 +19,21 @@ export default async function validateInvocation(
 ): Promise<void> {
   const { logger, instance } = context;
 
-  const config = instance.config;
-
   for (const key of REQUIRED_PROPERTIES) {
-    if (!config[key]) {
+    if (!instance.config[key]) {
       throw new IntegrationValidationError(
         'Missing required config property: ' + key,
       );
     }
   }
 
-  try {
-    new URL(config.qualysApiUrl);
-  } catch (err) {
-    throw new IntegrationValidationError(
-      'Invalid API URL: ' + config.qualysApiUrl,
-    );
-  }
-
-  const client = createQualysAPIClient(logger, config);
-  await client.verifyAuthentication();
-  client.validateApiUrl();
-
   const calculatedConfig = calculateConfig(context);
-  instance.config = calculatedConfig;
-
   logger.info(
     {
       // TODO: The SDK should be safely logging; the serializer for
       // integrationInstanceConfig will prevent logging masked fields or fields
       // not declared in the instanceConfigFields.
-      integrationInstanceConfig: calculateConfig,
+      integrationInstanceConfig: calculatedConfig,
 
       // TODO: Remove these once virtual instanceConfigFields is supported
       minScannedSinceISODate: calculatedConfig.minScannedSinceISODate,
@@ -58,6 +41,13 @@ export default async function validateInvocation(
       minFindingsSinceISODate: calculatedConfig.minFindingsSinceISODate,
       maxFindingsSinceISODate: calculatedConfig.maxFindingsSinceISODate,
     },
-    'Configuration validated',
+    'Configuration loaded',
   );
+
+  validateApiUrl(calculatedConfig.qualysApiUrl);
+
+  const client = createQualysAPIClient(logger, calculatedConfig);
+  await client.verifyAuthentication();
+
+  instance.config = calculatedConfig;
 }

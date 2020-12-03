@@ -450,20 +450,6 @@ describe('verifyAuthentication', () => {
   });
 });
 
-describe('validateApiUrl', () => {
-  test('invalid', () => {
-    const invalidApiUrl = 'https://qualysguard.qg3.apps.qualys.com';
-    const client = new QualysAPIClient({
-      config: { ...config, qualysApiUrl: invalidApiUrl },
-    });
-    expect(() => client.validateApiUrl()).toThrow(IntegrationValidationError);
-  });
-
-  test('valid', () => {
-    expect(() => createClient().validateApiUrl()).not.toThrowError();
-  });
-});
-
 describe('fetchPortalInfo', () => {
   test('info', async () => {
     recording = setupQualysRecording({

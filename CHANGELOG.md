@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Configuration validation fails to log some details for invalid configuration
+
 ## 4.7.0 - 2020-12-03
 
 ### Changed
