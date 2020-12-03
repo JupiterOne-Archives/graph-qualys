@@ -28,3 +28,16 @@ QUALYS_API_URL=https://qualysapi.qg3.apps.qualys.com
 ```sh
 yarn start
 ```
+
+Note that there is a mock Qualys server that is helpful for working out API
+interactions:
+
+```sh
+yarn start:qualys
+```
+
+Change your `.env` so the integration will connect to this service:
+
+```ini
+QUALYS_API_URL=http://localhost:8080
+```
