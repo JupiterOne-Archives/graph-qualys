@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.7.0 - 2020-12-03
+
 ### Changed
 
 - Upgrade `@jupiterone/integration-sdk-*@5.0.0`
