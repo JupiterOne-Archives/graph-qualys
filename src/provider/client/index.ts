@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import EventEmitter from 'events';
 import xmlParser from 'fast-xml-parser';
+import _ from 'lodash';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 import PQueue from 'p-queue';
@@ -14,7 +15,7 @@ import {
   IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
-import { QualysIntegrationConfig } from '../../types';
+import { UserIntegrationConfig } from '../../types';
 import { executeAPIRequest } from './request';
 import {
   assets,
@@ -38,7 +39,6 @@ import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
 import { ListWebAppFindingsFilters } from './types/was';
 import { calculateConcurrency, toArray } from './util';
 import { buildServiceRequestBody } from './was/util';
-import _ from 'lodash';
 
 export * from './types';
 
@@ -119,7 +119,7 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
 };
 
 export type QualysAPIClientConfig = {
-  config: QualysIntegrationConfig;
+  config: UserIntegrationConfig;
 
   /**
    * Initializes the API client with a `RateLimitConfig`.
@@ -151,7 +151,7 @@ export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 export class QualysAPIClient {
   private events: EventEmitter;
 
-  private config: QualysIntegrationConfig;
+  private config: UserIntegrationConfig;
   private retryConfig: RetryConfig;
   private rateLimitConfig: RateLimitConfig;
 

@@ -4,7 +4,9 @@ import { ISODateString, PossibleArray } from '../util';
 
 // https://qualysapi.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
 
-export type ListHostDetectionsFilterInputParameter = 'detection_updated_since';
+export type ListHostDetectionsFilterInputParameter =
+  | 'detection_updated_since'
+  | 'detection_updated_before';
 
 export type ListHostDetectionsFilters = Partial<
   Record<
