@@ -6,6 +6,11 @@
 
 - Fixed error `os.toLowerCase is not a function` when processing host details
 
+### Added
+
+- Logging each host detection count during iteration
+- Better handling of memory by dropping XML string after conversion
+
 ## 4.7.2 - 2020-12-05
 
 ### Fixed
