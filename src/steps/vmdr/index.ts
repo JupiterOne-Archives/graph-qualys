@@ -1,3 +1,4 @@
+import { chunk } from 'lodash';
 import { v4 as uuid } from 'uuid';
 
 import {
@@ -5,6 +6,7 @@ import {
   Entity,
   IntegrationStep,
   IntegrationStepExecutionContext,
+  Relationship,
   RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
@@ -205,40 +207,49 @@ export async function fetchScannedHostFindings({
 
       const seenHostFindingEntityKeys = new Set<string>();
 
-      for (const detection of detections) {
-        const findingKey = buildKey({
-          qid: detection.QID,
-          type: detection.TYPE,
-          port: detection.PORT,
-          protocol: detection.PROTOCOL,
-          ssl: detection.SSL,
-          hostId: host.ID,
-        });
+      // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
+      // so that we don't have to know what the optimal batch size it
+      for (const batchDetections of chunk(detections, 500)) {
+        const entities: Entity[] = [];
+        const relationships: Relationship[] = [];
 
-        if (seenHostFindingEntityKeys.has(findingKey)) continue;
+        for (const detection of batchDetections) {
+          const findingKey = buildKey({
+            qid: detection.QID,
+            type: detection.TYPE,
+            port: detection.PORT,
+            protocol: detection.PROTOCOL,
+            ssl: detection.SSL,
+            hostId: host.ID,
+          });
 
-        seenHostFindingEntityKeys.add(findingKey);
-        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-          detection.QID!,
-          findingKey,
-        );
+          if (seenHostFindingEntityKeys.has(findingKey)) continue;
 
-        const findingEntity = await jobState.addEntity(
-          createHostFindingEntity(
+          seenHostFindingEntityKeys.add(findingKey);
+          vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+            detection.QID!,
+            findingKey,
+          );
+
+          const findingEntity = createHostFindingEntity(
             findingKey,
             host,
             detection,
             hostTargetsMap[host.ID!],
-          ),
-        );
+          );
+          entities.push(findingEntity);
 
-        await jobState.addRelationship(
-          createDirectRelationship({
-            _class: RelationshipClass.IDENTIFIED,
-            from: serviceEntity,
-            to: findingEntity,
-          }),
-        );
+          relationships.push(
+            createDirectRelationship({
+              _class: RelationshipClass.IDENTIFIED,
+              from: serviceEntity,
+              to: findingEntity,
+            }),
+          );
+        }
+
+        await jobState.addEntities(entities);
+        await jobState.addRelationships(relationships);
       }
 
       logger.info(
