@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.7.2 - 2020-12-05
+
 ### Fixed
 
 - Responses with large bodies would hang the program
