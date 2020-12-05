@@ -7,7 +7,7 @@ import {
   ListHostDetectionsResponse,
 } from '../../provider/client/types/vmpc';
 import { toArray } from '../../provider/client/util';
-import { createHostFindingEntity } from './converters';
+import { createHostFindingEntity, getHostDetails } from './converters';
 
 describe('createHostFindingEntity', () => {
   const detectionsXml = fs
@@ -49,5 +49,16 @@ describe('createHostFindingEntity', () => {
         });
       }
     }
+  });
+});
+
+describe('getHostDetails', () => {
+  test('non-string os', () => {
+    // https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd says it should
+    // be a string, but we received `os.toLowerCase is not a function` in
+    // production 🤷🏼‍♂️
+    expect(getHostDetails({ os: {} })).toMatchObject({
+      os: undefined,
+    });
   });
 });
