@@ -532,7 +532,7 @@ export class QualysAPIClient {
     };
 
     const hostDetailsQueue = new PQueue({
-      concurrency: 3,
+      concurrency: 10,
     });
 
     for (const ids of chunk(
