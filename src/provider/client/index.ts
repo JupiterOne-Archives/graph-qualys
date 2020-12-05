@@ -10,8 +10,9 @@ import { URLSearchParams } from 'url';
 import { v4 as uuid } from 'uuid';
 
 import {
-  IntegrationProviderAPIError,
+  IntegrationError,
   IntegrationProviderAuthenticationError,
+  IntegrationProviderAuthorizationError,
   IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
@@ -23,6 +24,7 @@ import {
   ClientEvents,
   ClientRequestEvent,
   ClientResponseEvent,
+  qps,
   QWebHostId,
   RateLimitConfig,
   RateLimitState,
@@ -31,14 +33,12 @@ import {
   was,
 } from './types';
 import { PortalInfo } from './types/portal';
-import {
-  ListHostDetectionsResponse,
-  ListQualysVulnerabilitiesResponse,
-} from './types/vmpc';
 import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
-import { ListWebAppFindingsFilters } from './types/was';
 import { calculateConcurrency, toArray } from './util';
-import { buildServiceRequestBody } from './was/util';
+import {
+  buildServiceRequestBody,
+  processServiceResponseBody,
+} from './was/util';
 
 export * from './types';
 
@@ -70,6 +70,10 @@ const RETRYABLE_409_CODES = [
   CONCURRENCY_LIMIT_RESPONSE_ERROR_CODE,
   RATE_LIMIT_RESPONSE_ERROR_CODE,
 ];
+
+const QPS_REST_ENDPOINT = new RegExp(
+  '/qps/rest/([23]\\.0|portal)/.+',
+).compile();
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
@@ -247,20 +251,13 @@ export class QualysAPIClient {
 
   public async fetchPortalInfo(): Promise<PortalInfo | undefined> {
     const endpoint = '/qps/rest/portal/version';
-
-    try {
-      const response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(endpoint, {}),
-        {
-          method: 'GET',
-        },
-      );
-
-      const responseText = await response.text();
-      return xmlParser.parse(responseText).ServiceResponse?.data as PortalInfo;
-    } catch (err) {
-      return undefined;
-    }
+    const response = await this.executeQpsRestAPIRequest(
+      this.qualysUrl(endpoint, {}),
+      {
+        method: 'GET',
+      },
+    );
+    return response.ServiceResponse?.data as PortalInfo;
   }
 
   /**
@@ -285,43 +282,25 @@ export class QualysAPIClient {
 
     let hasMoreRecords = true;
     do {
-      const response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(endpoint, {}),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/xml',
-          },
-          body: buildServiceRequestBody({
-            limit,
-            offset,
-            filters: options?.filters,
-          }),
+      const response = await this.executeQpsRestAPIRequest<
+        was.ListWebAppsResponse
+      >(this.qualysUrl(endpoint, {}), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
         },
-      );
+        body: buildServiceRequestBody({
+          limit,
+          offset,
+          filters: options?.filters,
+        }),
+      });
 
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as was.ListWebAppsResponse;
-
-      const responseCode = jsonFromXml.ServiceResponse?.responseCode;
-      if (responseCode && responseCode !== 'SUCCESS') {
-        throw new IntegrationProviderAPIError({
-          cause: new Error(
-            `Unexpected responseCode in ServiceResponse: ${responseCode}`,
-          ),
-          endpoint,
-          status: response.status,
-          statusText: responseCode,
-        });
-      }
-
-      for (const webApp of toArray(jsonFromXml.ServiceResponse?.data?.WebApp)) {
+      for (const webApp of toArray(response.ServiceResponse?.data?.WebApp)) {
         await iteratee(webApp);
       }
 
-      hasMoreRecords = !!jsonFromXml.ServiceResponse?.hasMoreRecords;
+      hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
 
       if (hasMoreRecords) {
         offset += limit;
@@ -346,16 +325,15 @@ export class QualysAPIClient {
   public async iterateWebAppFindings(
     webAppIds: number[],
     iteratee: ResourceIteratee<was.WebAppFinding>,
-    options?: {
+    options: {
       filters?: was.ListWebAppFindingsFilters;
       pagination?: { limit: number; offset?: number };
-      // TODO make this a required argument and update tests
-      onRequestError?: (pageIds: number[], err: Error) => void;
+      onRequestError: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchWebAppFindings = async (ids: number[]) => {
       const endpoint = '/qps/rest/3.0/search/was/finding/';
-      const filters: ListWebAppFindingsFilters = {
+      const filters: was.ListWebAppFindingsFilters = {
         ...options?.filters,
         'webApp.id': ids,
       };
@@ -367,42 +345,24 @@ export class QualysAPIClient {
 
       let hasMoreRecords = true;
       do {
-        const response = await this.executeAuthenticatedAPIRequest(
-          this.qualysUrl(endpoint, {}),
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'text/xml',
-            },
-            body: buildServiceRequestBody({ limit, offset, filters }),
-            timeout: 1000 * 60 * 5,
+        const response = await this.executeQpsRestAPIRequest<
+          was.ListWebAppFindingsResponse
+        >(this.qualysUrl(endpoint, {}), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
           },
-        );
-
-        const responseText = await response.text();
-        const jsonFromXml = xmlParser.parse(
-          responseText,
-        ) as was.ListWebAppFindingsResponse;
-
-        const responseCode = jsonFromXml.ServiceResponse?.responseCode;
-        if (responseCode && responseCode !== 'SUCCESS') {
-          throw new IntegrationProviderAPIError({
-            cause: new Error(
-              `Unexpected responseCode in ServiceResponse: ${responseCode}`,
-            ),
-            endpoint,
-            status: response.status,
-            statusText: responseCode,
-          });
-        }
+          body: buildServiceRequestBody({ limit, offset, filters }),
+          timeout: 1000 * 60 * 5,
+        });
 
         for (const finding of toArray(
-          jsonFromXml.ServiceResponse?.data?.Finding,
+          response.ServiceResponse?.data?.Finding,
         )) {
           await iteratee(finding);
         }
 
-        hasMoreRecords = !!jsonFromXml.ServiceResponse?.hasMoreRecords;
+        hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
 
         if (hasMoreRecords) {
           offset += limit;
@@ -557,36 +517,18 @@ export class QualysAPIClient {
         </filters>
       </ServiceRequest>`;
 
-      const response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(endpoint, {}),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/xml',
-          },
-          body,
-          timeout: 1000 * 60 * 5,
+      const response = await this.executeQpsRestAPIRequest<
+        assets.SearchHostAssetResponse
+      >(this.qualysUrl(endpoint, {}), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
         },
-      );
+        body,
+        timeout: 1000 * 60 * 5,
+      });
 
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as assets.SearchHostAssetResponse;
-
-      const responseCode = jsonFromXml.ServiceResponse?.responseCode;
-      if (responseCode && responseCode !== 'SUCCESS') {
-        throw new IntegrationProviderAPIError({
-          cause: new Error(
-            `Unexpected responseCode in ServiceResponse: ${responseCode}\n${responseText}`,
-          ),
-          endpoint,
-          status: response.status,
-          statusText: responseCode,
-        });
-      }
-
-      return toArray(jsonFromXml.ServiceResponse?.data?.HostAsset);
+      return toArray(response.ServiceResponse?.data?.HostAsset);
     };
 
     const hostDetailsQueue = new PQueue({
@@ -630,35 +572,27 @@ export class QualysAPIClient {
       </filters>
     </ServiceRequest>`;
 
-    const response = await this.executeAuthenticatedAPIRequest(
-      this.qualysUrl(endpoint, {}),
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/xml',
-        },
-        body,
+    const response = await this.executeQpsRestAPIRequest<
+      assets.SearchHostAssetResponse
+    >(this.qualysUrl(endpoint, {}), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
       },
-    );
+      body,
+    });
 
-    const responseText = await response.text();
-    const jsonFromXml = xmlParser.parse(
-      responseText,
-    ) as assets.SearchHostAssetResponse;
-
-    const responseCode = jsonFromXml.ServiceResponse?.responseCode;
-    if (responseCode && responseCode !== 'SUCCESS') {
-      throw new IntegrationProviderAPIError({
-        cause: new Error(
-          `Unexpected responseCode in ServiceResponse: ${responseCode}`,
-        ),
-        endpoint,
-        status: response.status,
-        statusText: responseCode,
+    const assets = toArray(response.ServiceResponse?.data?.HostAsset);
+    if (assets.length != 1)
+      throw new IntegrationError({
+        message: `Unexpected response, no host details for host ID ${JSON.stringify(
+          hostId,
+        )}`,
+        code: 'HOST_DETAILS_NOT_FOUND',
+        fatal: false,
       });
-    }
 
-    return jsonFromXml.ServiceResponse?.data?.HostAsset as assets.HostAsset;
+    return assets[0];
   }
 
   /**
@@ -721,7 +655,7 @@ export class QualysAPIClient {
       const responseText = await response.text();
       const jsonFromXml = xmlParser.parse(
         responseText,
-      ) as ListHostDetectionsResponse;
+      ) as vmpc.ListHostDetectionsResponse;
       const detectionHosts: vmpc.DetectionHost[] = toArray(
         jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
       );
@@ -798,7 +732,7 @@ export class QualysAPIClient {
       const responseText = await response.text();
       const jsonFromXml = xmlParser.parse(
         responseText,
-      ) as ListQualysVulnerabilitiesResponse;
+      ) as vmpc.ListQualysVulnerabilitiesResponse;
       const vulns: vmpc.Vuln[] = toArray(
         jsonFromXml.KNOWLEDGE_BASE_VULN_LIST_OUTPUT?.RESPONSE?.VULN_LIST?.VULN,
       );
@@ -832,6 +766,50 @@ export class QualysAPIClient {
       },
       size: 0,
     });
+  }
+
+  /**
+   * Executes an API request and processes the body, handling 200 responses with
+   * embedded error codes.
+   *
+   * @param endpoint an API endpoint having a path matching
+   * `/qps/rest/:version/*`
+   * @param init RequestInit argument for fetch
+   *
+   * @throws `IntegrationProviderAuthorizationError` when Qualys license has
+   * expired, an error that should be reported to user, not operator
+   * @throws `IntegrationError` for unexpected response content-type or
+   * responseCode in 200 response body
+   * @throws `TypeError` when request endpoint does not look like a QPS REST
+   * value
+   */
+  private async executeQpsRestAPIRequest<
+    T extends qps.ServiceResponseBody<any>
+  >(endpoint: string, init: RequestInit): Promise<T> {
+    if (!QPS_REST_ENDPOINT.test(endpoint))
+      throw new TypeError(
+        `Invalid QPS REST endpoint ${JSON.stringify(
+          endpoint,
+        )}, expected ${JSON.stringify(QPS_REST_ENDPOINT)}`,
+      );
+
+    const response = await this.executeAuthenticatedAPIRequest(endpoint, init);
+    try {
+      const bodyT = await processServiceResponseBody<T>(response);
+      return bodyT;
+    } catch (err) {
+      switch (err.code) {
+        case 'EVALUATION_EXPIRED':
+          throw new IntegrationProviderAuthorizationError({
+            cause: err,
+            endpoint,
+            status: response.status,
+            statusText: response.statusText,
+          });
+        default:
+          throw err;
+      }
+    }
   }
 
   private hashAPIRequest(init: RequestInit) {

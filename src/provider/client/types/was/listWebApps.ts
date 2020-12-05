@@ -1,5 +1,5 @@
+import { ServiceResponseBody } from '../qps';
 import { ISODateString, PossibleArray } from '../util';
-import { ServiceResponse } from './serviceResponse';
 
 export type ListWebAppsFilterInputParameter =
   | 'id'
@@ -23,9 +23,7 @@ export type ListWebAppsFilters = Partial<
 
 export type ListWebAppsPagination = { limit: number; offset?: number };
 
-export type ListWebAppsResponse = {
-  ServiceResponse?: ServiceResponse<WebAppData>;
-};
+export type ListWebAppsResponse = ServiceResponseBody<WebAppData>;
 
 export type WebAppData = {
   WebApp?: PossibleArray<WebApp>;

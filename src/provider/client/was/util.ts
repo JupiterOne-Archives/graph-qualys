@@ -1,4 +1,10 @@
+import xmlParser from 'fast-xml-parser';
+import { Response } from 'node-fetch';
+
+import { IntegrationError } from '@jupiterone/integration-sdk-core';
+
 import { was } from '../types';
+import { ServiceResponseBody } from '../types/qps';
 
 export function buildServiceRequestBody({
   limit,
@@ -32,4 +38,32 @@ function buildFilterXml(
     }
   });
   return `<filters>${criteria.join('\n')}</filters>`;
+}
+
+const XML_CONTENT_TYPE = /(text|application)\/xml/;
+
+export async function processServiceResponseBody<
+  T extends ServiceResponseBody<any>
+>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !XML_CONTENT_TYPE.test(contentType))
+    throw new IntegrationError({
+      message: `Expected Content-Type 'text/xml' but was ${JSON.stringify(
+        contentType,
+      )}`,
+      code: String(response.status),
+      fatal: false,
+    });
+
+  const bodyXML = await response.text();
+  const bodyT = xmlParser.parse(bodyXML) as T;
+
+  const responseCode = bodyT.ServiceResponse?.responseCode;
+  if (!responseCode || responseCode === 'SUCCESS') return bodyT;
+
+  throw new IntegrationError({
+    message: `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+    code: responseCode,
+    fatal: false,
+  });
 }

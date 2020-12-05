@@ -1,8 +1,8 @@
 // https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd
 
 import { QualyNumericSeverity } from '../../../../types';
+import { ServiceResponseBody } from '../qps';
 import { PossibleArray } from '../util';
-import { ServiceResponse } from './serviceResponse';
 
 export type ListWebAppFindingsFilterInputParameter =
   | 'webApp.id'
@@ -15,9 +15,9 @@ export type ListWebAppFindingsFilters = Partial<
   >
 >;
 
-export type ListWebAppFindingsResponse = {
-  ServiceResponse?: ServiceResponse<WebAppFindingsData>;
-};
+export type ListWebAppFindingsResponse = ServiceResponseBody<
+  WebAppFindingsData
+>;
 
 export type WebAppFindingsData = {
   Finding?: PossibleArray<WebAppFinding>;
