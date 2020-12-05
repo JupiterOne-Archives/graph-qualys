@@ -2,6 +2,8 @@ import { QWebHostId } from './index';
 import { ServiceResponseBody } from './qps';
 import { ISODateString, PossibleArray } from './util';
 
+// https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd
+
 export type SearchHostAssetResponse = ServiceResponseBody<Data>;
 export type ListHostAssetsResponse = ServiceResponseBody<Data>;
 

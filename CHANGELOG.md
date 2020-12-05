@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed error `os.toLowerCase is not a function` when processing host details
+
 ## 4.7.2 - 2020-12-05
 
 ### Fixed

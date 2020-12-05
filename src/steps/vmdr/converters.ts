@@ -37,8 +37,6 @@ export function createServiceScansDiscoveredHostRelationship(
   serviceEntity: Entity,
   host: assets.HostAsset,
 ): Relationship {
-  const hostname = getHostName(host);
-
   return createMappedRelationship({
     _class: RelationshipClass.SCANS,
     // TODO require _type https://github.com/JupiterOne/sdk/issues/347
@@ -57,19 +55,8 @@ export function createServiceScansDiscoveredHostRelationship(
         // `Finding.targets` to allow for global mappings of Findings to these
         // Host entities.
         id: toStringArray([host.id, host.qwebHostId]),
-        qualysAssetId: host.id,
-        qualysHostId: host.qwebHostId,
-
-        scannedBy: 'qualys',
-        lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
-
-        displayName: host.name || hostname,
-        fqdn: host.fqdn,
-        hostname,
+        ...getHostDetails(host),
         ...getHostIPAddresses(host),
-
-        os: host.os,
-        platform: determinePlatform(host),
       },
     },
   });
@@ -89,7 +76,6 @@ export function createServiceScansEC2HostRelationship(
   serviceEntity: Entity,
   host: assets.HostAsset,
 ): Relationship {
-  const hostname = getHostName(host);
   const instanceId = getEC2InstanceId(host);
   const instanceArn = getEC2HostArn(host);
 
@@ -115,19 +101,8 @@ export function createServiceScansEC2HostRelationship(
         // This value is also added to the `Finding.targets` to allow for global
         // mappings of Findings to these Host entities.
         id: instanceId,
-        qualysAssetId: host.id,
-        qualysHostId: host.qwebHostId,
-
-        scannedBy: 'qualys',
-        lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
-
-        displayName: host.name || hostname,
-        fqdn: host.fqdn,
-        hostname,
+        ...getHostDetails(host),
         ...getHostIPAddresses(host),
-
-        os: host.os,
-        platform: determinePlatform(host),
       },
     },
   });
@@ -279,6 +254,28 @@ export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
   }
 }
 
+export function getHostDetails(host: assets.HostAsset) {
+  const hostname =
+    host.dnsHostName || host.fqdn || host.address || String(host.id!);
+  const os = typeof host.os === 'string' ? host.os : undefined;
+  const platform = os && determinePlatform(os);
+
+  return {
+    hostname,
+    fqdn: host.fqdn,
+    os,
+    platform,
+
+    qualysAssetId: host.id,
+    qualysHostId: host.qwebHostId,
+
+    scannedBy: 'qualys',
+    lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
+
+    displayName: host.name || hostname,
+  };
+}
+
 function generateHostAssetKey(host: assets.HostAsset): string {
   return `qualys-host:${host.qwebHostId!}`;
 }
@@ -288,10 +285,6 @@ function getEC2InstanceId(hostAsset: assets.HostAsset): string | undefined {
   if ('EC_2' === ec2?.type) {
     return ec2.instanceId;
   }
-}
-
-function getHostName(host: assets.HostAsset): string {
-  return host.dnsHostName || host.fqdn || host.address || String(host.id!);
 }
 
 function getHostIPAddresses(host: assets.HostAsset) {
@@ -304,12 +297,7 @@ function getHostIPAddresses(host: assets.HostAsset) {
   };
 }
 
-function determinePlatform(hostAsset: assets.HostAsset): string | undefined {
-  let os = hostAsset.os;
-  if (!os) {
-    return undefined;
-  }
-
+function determinePlatform(os: string): string | undefined {
   os = os.toLowerCase();
 
   if (os.indexOf('linux') !== -1) {
