@@ -13,10 +13,10 @@ import {
 import { createQualysAPIClient } from '../../provider';
 import { QualysIntegrationConfig } from '../../types';
 import { DATA_WAS_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
-import { VulnerabilityFindingKeysCollector } from '../utils';
+// import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
   DATA_SCANNED_WEBAPP_IDS,
-  DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+  // DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
   MAPPED_RELATIONSHIP_TYPE_WAS_SCANS_WEBAPP,
   STEP_FETCH_SCANNED_WEBAPP_FINDINGS,
   STEP_FETCH_SCANNED_WEBAPPS,
@@ -100,7 +100,7 @@ export async function fetchScannedWebAppFindings({
   let numPageErrors = 0;
   const errorCorrelationId = uuid();
 
-  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
+  // const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateWebAppFindings(
     scannedWebAppIds,
     async (finding) => {
@@ -117,18 +117,17 @@ export async function fetchScannedWebAppFindings({
       );
 
       if (finding.qid) {
-        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-          finding.qid,
-          findingEntity._key,
-        );
-
+        // vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+        //   finding.qid,
+        //   findingEntity._key,
+        // );
         // Ensure that finding keys are updated for each finding
         // so that should a partial set be ingested, we don't lose what we've seen
         // for later steps.
-        await jobState.setData(
-          DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-          vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
-        );
+        // await jobState.setData(
+        //   DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+        //   vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+        // );
       } else {
         logger.info(
           { finding: { id: finding.id, uniqueId: finding.uniqueId } },
