@@ -2,6 +2,7 @@ import xmlParser from 'fast-xml-parser';
 import fs from 'fs';
 import path from 'path';
 
+import { IntegrationValidationError } from '@jupiterone/integration-sdk-core';
 import { Recording } from '@jupiterone/integration-sdk-testing';
 import { Request } from '@pollyjs/core';
 
@@ -20,7 +21,6 @@ import {
   vmpc,
   was,
 } from './client';
-import { IntegrationValidationError } from '@jupiterone/integration-sdk-core';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -530,6 +530,25 @@ describe('iterateWebApps', () => {
       expect(w.url).toMatch(/^http/);
     });
   });
+
+  test('mocked, unknown content type', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppsMocked',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/html').status(200).send('WUT');
+    });
+
+    const iteratee = jest.fn();
+    const client = createClient();
+
+    await expect(client.iterateWebApps(iteratee)).rejects.toThrow(
+      /Content-Type/,
+    );
+    expect(iteratee).not.toHaveBeenCalled();
+  });
 });
 
 describe('fetchScannedWebAppIds', () => {
@@ -553,6 +572,23 @@ describe('fetchScannedWebAppIds', () => {
       webAppId,
     ]);
   });
+
+  test('mocked, unknown content type', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'fetchScannedWebAppIdsMocked',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/html').status(200).send('WUT');
+    });
+
+    const client = createClient();
+
+    await expect(client.fetchScannedWebAppIds()).rejects.toThrow(
+      /Content-Type/,
+    );
+  });
 });
 
 describe('iterateWebAppFindings', () => {
@@ -562,12 +598,20 @@ describe('iterateWebAppFindings', () => {
       name: 'iterateWebAppFindingsNone',
     });
 
+    const onRequestError = jest.fn();
     const findings: was.WebAppFinding[] = [];
 
-    await createClient().iterateWebAppFindings([], (webapp) => {
-      findings.push(webapp);
-    });
+    await createClient().iterateWebAppFindings(
+      [],
+      (webapp) => {
+        findings.push(webapp);
+      },
+      {
+        onRequestError,
+      },
+    );
 
+    expect(onRequestError).not.toHaveBeenCalled();
     expect(findings.length).toBe(0);
   });
 
@@ -577,12 +621,20 @@ describe('iterateWebAppFindings', () => {
       name: 'iterateWebAppFindingsUnknownId',
     });
 
+    const onRequestError = jest.fn();
     const findings: was.WebAppFinding[] = [];
 
-    await createClient().iterateWebAppFindings([123], (webapp) => {
-      findings.push(webapp);
-    });
+    await createClient().iterateWebAppFindings(
+      [123],
+      (webapp) => {
+        findings.push(webapp);
+      },
+      {
+        onRequestError,
+      },
+    );
 
+    expect(onRequestError).not.toHaveBeenCalled();
     expect(findings.length).toBe(0);
   });
 
@@ -693,19 +745,22 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
     ].reverse();
 
     recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/xml');
+
       if (/1,2,3,4,5,6,7,8,9,10/.test(req.body)) {
         if (set1Responses.length === 0)
           throw 'No more responses to give from set1Responses';
         res.status(200).send(set1Responses.pop());
-      }
-
-      if (/11,12/.test(req.body)) {
+      } else if (/11,12/.test(req.body)) {
         if (set2Responses.length === 0)
           throw 'No more responses to give from set2Responses';
         res.status(200).send(set2Responses.pop());
+      } else {
+        throw 'Unexpected request';
       }
     });
 
+    const onRequestError = jest.fn();
     const client = createClient();
     const findings: was.WebAppFinding[] = [];
 
@@ -714,9 +769,10 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
       (webapp) => {
         findings.push(webapp);
       },
-      { pagination: { limit: 2 } },
+      { pagination: { limit: 2 }, onRequestError },
     );
 
+    expect(onRequestError).not.toHaveBeenCalled();
     expect(findings.length).toEqual(3);
   });
 
@@ -730,7 +786,7 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
     recording.server.any().intercept((req, res) => {
       receivedBody = req.body;
 
-      res.status(200).send(`
+      res.setHeader('content-type', 'text/xml').status(200).send(`
         <?xml version="1.0" encoding="UTF-8"?>
   <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
@@ -741,6 +797,7 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
         `);
     });
 
+    const onRequestError = jest.fn();
     const client = createClient();
     const findings: was.WebAppFinding[] = [];
 
@@ -749,13 +806,34 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
       (webapp) => {
         findings.push(webapp);
       },
-      { filters: { lastDetectedDate: '2020-09-11T23:00:30Z' } },
+      { filters: { lastDetectedDate: '2020-09-11T23:00:30Z' }, onRequestError },
     );
 
+    expect(onRequestError).not.toHaveBeenCalled();
     expect(findings.length).toEqual(0);
     expect(receivedBody).toMatch(
       /<Criteria field="lastDetectedDate" operator="EQUALS">2020-09-11T23:00:30Z<\/Criteria>/,
     );
+  });
+
+  test('mocked, unknown content type', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppFindingsMocked',
+    });
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/html').status(200).send('WUT');
+    });
+
+    const iteratee = jest.fn();
+    const onRequestError = jest.fn();
+    const client = createClient();
+
+    await client.iterateWebAppFindings([1], iteratee, { onRequestError });
+
+    expect(iteratee).not.toHaveBeenCalled();
+    expect(onRequestError).toHaveBeenCalledWith([1], expect.any(Error));
   });
 
   // TODO enable once trial account is working again, re-record with pagination

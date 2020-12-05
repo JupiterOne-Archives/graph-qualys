@@ -1,21 +1,9 @@
 import { QWebHostId } from './index';
+import { ServiceResponseBody } from './qps';
 import { ISODateString, PossibleArray } from './util';
 
-export type SearchHostAssetResponse = {
-  ServiceResponse?: ServiceResponse;
-};
-
-export type ListHostAssetsResponse = {
-  ServiceResponse?: ServiceResponse;
-};
-
-export type ServiceResponse = {
-  responseCode?: string;
-  responseErrorDetails?: string;
-  count?: number;
-  hasMoreRecords?: boolean;
-  data?: Data;
-};
+export type SearchHostAssetResponse = ServiceResponseBody<Data>;
+export type ListHostAssetsResponse = ServiceResponseBody<Data>;
 
 export type Data = {
   HostAsset?: PossibleArray<HostAsset>;

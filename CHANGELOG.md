@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## 4.7.2 - 2020-12-05
+
+### Fixed
+
+- Responses with large bodies would hang the program
+
+### Added
+
+- Additional Qualys API response error handling
+
 ## 4.7.1 - 2020-12-03
 
 ### Fixed
