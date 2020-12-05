@@ -1,3 +1,4 @@
+import { chunk } from 'lodash';
 import { v4 as uuid } from 'uuid';
 
 import {
@@ -5,6 +6,7 @@ import {
   Entity,
   IntegrationStep,
   IntegrationStepExecutionContext,
+  Relationship,
   RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
@@ -14,10 +16,10 @@ import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
-import { VulnerabilityFindingKeysCollector } from '../utils';
+// import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
   DATA_HOST_TARGETS,
-  DATA_HOST_VULNERABILITY_FINDING_KEYS,
+  // DATA_HOST_VULNERABILITY_FINDING_KEYS,
   DATA_SCANNED_HOST_IDS,
   STEP_FETCH_SCANNED_HOST_DETAILS,
   STEP_FETCH_SCANNED_HOST_FINDINGS,
@@ -191,55 +193,80 @@ export async function fetchScannedHostFindings({
   const totalPageErrors = 0;
   const errorCorrelationId = uuid();
 
-  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
+  // const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
+      logger.info(
+        {
+          hostId: host.ID,
+          detectionCount: detections.length,
+        },
+        'Processing host detections...',
+      );
+
       const seenHostFindingEntityKeys = new Set<string>();
 
-      for (const detection of detections) {
-        const findingKey = buildKey({
-          qid: detection.QID,
-          type: detection.TYPE,
-          port: detection.PORT,
-          protocol: detection.PROTOCOL,
-          ssl: detection.SSL,
-          hostId: host.ID,
-        });
+      // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
+      // so that we don't have to know what the optimal batch size it
+      for (const batchDetections of chunk(detections, 500)) {
+        const entities: Entity[] = [];
+        const relationships: Relationship[] = [];
 
-        if (seenHostFindingEntityKeys.has(findingKey)) continue;
+        for (const detection of batchDetections) {
+          const findingKey = buildKey({
+            qid: detection.QID,
+            type: detection.TYPE,
+            port: detection.PORT,
+            protocol: detection.PROTOCOL,
+            ssl: detection.SSL,
+            hostId: host.ID,
+          });
 
-        seenHostFindingEntityKeys.add(findingKey);
-        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-          detection.QID!,
-          findingKey,
-        );
+          if (seenHostFindingEntityKeys.has(findingKey)) continue;
 
-        const findingEntity = await jobState.addEntity(
-          createHostFindingEntity(
+          seenHostFindingEntityKeys.add(findingKey);
+          // vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+          //   detection.QID!,
+          //   findingKey,
+          // );
+
+          const findingEntity = createHostFindingEntity(
             findingKey,
             host,
             detection,
             hostTargetsMap[host.ID!],
-          ),
-        );
+          );
+          entities.push(findingEntity);
 
-        await jobState.addRelationship(
-          createDirectRelationship({
-            _class: RelationshipClass.IDENTIFIED,
-            from: serviceEntity,
-            to: findingEntity,
-          }),
-        );
+          relationships.push(
+            createDirectRelationship({
+              _class: RelationshipClass.IDENTIFIED,
+              from: serviceEntity,
+              to: findingEntity,
+            }),
+          );
+        }
+
+        await jobState.addEntities(entities);
+        await jobState.addRelationships(relationships);
       }
+
+      logger.info(
+        {
+          hostId: host.ID,
+          detectionCount: detections.length,
+        },
+        'Processing host detections completed.',
+      );
 
       // Ensure that `DATA_HOST_VULNERABILITY_FINDING_KEYS` is updated for each host
       // so that should a partial set be ingested, we don't lose what we've seen
       // for later steps.
-      await jobState.setData(
-        DATA_HOST_VULNERABILITY_FINDING_KEYS,
-        vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
-      );
+      // await jobState.setData(
+      //   DATA_HOST_VULNERABILITY_FINDING_KEYS,
+      //   vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+      // );
 
       totalHostsProcessed++;
     },

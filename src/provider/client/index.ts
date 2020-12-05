@@ -532,7 +532,7 @@ export class QualysAPIClient {
     };
 
     const hostDetailsQueue = new PQueue({
-      concurrency: 3,
+      concurrency: 10,
     });
 
     for (const ids of chunk(
@@ -636,7 +636,10 @@ export class QualysAPIClient {
       }
     }
 
-    const fetchHostDetections = async (ids: QWebHostId[]) => {
+    // Ensure we drop from memory the XML string after parsing it
+    const fetchHostDetections = async (
+      ids: QWebHostId[],
+    ): Promise<vmpc.DetectionHost[]> => {
       const params = new URLSearchParams({
         ...filters,
         action: 'list',
@@ -656,11 +659,14 @@ export class QualysAPIClient {
       const jsonFromXml = xmlParser.parse(
         responseText,
       ) as vmpc.ListHostDetectionsResponse;
-      const detectionHosts: vmpc.DetectionHost[] = toArray(
+
+      return toArray(
         jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
       );
+    };
 
-      for (const host of detectionHosts) {
+    const performIteration = async (ids: QWebHostId[]) => {
+      for (const host of await fetchHostDetections(ids)) {
         await iteratee({
           host,
           detections: toArray(host.DETECTION_LIST?.DETECTION),
@@ -689,7 +695,7 @@ export class QualysAPIClient {
     )) {
       requestQueue
         .add(async () => {
-          await fetchHostDetections(ids);
+          await performIteration(ids);
         })
         .catch((err) => {
           options?.onRequestError?.(ids, err);
