@@ -195,6 +195,14 @@ export async function fetchScannedHostFindings({
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
+      logger.info(
+        {
+          hostId: host.ID,
+          detectionCount: detections.length,
+        },
+        'Processing host detections...',
+      );
+
       const seenHostFindingEntityKeys = new Set<string>();
 
       for (const detection of detections) {
@@ -232,6 +240,14 @@ export async function fetchScannedHostFindings({
           }),
         );
       }
+
+      logger.info(
+        {
+          hostId: host.ID,
+          detectionCount: detections.length,
+        },
+        'Processing host detections completed.',
+      );
 
       // Ensure that `DATA_HOST_VULNERABILITY_FINDING_KEYS` is updated for each host
       // so that should a partial set be ingested, we don't lose what we've seen
