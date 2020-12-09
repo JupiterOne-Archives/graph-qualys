@@ -1,41 +1,80 @@
-import { camelCase, noop } from 'lodash';
+import { noop } from 'lodash';
+import PQueue from 'p-queue';
 import sax from 'sax';
 
 import { parseStringPropertyValue } from '@jupiterone/integration-sdk-core';
 
 import { ResourceIteratee, vmpc } from '../types';
 
-export function parseHostDetectionsStream(
-  xmlStream: NodeJS.ReadableStream,
-  iteratee: ResourceIteratee<{
-    host: vmpc.DetectionHost;
-    detections: vmpc.HostDetection[];
-  }>,
-  debug: boolean = false,
-): Promise<void> {
+export type HostDetections = {
+  host: vmpc.DetectionHost;
+  detections: vmpc.HostDetection[];
+};
+
+export function parseHostDetectionsStream({
+  xmlStream,
+  iteratee,
+  onIterateeError,
+  iterateeErrorLimit,
+  debug = false,
+}: {
+  xmlStream: NodeJS.ReadableStream;
+  iteratee: ResourceIteratee<HostDetections>;
+  onIterateeError: (err: Error, hostDetections: HostDetections) => void;
+
+  /**
+   * The number of errors to accept, from the start, before giving up. This is
+   * meant to catch the situation where the iteratee is broken (such as a bad
+   * converter function).
+   */
+  iterateeErrorLimit?: number;
+
+  debug?: boolean;
+}): Promise<void> {
   const log = debug ? console.log : noop;
 
   return new Promise((resolve, reject) => {
-    const iterateePromises: (void | Promise<void>)[] = [];
-    const completePromises = () => {
-      Promise.all(iterateePromises)
-        .then(() => resolve())
-        .catch(reject);
-    };
+    let terminating = false;
+    let iterateeErrorCount = 0;
+    let iterateeSuccessCount = 0;
+
+    const iterateeQueue = new PQueue();
 
     let host: any,
       detections: any[],
       detection: any,
       propertyValue: string[] | undefined;
-
     const propertyTargets: any[] = [];
 
     const saxStream = sax.createStream();
 
-    saxStream.on('error', reject);
+    // TODO put 2 minute onIdle socket timeout because qualys said they will
+    // send something every 56 seconds to keep the connection open.
+    const completePromises = async (err?: Error) => {
+      log('completePromises', {
+        err,
+        iterateePromiseCount: iterateeQueue.size,
+        terminating,
+      });
 
-    saxStream.on('opentag', (tag) => {
-      log(tag);
+      xmlStream.pause();
+      xmlStream.unpipe(saxStream);
+
+      await iterateeQueue.onIdle();
+      return err ? reject(err) : resolve();
+    };
+
+    saxStream.on('close', () => {
+      log('close', { terminating });
+    });
+
+    saxStream.on('error', function (err) {
+      log('error', { err, terminating });
+      // TODO test parsing error
+    });
+
+    saxStream.on('opentag', function (tag) {
+      log('opentag', { tag, terminating });
 
       if (tag.name === 'HOST') {
         host = {};
@@ -51,56 +90,88 @@ export function parseHostDetectionsStream(
       }
     });
 
-    saxStream.on('text', (text) => {
-      log({ text, propertyValue });
+    saxStream.on('text', function (text) {
+      log('text', { text, propertyValue, terminating });
 
       if (propertyValue && propertyTargets.length > 0) {
         propertyValue.push(text);
       }
     });
 
-    saxStream.on('cdata', (cdata) => {
-      log({ cdata, propertyValue });
+    saxStream.on('cdata', function (cdata) {
+      log('cdata', { cdata, propertyValue, terminating });
 
       if (propertyValue && propertyTargets.length > 0) {
         propertyValue.push(cdata);
       }
     });
 
-    saxStream.on('closetag', (tag) => {
-      log({
+    saxStream.on('closetag', function (tag) {
+      log('closetag', {
         tag,
         propertyTargets,
         propertyValue,
+        host,
+        detections,
+        terminating,
       });
 
+      if (terminating) return;
+
       if (propertyValue && propertyTargets.length > 0) {
-        propertyTargets[0][camelCase(tag)] = parseStringPropertyValue(
+        propertyTargets[0][tag] = parseStringPropertyValue(
           propertyValue.join('').trim(),
         );
         propertyValue = undefined;
       }
 
-      if (tag === 'HOST') {
-        log({
+      if (tag === 'DETECTION') {
+        propertyTargets.shift();
+      } else if (tag === 'HOST') {
+        propertyTargets.shift();
+
+        const hostDetections: HostDetections = {
           host,
           detections,
-        });
+        };
 
-        propertyTargets.shift();
+        iterateeQueue
+          .add(async () => {
+            await iteratee(hostDetections);
+            iterateeSuccessCount++;
+          })
+          .catch((err) => {
+            iterateeErrorCount++;
 
-        iterateePromises.push(
-          iteratee({
-            host,
-            detections,
-          }),
-        );
-      } else if (tag === 'DETECTION') {
-        propertyTargets.shift();
+            log('iterateeError', {
+              err,
+              iterateeErrorLimit,
+              iterateeErrorCount,
+              hostDetections,
+              terminating,
+            });
+
+            onIterateeError(err, hostDetections);
+
+            if (
+              !iterateeSuccessCount &&
+              iterateeErrorLimit &&
+              iterateeErrorCount >= iterateeErrorLimit
+            ) {
+              terminating = true;
+              completePromises(
+                new Error(
+                  `Exceeded iteratee error limit ${iterateeErrorLimit}`,
+                ),
+              );
+            }
+          });
       }
     });
 
-    saxStream.on('end', completePromises);
+    saxStream.on('end', function () {
+      if (!terminating) completePromises();
+    });
 
     xmlStream.pipe(saxStream);
   });

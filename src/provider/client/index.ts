@@ -654,7 +654,14 @@ export class QualysAPIClient {
 
       ensureXMLResponse(response);
 
-      return parseHostDetectionsStream(response.body, iteratee);
+      return parseHostDetectionsStream({
+        xmlStream: response.body,
+        iteratee,
+        onIterateeError: (err, hostDetections) => {
+          // TODO: handle err
+          console.error({ err, hostDetections });
+        },
+      });
     };
 
     // Start with the standard subscription level until we know the current
