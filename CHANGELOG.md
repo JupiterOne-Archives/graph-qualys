@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Process detections XML using a streaming parser to limit memory consumption
+  and perform conversion and writing to storage as soon as possible.
+
 ## Added
 
 - `yarn start:qualys` provides a mock implementation of some of the Qualys APIs

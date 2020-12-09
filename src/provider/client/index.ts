@@ -36,11 +36,13 @@ import { PortalInfo } from './types/portal';
 import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
 import {
   calculateConcurrency,
+  ensureXMLResponse,
   isXMLResponse,
   parseXMLResponse,
   processServiceResponseBody,
   toArray,
 } from './util';
+import { parseHostDetectionsStream } from './vmdr';
 import { buildServiceRequestBody } from './was/util';
 
 export * from './types';
@@ -634,10 +636,7 @@ export class QualysAPIClient {
       }
     }
 
-    // Ensure we drop from memory the XML string after parsing it
-    const fetchHostDetections = async (
-      ids: QWebHostId[],
-    ): Promise<vmpc.DetectionHost[]> => {
+    const fetchHostDetections = async (ids: QWebHostId[]): Promise<void> => {
       const params = new URLSearchParams({
         ...filters,
         action: 'list',
@@ -653,21 +652,9 @@ export class QualysAPIClient {
         { method: 'POST', body: params },
       );
 
-      const jsonFromXml = await parseXMLResponse<
-        vmpc.ListHostDetectionsResponse
-      >(response);
-      return toArray(
-        jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
-      );
-    };
+      ensureXMLResponse(response);
 
-    const performIteration = async (ids: QWebHostId[]) => {
-      for (const host of await fetchHostDetections(ids)) {
-        await iteratee({
-          host,
-          detections: toArray(host.DETECTION_LIST?.DETECTION),
-        });
-      }
+      return parseHostDetectionsStream(response.body, iteratee);
     };
 
     // Start with the standard subscription level until we know the current
@@ -691,7 +678,7 @@ export class QualysAPIClient {
     )) {
       requestQueue
         .add(async () => {
-          await performIteration(ids);
+          await fetchHostDetections(ids);
         })
         .catch((err) => {
           options?.onRequestError?.(ids, err);
