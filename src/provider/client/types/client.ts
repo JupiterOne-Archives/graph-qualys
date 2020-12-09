@@ -33,6 +33,8 @@ export type ClientResponseEvent = ClientEvent & {
   completed: boolean;
 };
 
+export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
+
 export type CanRetryDecision = {
   retryable: boolean;
   reason: string;

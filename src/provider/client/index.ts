@@ -1,6 +1,5 @@
 import * as crypto from 'crypto';
 import EventEmitter from 'events';
-import xmlParser from 'fast-xml-parser';
 import _ from 'lodash';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
@@ -28,17 +27,21 @@ import {
   QWebHostId,
   RateLimitConfig,
   RateLimitState,
+  ResourceIteratee,
   RetryConfig,
   vmpc,
   was,
 } from './types';
 import { PortalInfo } from './types/portal';
 import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
-import { calculateConcurrency, toArray } from './util';
 import {
-  buildServiceRequestBody,
+  calculateConcurrency,
+  isXMLResponse,
+  parseXMLResponse,
   processServiceResponseBody,
-} from './was/util';
+  toArray,
+} from './util';
+import { buildServiceRequestBody } from './was/util';
 
 export * from './types';
 
@@ -79,10 +82,11 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
   noRetryStatusCodes: [400, 401, 403, 404, 413],
   canRetry: async (response) => {
-    if (response.status === 409) {
+    if (response.status === 409 && isXMLResponse(response)) {
       try {
-        const body = await response.text();
-        const errorResponse = xmlParser.parse(body) as QualysV2ApiErrorResponse;
+        const errorResponse = await parseXMLResponse<QualysV2ApiErrorResponse>(
+          response,
+        );
         if (errorResponse.SIMPLE_RETURN) {
           return {
             retryable: RETRYABLE_409_CODES.includes(
@@ -151,8 +155,6 @@ export type QualysAPIClientConfig = {
    */
   retryConfig?: Partial<RetryConfig>;
 };
-
-export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
 export class QualysAPIClient {
   private events: EventEmitter;
@@ -233,12 +235,10 @@ export class QualysAPIClient {
       });
     }
 
-    const isXML = /text\/xml/.test(response.headers.get('content-type'));
-    if (isXML) {
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as QualysV2ApiErrorResponse;
+    if (isXMLResponse(response)) {
+      const jsonFromXml = await parseXMLResponse<QualysV2ApiErrorResponse>(
+        response,
+      );
       const { CODE, TEXT } = (jsonFromXml as any)?.SIMPLE_RETURN?.RESPONSE;
       const isError = CODE && TEXT;
       if (isError) {
@@ -413,10 +413,9 @@ export class QualysAPIClient {
       },
     );
 
-    const responseText = await response.text();
-    const jsonFromXml = xmlParser.parse(
-      responseText,
-    ) as vmpc.ListScannedHostIdsResponse;
+    const jsonFromXml = await parseXMLResponse<vmpc.ListScannedHostIdsResponse>(
+      response,
+    );
     return toArray(jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.ID_SET?.ID);
   }
 
@@ -442,10 +441,9 @@ export class QualysAPIClient {
     const buildHostIdsResponse = async (
       response: Response,
     ): Promise<ListHostIdsResponse> => {
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as vmpc.ListScannedHostIdsResponse;
+      const jsonFromXml = await parseXMLResponse<
+        vmpc.ListScannedHostIdsResponse
+      >(response);
 
       const hostListIds = toArray(
         jsonFromXml.HOST_LIST_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
@@ -655,11 +653,9 @@ export class QualysAPIClient {
         { method: 'POST', body: params },
       );
 
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as vmpc.ListHostDetectionsResponse;
-
+      const jsonFromXml = await parseXMLResponse<
+        vmpc.ListHostDetectionsResponse
+      >(response);
       return toArray(
         jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
       );
@@ -735,10 +731,9 @@ export class QualysAPIClient {
         { method: 'POST', body: params },
       );
 
-      const responseText = await response.text();
-      const jsonFromXml = xmlParser.parse(
-        responseText,
-      ) as vmpc.ListQualysVulnerabilitiesResponse;
+      const jsonFromXml = await parseXMLResponse<
+        vmpc.ListQualysVulnerabilitiesResponse
+      >(response);
       const vulns: vmpc.Vuln[] = toArray(
         jsonFromXml.KNOWLEDGE_BASE_VULN_LIST_OUTPUT?.RESPONSE?.VULN_LIST?.VULN,
       );
