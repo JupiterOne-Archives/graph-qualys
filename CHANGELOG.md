@@ -5,6 +5,8 @@
 ### Changed
 
 - Validating response content type before parsing body
+- Process detections XML using a streaming parser to limit memory consumption
+  and perform conversion and writing to storage as soon as possible.
 
 ## Added
 
