@@ -961,7 +961,10 @@ describe('iterateScannedHostIds', () => {
     recording.server.any().intercept((req, res) => {
       const pd = pageData(req);
       expect(req.absoluteUrl).toMatch(pd.urlRegExp);
-      res.status(200).send(hostListOutput(hostList, pd));
+      res
+        .status(200)
+        .setHeader('content-type', 'text/xml')
+        .send(hostListOutput(hostList, pd));
     });
 
     const hostIds: number[] = [];
@@ -984,7 +987,10 @@ describe('iterateScannedHostIds', () => {
     recording.server.any().intercept((req, res) => {
       const pd = pageData(req);
       expect(req.absoluteUrl).toMatch(pd.urlRegExp);
-      res.status(200).send(hostListOutput(idSet, pd));
+      res
+        .status(200)
+        .setHeader('content-type', 'text/xml')
+        .send(hostListOutput(idSet, pd));
     });
 
     const hostIds: number[] = [];
@@ -1661,7 +1667,10 @@ describe('executeAPIRequest', () => {
     let requestCount = 0;
     recording.server.any().intercept((_req, res) => {
       requestCount++;
-      res.status(409).send(incompleteRegistrationXMLBody);
+      res
+        .status(409)
+        .setHeader('content-type', 'text/xml')
+        .send(incompleteRegistrationXMLBody);
     });
 
     const client = new QualysAPIClient({
@@ -1688,7 +1697,10 @@ describe('executeAPIRequest', () => {
     let requestCount = 0;
     recording.server.any().intercept((_req, res) => {
       requestCount++;
-      res.status(409).send(secureIdRequiredXMLBody);
+      res
+        .status(409)
+        .setHeader('content-type', 'text/xml')
+        .send(secureIdRequiredXMLBody);
     });
 
     const client = new QualysAPIClient({

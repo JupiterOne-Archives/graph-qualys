@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Validating response content type before parsing body
+
 ## 4.7.3 - 2020-12-05
 
 ### Fixed
