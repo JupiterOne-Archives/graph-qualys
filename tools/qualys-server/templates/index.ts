@@ -17,6 +17,8 @@ export async function initializeEngine() {
 async function parseTemplates(): Promise<Record<string, string>> {
   const templatePaths = {
     'activity-log.mustache': 'activity-log.mustache',
+    'portal-version.mustache': 'portal-version.mustache',
+    'webapp-list.mustache': 'webapp-list.mustache',
     'host-id-list.mustache': 'host-id-list.mustache',
     'host-details-list.mustache': 'host-details-list.mustache',
     'host-detection-list.mustache': 'host-detection-list.mustache',
