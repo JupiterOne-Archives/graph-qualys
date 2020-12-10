@@ -25,6 +25,17 @@ async function start() {
     res.render('activity-log');
   });
 
+  app.get('/qps/rest/portal/version', (req, res) => {
+    res.setHeader('content-type', 'application/xml');
+    res.render('portal-version');
+  });
+
+  app.post('/qps/rest/3.0/search/was/webapp', (req, res) => {
+    // TODO: Implement pagination responses
+    res.setHeader('content-type', 'application/xml');
+    res.render('webapp-list');
+  });
+
   app.get('/api/2.0/fo/asset/host/', (req, res) => {
     const truncationLimit = Number(req.query['truncation_limit']);
     const idStart = Number(req.query['id_max']) || 0;
