@@ -159,7 +159,7 @@ export function parseHostDetectionsStream({
               iterateeErrorCount >= iterateeErrorLimit
             ) {
               terminating = true;
-              completePromises(
+              void completePromises(
                 new Error(
                   `Exceeded iteratee error limit ${iterateeErrorLimit}`,
                 ),
@@ -170,7 +170,7 @@ export function parseHostDetectionsStream({
     });
 
     saxStream.on('end', function () {
-      if (!terminating) completePromises();
+      if (!terminating) void completePromises();
     });
 
     xmlStream.pipe(saxStream);
