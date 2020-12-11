@@ -7,6 +7,8 @@
 - Validating response content type before parsing body
 - Process detections XML using a streaming parser to limit memory consumption
   and perform conversion and writing to storage as soon as possible.
+- Request details for more hosts per request, submit more requests concurrently
+  to reduce total time to fetch large numbers of hosts.
 
 ## Added
 
