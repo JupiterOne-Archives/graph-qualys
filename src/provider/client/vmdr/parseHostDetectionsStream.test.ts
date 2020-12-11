@@ -1,10 +1,8 @@
 import { noop } from 'lodash';
 import stream from 'stream';
 
-import {
-  HostDetections,
-  parseHostDetectionsStream,
-} from './parseHostDetectionsStream';
+import { vmpc } from '../types';
+import { parseHostDetectionsStream } from './parseHostDetectionsStream';
 
 class ReadableString extends stream.Readable {
   private sent = false;
@@ -81,7 +79,7 @@ const detectionOutputXML = `${detectionOutputOpenXML}
     ${hostXML3}
   ${detectionOutputCloseXML}`;
 
-const hostDetections1: HostDetections = {
+const hostDetections1: vmpc.HostDetections = {
   host: {
     ID: 1,
     LAST_SCAN_DATETIME: '2018-04-13T03:49:05Z' as any,
@@ -96,7 +94,7 @@ const hostDetections1: HostDetections = {
   ],
 };
 
-const hostDetections2: HostDetections = {
+const hostDetections2: vmpc.HostDetections = {
   host: {
     ID: 2,
     LAST_SCAN_DATETIME: '2018-04-13T03:49:05Z' as any,
@@ -117,7 +115,7 @@ const hostDetections2: HostDetections = {
   ],
 };
 
-const hostDetections3: HostDetections = {
+const hostDetections3: vmpc.HostDetections = {
   host: {
     ID: 3,
     LAST_SCAN_DATETIME: '2018-04-13T03:49:05Z' as any,
@@ -128,9 +126,17 @@ const hostDetections3: HostDetections = {
 test('unknown xml', async () => {
   const iteratee = jest.fn();
   const onIterateeError = jest.fn();
+  const onComplete = jest.fn();
+  const onUnhandledError = jest.fn();
   const xmlStream = new ReadableString('<unknown></unknown>');
   await expect(
-    parseHostDetectionsStream({ xmlStream, iteratee, onIterateeError }),
+    parseHostDetectionsStream({
+      xmlStream,
+      iteratee,
+      onIterateeError,
+      onUnhandledError,
+      onComplete,
+    }),
   ).resolves.not.toThrowError();
   expect(onIterateeError).not.toHaveBeenCalled();
   expect(iteratee).not.toHaveBeenCalled();
@@ -139,9 +145,17 @@ test('unknown xml', async () => {
 test('no content', async () => {
   const iteratee = jest.fn();
   const onIterateeError = jest.fn();
+  const onComplete = jest.fn();
+  const onUnhandledError = jest.fn();
   const xmlStream = new ReadableString('');
   await expect(
-    parseHostDetectionsStream({ xmlStream, iteratee, onIterateeError }),
+    parseHostDetectionsStream({
+      xmlStream,
+      iteratee,
+      onIterateeError,
+      onUnhandledError,
+      onComplete,
+    }),
   ).resolves.not.toThrowError();
   expect(onIterateeError).not.toHaveBeenCalled();
   expect(iteratee).not.toHaveBeenCalled();
@@ -150,6 +164,8 @@ test('no content', async () => {
 test('empty HOST_LIST', async () => {
   const iteratee = jest.fn();
   const onIterateeError = jest.fn();
+  const onComplete = jest.fn();
+  const onUnhandledError = jest.fn();
   const xmlStream = new ReadableString(
     '<HOST_LIST_VM_DETECTION_OUTPUT>\
   <RESPONSE>\
@@ -160,7 +176,13 @@ test('empty HOST_LIST', async () => {
 </HOST_LIST_VM_DETECTION_OUTPUT>',
   );
   await expect(
-    parseHostDetectionsStream({ xmlStream, iteratee, onIterateeError }),
+    parseHostDetectionsStream({
+      xmlStream,
+      iteratee,
+      onIterateeError,
+      onUnhandledError,
+      onComplete,
+    }),
   ).resolves.not.toThrowError();
   expect(onIterateeError).not.toHaveBeenCalled();
   expect(iteratee).not.toHaveBeenCalled();
@@ -169,6 +191,8 @@ test('empty HOST_LIST', async () => {
 test('HOST, empty DETECTION_LIST', async () => {
   const iteratee = jest.fn();
   const onIterateeError = jest.fn();
+  const onComplete = jest.fn();
+  const onUnhandledError = jest.fn();
 
   const xmlStream = new ReadableString(
     '<HOST_LIST_VM_DETECTION_OUTPUT>\
@@ -188,10 +212,19 @@ test('HOST, empty DETECTION_LIST', async () => {
   );
 
   await expect(
-    parseHostDetectionsStream({ xmlStream, iteratee, onIterateeError }),
+    parseHostDetectionsStream({
+      xmlStream,
+      iteratee,
+      onIterateeError,
+      onUnhandledError,
+      onComplete,
+    }),
   ).resolves.not.toThrowError();
 
   expect(onIterateeError).not.toHaveBeenCalled();
+  expect(onUnhandledError).not.toHaveBeenCalled();
+  expect(onComplete).toHaveBeenCalledWith('end');
+
   expect(iteratee).toHaveBeenCalledWith({
     detections: [],
     host: {
@@ -206,14 +239,25 @@ test('HOST, empty DETECTION_LIST', async () => {
 test('HOSTs, DETECTIONs', async () => {
   const iteratee = jest.fn();
   const onIterateeError = jest.fn();
+  const onComplete = jest.fn();
+  const onUnhandledError = jest.fn();
 
   const xmlStream = new ReadableString(detectionOutputXML);
 
   await expect(
-    parseHostDetectionsStream({ xmlStream, iteratee, onIterateeError }),
+    parseHostDetectionsStream({
+      xmlStream,
+      iteratee,
+      onIterateeError,
+      onUnhandledError,
+      onComplete,
+    }),
   ).resolves.not.toThrowError();
 
   expect(onIterateeError).not.toHaveBeenCalled();
+  expect(onUnhandledError).not.toHaveBeenCalled();
+  expect(onComplete).toHaveBeenCalledWith('end');
+
   expect(iteratee).toHaveBeenNthCalledWith(1, hostDetections1);
   expect(iteratee).toHaveBeenNthCalledWith(2, hostDetections2);
   expect(iteratee).toHaveBeenNthCalledWith(3, hostDetections3);
@@ -232,14 +276,25 @@ describe('error', () => {
           }),
       );
     const onIterateeError = jest.fn();
+    const onComplete = jest.fn();
+    const onUnhandledError = jest.fn();
 
     const xmlStream = new ReadableString(detectionOutputXML);
 
     await expect(
-      parseHostDetectionsStream({ xmlStream, iteratee, onIterateeError }),
+      parseHostDetectionsStream({
+        xmlStream,
+        iteratee,
+        onIterateeError,
+        onUnhandledError,
+        onComplete,
+      }),
     ).resolves.not.toThrowError();
 
     expect(onIterateeError).toHaveBeenCalledWith(error, hostDetections1);
+    expect(onUnhandledError).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith('end');
+
     expect(iteratee).toHaveBeenNthCalledWith(1, hostDetections1);
     expect(iteratee).toHaveBeenNthCalledWith(2, hostDetections2);
     expect(iteratee).toHaveBeenNthCalledWith(3, hostDetections3);
@@ -254,6 +309,8 @@ describe('error', () => {
       .mockResolvedValue(noop);
 
     const onIterateeError = jest.fn();
+    const onComplete = jest.fn();
+    const onUnhandledError = jest.fn();
 
     const xmlStream = new stream.PassThrough();
 
@@ -263,7 +320,8 @@ describe('error', () => {
       iteratee,
       onIterateeError,
       iterateeErrorLimit: 1,
-      // debug: true,
+      onUnhandledError,
+      onComplete,
     }).catch((err) => {
       parseError = err;
     });
@@ -273,6 +331,8 @@ describe('error', () => {
     xmlStream.write(hostXML1);
     expect(iteratee).toHaveBeenNthCalledWith(1, hostDetections1);
     expect(onIterateeError).not.toHaveBeenCalled();
+    expect(onUnhandledError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
 
     xmlStream.write(hostXML2);
     expect(iteratee).toHaveBeenNthCalledWith(2, hostDetections2);
@@ -283,20 +343,28 @@ describe('error', () => {
     });
 
     expect(onIterateeError).toHaveBeenCalledWith(error, hostDetections2);
+    expect(onUnhandledError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
 
     xmlStream.write(hostXML3);
     expect(iteratee).toHaveBeenNthCalledWith(3, hostDetections3);
+    expect(onUnhandledError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
 
     xmlStream.write(detectionOutputCloseXML);
     xmlStream.end();
 
     await parsePromise;
     expect(parseError).toBeUndefined();
+    expect(onUnhandledError).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledTimes(1);
 
     expect(iteratee).toHaveBeenCalledTimes(3);
   });
 
   test('stops processing if no successes', async () => {
+    const exceededErrorLimitMessage = 'Exceeded iteratee error limit 2';
+
     const error1 = new Error('One failed');
     const error2 = new Error('Two failed');
     const iteratee = jest
@@ -306,6 +374,8 @@ describe('error', () => {
       .mockResolvedValue(noop);
 
     const onIterateeError = jest.fn();
+    const onComplete = jest.fn();
+    const onUnhandledError = jest.fn();
 
     const xmlStream = new stream.PassThrough();
 
@@ -315,7 +385,8 @@ describe('error', () => {
       iteratee,
       onIterateeError,
       iterateeErrorLimit: 2,
-      // debug: true,
+      onComplete,
+      onUnhandledError,
     }).catch((err) => {
       parseError = err;
     });
@@ -329,6 +400,8 @@ describe('error', () => {
       setTimeout(resolve, 1);
     });
     expect(onIterateeError).toHaveBeenNthCalledWith(1, error1, hostDetections1);
+    expect(onUnhandledError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
 
     xmlStream.write(hostXML2);
     expect(iteratee).toHaveBeenNthCalledWith(2, hostDetections2);
@@ -337,6 +410,12 @@ describe('error', () => {
       setTimeout(resolve, 1);
     });
     expect(onIterateeError).toHaveBeenNthCalledWith(2, error2, hostDetections2);
+    expect(onUnhandledError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: exceededErrorLimitMessage }),
+    );
+    expect(onComplete).toHaveBeenCalledWith(
+      'closetag', // during closing of HOST
+    );
 
     // Prove that additional data on the input stream is ignored
     xmlStream.write(hostXML3);
@@ -346,7 +425,11 @@ describe('error', () => {
     await parsePromise;
 
     expect(parseError).toBeDefined();
-    expect(parseError?.message).toMatch(/Exceeded iteratee error limit 2/);
+    expect(parseError?.message).toEqual(exceededErrorLimitMessage);
+    expect(onUnhandledError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: exceededErrorLimitMessage }),
+    );
+    expect(onComplete).toHaveBeenCalledTimes(1);
 
     expect(iteratee).toHaveBeenCalledTimes(2);
   });

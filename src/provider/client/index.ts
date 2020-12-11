@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 
 import {
   IntegrationError,
+  IntegrationLogger,
   IntegrationProviderAuthenticationError,
   IntegrationProviderAuthorizationError,
   IntegrationValidationError,
@@ -616,15 +617,12 @@ export class QualysAPIClient {
    */
   public async iterateHostDetections(
     hostIds: QWebHostId[],
-    iteratee: ResourceIteratee<{
-      host: vmpc.DetectionHost;
-      detections: vmpc.HostDetection[];
-    }>,
-    options?: {
+    iteratee: ResourceIteratee<vmpc.HostDetections>,
+    options: {
+      onRequestError: (pageIds: number[], err: Error) => void;
       filters?: vmpc.ListHostDetectionsFilters;
       pagination?: { limit: number };
-      // TODO make this a required argument and update tests
-      onRequestError?: (pageIds: number[], err: Error) => void;
+      logger?: IntegrationLogger;
     },
   ): Promise<void> {
     const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
@@ -657,10 +655,16 @@ export class QualysAPIClient {
       return parseHostDetectionsStream({
         xmlStream: response.body,
         iteratee,
-        onIterateeError: (err, hostDetections) => {
-          // TODO: handle err
-          console.error({ err, hostDetections });
-        },
+        onIterateeError: (err, hostDetections) =>
+          options.logger?.warn(
+            { err, hostId: hostDetections.host.ID },
+            'Error occurred in host iteratee',
+          ),
+        onUnhandledError: (err) => options.onRequestError(ids, err),
+        onComplete: (event) =>
+          options?.logger?.info(
+            `Host detections parser completed by '${event}'`,
+          ),
       });
     };
 
