@@ -6,21 +6,37 @@ import { parseStringPropertyValue } from '@jupiterone/integration-sdk-core';
 
 import { ResourceIteratee, vmpc } from '../types';
 
-export type HostDetections = {
-  host: vmpc.DetectionHost;
-  detections: vmpc.HostDetection[];
-};
-
 export function parseHostDetectionsStream({
   xmlStream,
   iteratee,
   onIterateeError,
-  iterateeErrorLimit,
-  debug = false,
+  onUnhandledError,
+  onComplete,
+  iterateeErrorLimit = 10,
+  debugSax = false,
 }: {
   xmlStream: NodeJS.ReadableStream;
-  iteratee: ResourceIteratee<HostDetections>;
-  onIterateeError: (err: Error, hostDetections: HostDetections) => void;
+
+  iteratee: ResourceIteratee<vmpc.HostDetections>;
+
+  /**
+   * Invoked when there is an error calling the iteratee. Parsing will continue
+   * depending on `interateeErrorLimit`.
+   */
+  onIterateeError: (err: Error, hostDetections: vmpc.HostDetections) => void;
+
+  /**
+   * Invoked when there is an unexpected error.
+   */
+  onUnhandledError: (err: Error) => void;
+
+  /**
+   * Invoked when parsing is going to complete, and any time additional requests
+   * to complete are made from a parser event.
+   *
+   * @param event the parsing event that started the completion process
+   */
+  onComplete: (event: string) => void;
 
   /**
    * The number of errors to accept, from the start, before giving up. This is
@@ -29,9 +45,13 @@ export function parseHostDetectionsStream({
    */
   iterateeErrorLimit?: number;
 
-  debug?: boolean;
+  /**
+   * Enable debug logging for stream processing development. This is super
+   * noisy, goes to the console.log, and should only be enable in development.
+   */
+  debugSax?: boolean;
 }): Promise<void> {
-  const log = debug ? console.log : noop;
+  const logSaxEvent = debugSax ? console.log : noop;
 
   return new Promise((resolve, reject) => {
     let terminating = false;
@@ -50,31 +70,44 @@ export function parseHostDetectionsStream({
 
     // TODO put 2 minute onIdle socket timeout because qualys said they will
     // send something every 56 seconds to keep the connection open.
-    const completePromises = async (err?: Error) => {
-      log('completePromises', {
-        err,
+    // TODO: test `onComplete`, multiple invocations
+    const completePromises = async (event: string, unhandledError?: Error) => {
+      logSaxEvent('completePromises', {
+        event,
+        unhandledError,
         iterateePromiseCount: iterateeQueue.size,
         terminating,
       });
 
-      xmlStream.pause();
-      xmlStream.unpipe(saxStream);
+      if (unhandledError) onUnhandledError(unhandledError);
 
-      await iterateeQueue.onIdle();
-      return err ? reject(err) : resolve();
+      onComplete(event);
+
+      if (terminating) {
+        await iterateeQueue.onIdle();
+        return;
+      } else {
+        terminating = true;
+        xmlStream.pause();
+        xmlStream.unpipe(saxStream);
+        await iterateeQueue.onIdle();
+        return unhandledError ? reject(unhandledError) : resolve();
+      }
     };
 
     saxStream.on('close', () => {
-      log('close', { terminating });
+      logSaxEvent('close', { terminating });
+      void completePromises('close');
     });
 
+    // TODO test XML parsing error
     saxStream.on('error', function (err) {
-      log('error', { err, terminating });
-      // TODO test parsing error
+      logSaxEvent('error', { err, terminating });
+      void completePromises('error', err);
     });
 
     saxStream.on('opentag', function (tag) {
-      log('opentag', { tag, terminating });
+      logSaxEvent('opentag', { tag, terminating });
 
       if (tag.name === 'HOST') {
         host = {};
@@ -91,7 +124,7 @@ export function parseHostDetectionsStream({
     });
 
     saxStream.on('text', function (text) {
-      log('text', { text, propertyValue, terminating });
+      logSaxEvent('text', { text, propertyValue, terminating });
 
       if (propertyValue && propertyTargets.length > 0) {
         propertyValue.push(text);
@@ -99,7 +132,7 @@ export function parseHostDetectionsStream({
     });
 
     saxStream.on('cdata', function (cdata) {
-      log('cdata', { cdata, propertyValue, terminating });
+      logSaxEvent('cdata', { cdata, propertyValue, terminating });
 
       if (propertyValue && propertyTargets.length > 0) {
         propertyValue.push(cdata);
@@ -107,7 +140,7 @@ export function parseHostDetectionsStream({
     });
 
     saxStream.on('closetag', function (tag) {
-      log('closetag', {
+      logSaxEvent('closetag', {
         tag,
         propertyTargets,
         propertyValue,
@@ -130,7 +163,7 @@ export function parseHostDetectionsStream({
       } else if (tag === 'HOST') {
         propertyTargets.shift();
 
-        const hostDetections: HostDetections = {
+        const hostDetections: vmpc.HostDetections = {
           host,
           detections,
         };
@@ -143,7 +176,7 @@ export function parseHostDetectionsStream({
           .catch((err) => {
             iterateeErrorCount++;
 
-            log('iterateeError', {
+            logSaxEvent('iterateeError', {
               err,
               iterateeErrorLimit,
               iterateeErrorCount,
@@ -158,8 +191,8 @@ export function parseHostDetectionsStream({
               iterateeErrorLimit &&
               iterateeErrorCount >= iterateeErrorLimit
             ) {
-              terminating = true;
               void completePromises(
+                'closetag',
                 new Error(
                   `Exceeded iteratee error limit ${iterateeErrorLimit}`,
                 ),
@@ -170,7 +203,8 @@ export function parseHostDetectionsStream({
     });
 
     saxStream.on('end', function () {
-      if (!terminating) void completePromises();
+      logSaxEvent('end');
+      void completePromises('end');
     });
 
     xmlStream.pipe(saxStream);
