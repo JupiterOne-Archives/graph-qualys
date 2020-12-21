@@ -48,3 +48,14 @@ export function toStringArray(
   });
   return strings;
 }
+
+/**
+ * Await on a promise for a specific number of milliseconds
+ */
+export function sleep(ms: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+}

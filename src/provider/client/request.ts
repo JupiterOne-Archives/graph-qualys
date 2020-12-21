@@ -1,6 +1,6 @@
-import Timeout from 'await-timeout';
 import EventEmitter from 'events';
 import { Response } from 'node-fetch';
+import { sleep } from '../../util';
 
 import {
   CanRetryDecision,
@@ -135,7 +135,7 @@ async function attemptAPIRequest(
   if (tryAfter > now) {
     const delay = tryAfter - now;
     emitDelayedRequestEvent(events, { ...requestEvent, delay });
-    await Timeout.set(delay);
+    await sleep(delay);
   }
 
   emitRequestEvent(events, requestEvent);
