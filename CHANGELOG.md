@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
+## 4.7.4 - 2020-12-21
+
 ### Changed
 
 - Validating response content type before parsing body
+- Upgraded various packages and removed old unused packages
 
 ## 4.7.3 - 2020-12-05
 
