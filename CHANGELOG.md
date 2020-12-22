@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## Added
+
+- `yarn start:qualys` provides a mock implementation of some of the Qualys APIs
+  used by the integration.
+
 ## 4.7.4 - 2020-12-21
 
 ### Changed
