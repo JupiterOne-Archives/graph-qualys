@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 4.7.5 - 2020-12-22
+
 ### Changed
 
 - Request details for more hosts per request, submit more requests concurrently
