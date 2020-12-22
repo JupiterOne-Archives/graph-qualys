@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import Mustache from 'mustache';
 import path from 'path';
 
@@ -15,7 +15,7 @@ export async function initializeEngine() {
 }
 
 async function parseTemplates(): Promise<Record<string, string>> {
-  const templatePaths = {
+  const templatePaths: Record<string, string> = {
     'activity-log.mustache': 'activity-log.mustache',
     'portal-version.mustache': 'portal-version.mustache',
     'webapp-list.mustache': 'webapp-list.mustache',
@@ -30,29 +30,26 @@ async function parseTemplates(): Promise<Record<string, string>> {
   };
 
   const templates: Record<string, string> = {};
-
   const loaders: Promise<void>[] = [];
-  for (const [templateName, templatePath] of Object.entries(templatePaths)) {
-    loaders.push(
-      new Promise((resolve, reject) => {
-        fs.readFile(
-          path.join(__dirname, templatePath),
-          'utf-8',
-          (err, data) => {
-            if (err) reject(err);
-            else {
-              console.log(`Loaded template '${templatePath}'`);
-              templates[templateName] = data;
-              Mustache.parse(data);
-              resolve();
-            }
-          },
-        );
-      }),
+
+  async function parseTemplateFile(
+    templateName: string,
+    templateRelativePath: string,
+  ) {
+    const data = await fs.readFile(
+      path.join(__dirname, templateRelativePath),
+      'utf-8',
     );
+
+    console.log({ templateRelativePath }, 'Loaded template');
+    templates[templateName] = data;
+    Mustache.parse(data);
+  }
+
+  for (const [templateName, templatePath] of Object.entries(templatePaths)) {
+    loaders.push(parseTemplateFile(templateName, templatePath));
   }
 
   await Promise.all(loaders);
-
   return templates;
 }
