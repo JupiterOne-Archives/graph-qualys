@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Request details for more hosts per request, submit more requests concurrently
+  to reduce total time to fetch large numbers of hosts.
+
 ## Added
 
 - `yarn start:qualys` provides a mock implementation of some of the Qualys APIs

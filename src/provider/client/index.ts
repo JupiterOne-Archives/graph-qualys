@@ -53,7 +53,7 @@ const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
 /**
  * Number of hosts to fetch details for per request.
  */
-const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 1000;
 
 /**
  * Number of hosts to fetch detections for per request. This is NOT the number
@@ -487,6 +487,8 @@ export class QualysAPIClient {
   /**
    * Iterate details of hosts known to the Asset Manager.
    *
+   * * [API Documentation](https://www.qualys.com/docs/qualys-asset-management-tagging-api-v2-user-guide.pdf)
+   *
    * There are currently no [rate
    * limits](https://www.qualys.com/docs/qualys-api-limits.pdf) on the Asset
    * Manager APIs.
@@ -523,14 +525,14 @@ export class QualysAPIClient {
           'Content-Type': 'text/xml',
         },
         body,
-        timeout: 1000 * 60 * 5,
+        timeout: 1000 * 60 * 10,
       });
 
       return toArray(response.ServiceResponse?.data?.HostAsset);
     };
 
     const hostDetailsQueue = new PQueue({
-      concurrency: 10,
+      concurrency: 20,
     });
 
     for (const ids of chunk(
