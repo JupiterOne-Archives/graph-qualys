@@ -53,7 +53,26 @@ const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
 /**
  * Number of hosts to fetch details for per request.
  */
-const DEFAULT_HOST_DETAILS_PAGE_SIZE = 1000;
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
+
+/**
+ * Number of concurrent requests to fetch details.
+ *
+ * Attempted combinations:
+ *
+ * - ✅ page 250, concurrency 10, timeout 5min
+ * - 🚫 page 500, concurrency 15, timeout 10min
+ *   - https://status.qualys.com/ was showing some problems, unclear if they were related
+ *   - "socket hang up"
+ * - 🚫 page 1000, concurrency 20, timeout 10min
+ *   - "socket hang up"
+ */
+const DEFAULT_HOST_DETAILS_CONCURRENCY = 10;
+
+/**
+ * Time to wait for data to come back from host details endpoint.
+ */
+const DEFAULT_HOST_DETAILS_SOCKET_TIMEOUT_MS = 1000 * 60 * 5;
 
 /**
  * Number of hosts to fetch detections for per request. This is NOT the number
@@ -525,14 +544,14 @@ export class QualysAPIClient {
           'Content-Type': 'text/xml',
         },
         body,
-        timeout: 1000 * 60 * 10,
+        timeout: DEFAULT_HOST_DETAILS_SOCKET_TIMEOUT_MS,
       });
 
       return toArray(response.ServiceResponse?.data?.HostAsset);
     };
 
     const hostDetailsQueue = new PQueue({
-      concurrency: 20,
+      concurrency: DEFAULT_HOST_DETAILS_CONCURRENCY,
     });
 
     for (const ids of chunk(
