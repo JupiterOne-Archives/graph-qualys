@@ -197,6 +197,7 @@ export async function fetchScannedHostFindings({
   )) as Entity;
 
   let totalHostsProcessed = 0;
+  let totalDetectionsProcessed = 0;
   const totalPageErrors = 0;
   const errorCorrelationId = uuid();
 
@@ -204,25 +205,6 @@ export async function fetchScannedHostFindings({
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
-      // This code is hot and we don't want to be logging all of the time.
-      // We largely reduce the number of logs by ensuring that we only log every
-      // so often.
-      const shouldLogPageVerbose =
-        totalHostsProcessed % HOST_DETECTIONS_PAGE_LOG_FREQUENCY === 0 &&
-        totalHostsProcessed !== 0;
-
-      if (shouldLogPageVerbose) {
-        logger.info(
-          {
-            hostId: host.ID,
-            detectionCount: detections.length,
-            totalHostsProcessed,
-            totalPageErrors,
-          },
-          'Processing host detections...',
-        );
-      }
-
       const seenHostFindingEntityKeys = new Set<string>();
 
       // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
@@ -279,14 +261,21 @@ export async function fetchScannedHostFindings({
       // );
 
       totalHostsProcessed++;
+      totalDetectionsProcessed += detections.length;
+
+      // This code is hot and we don't want to be logging all of the time.
+      // We largely reduce the number of logs by ensuring that we only log every
+      // so often.
+      const shouldLogPageVerbose =
+        totalHostsProcessed % HOST_DETECTIONS_PAGE_LOG_FREQUENCY === 0 &&
+        totalHostsProcessed !== 0;
 
       if (shouldLogPageVerbose) {
         logger.info(
           {
-            hostId: host.ID,
-            detectionCount: detections.length,
-            totalPageErrors,
+            totalDetectionsProcessed,
             totalHostsProcessed,
+            totalPageErrors,
           },
           'Processing host detections completed.',
         );
