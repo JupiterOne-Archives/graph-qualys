@@ -129,11 +129,17 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _type: ENTITY_TYPE_SERVICE_WAS,
         _class: 'Service',
         resourceName: 'Web Application Scanner',
+        indexMetadata: {
+          enabled: false,
+        },
       },
       {
         _type: ENTITY_TYPE_SERVICE_VMDR,
         _class: 'Service',
         resourceName: 'Vulnerability Manager',
+        indexMetadata: {
+          enabled: false,
+        },
       },
     ],
     relationships: [
@@ -146,6 +152,9 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _class: RelationshipClass.HAS,
         sourceType: ENTITY_TYPE_QUALYS_ACCOUNT,
         targetType: ENTITY_TYPE_SERVICE_WAS,
+        indexMetadata: {
+          enabled: false,
+        },
       },
       {
         _type: generateRelationshipType(
@@ -156,6 +165,9 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _class: RelationshipClass.HAS,
         sourceType: ENTITY_TYPE_QUALYS_ACCOUNT,
         targetType: ENTITY_TYPE_SERVICE_VMDR,
+        indexMetadata: {
+          enabled: false,
+        },
       },
     ],
     dependsOn: [STEP_FETCH_ACCOUNT],
