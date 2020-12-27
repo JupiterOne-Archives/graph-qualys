@@ -44,6 +44,9 @@ export const VmdrEntities: Record<string, StepEntityMetadata> = {
     _class: 'Finding',
     resourceName: 'Host Detection',
     partial: true,
+    indexMetadata: {
+      enabled: false,
+    },
   },
 };
 
@@ -54,6 +57,9 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     targetType: ENTITY_TYPE_HOST_FINDING,
     partial: true,
+    indexMetadata: {
+      enabled: false,
+    },
   },
   SERVICE_DISCOVERED_HOST: {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
@@ -61,6 +67,9 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     targetType: ENTITY_TYPE_DISCOVERED_HOST,
     partial: true,
+    indexMetadata: {
+      enabled: false,
+    },
   },
   SERVICE_EC2_HOST: {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
@@ -68,5 +77,8 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     targetType: ENTITY_TYPE_EC2_HOST,
     partial: true,
+    indexMetadata: {
+      enabled: false,
+    },
   },
 };
