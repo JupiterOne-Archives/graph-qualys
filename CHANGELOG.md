@@ -7,6 +7,7 @@
 - Upgrade `@jupiterone/integration-sdk-\*@5.3.0
 - Adopted `indexMetadata` in each step's graph object metadata to omit disk
   writes
+- Reduce frequency of host detection logging
 
 ## 4.7.5 - 2020-12-22
 
