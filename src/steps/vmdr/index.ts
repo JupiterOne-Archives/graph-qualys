@@ -37,6 +37,13 @@ import {
 import { HostAssetTargetsMap } from './types';
 
 /**
+ * This is the number of pages that must be traversed before producing a more
+ * verbose set of logging. The host detections code is hot and we don't want to
+ * log too frequently.
+ */
+const HOST_DETECTIONS_PAGE_LOG_FREQUENCY = 10000;
+
+/**
  * Fetches the set of scanned host IDs that will be processed by the
  * integration. This step may be changed to reduce the set of processed hosts.
  */
@@ -190,6 +197,7 @@ export async function fetchScannedHostFindings({
   )) as Entity;
 
   let totalHostsProcessed = 0;
+  let totalDetectionsProcessed = 0;
   const totalPageErrors = 0;
   const errorCorrelationId = uuid();
 
@@ -197,14 +205,6 @@ export async function fetchScannedHostFindings({
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
-      logger.info(
-        {
-          hostId: host.ID,
-          detectionCount: detections.length,
-        },
-        'Processing host detections...',
-      );
-
       const seenHostFindingEntityKeys = new Set<string>();
 
       // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
@@ -252,14 +252,6 @@ export async function fetchScannedHostFindings({
         await jobState.addRelationships(relationships);
       }
 
-      logger.info(
-        {
-          hostId: host.ID,
-          detectionCount: detections.length,
-        },
-        'Processing host detections completed.',
-      );
-
       // Ensure that `DATA_HOST_VULNERABILITY_FINDING_KEYS` is updated for each host
       // so that should a partial set be ingested, we don't lose what we've seen
       // for later steps.
@@ -269,6 +261,25 @@ export async function fetchScannedHostFindings({
       // );
 
       totalHostsProcessed++;
+      totalDetectionsProcessed += detections.length;
+
+      // This code is hot and we don't want to be logging all of the time.
+      // We largely reduce the number of logs by ensuring that we only log every
+      // so often.
+      const shouldLogPageVerbose =
+        totalHostsProcessed % HOST_DETECTIONS_PAGE_LOG_FREQUENCY === 0 &&
+        totalHostsProcessed !== 0;
+
+      if (shouldLogPageVerbose) {
+        logger.info(
+          {
+            totalDetectionsProcessed,
+            totalHostsProcessed,
+            totalPageErrors,
+          },
+          'Processing host detections completed.',
+        );
+      }
     },
     {
       filters: {
