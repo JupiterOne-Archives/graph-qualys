@@ -26,6 +26,7 @@ async function parseTemplates(): Promise<Record<string, string>> {
 
     hostDetails: 'partials/host-details.mustache',
     hostDetections: 'partials/host-detections.mustache',
+    hostDetection: 'partials/host-detection.mustache',
     vuln: 'partials/vuln.mustache',
   };
 

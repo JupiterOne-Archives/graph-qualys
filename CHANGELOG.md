@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Mock Qualys server includes concurrency and rate limit headers to exercise
+  concurrency logic in client
+- Mock Qualys server answers a variable number of detections per host
+- Mock Qualys server detections endpoint response times vary across invocations
+  to simulate production variation
+
 ## 4.8.0 - 2020-12-27
 
 ### Changed
