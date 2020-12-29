@@ -1,5 +1,6 @@
 import express from 'express';
 import xmlBodyParser from 'express-xml-bodyparser';
+import onFinished from 'on-finished';
 import path from 'path';
 import { URL } from 'url';
 
@@ -19,6 +20,24 @@ async function start() {
   app.use(express.text());
   app.use(express.urlencoded({ extended: false }));
   app.use(xmlBodyParser());
+
+  app.use((req, res, next) => {
+    res.setHeader('x-ratelimit-limit', 10000);
+    res.setHeader('x-ratelimit-remaining', 10000);
+    res.setHeader('x-ratelimit-window-sec', 3600);
+    res.setHeader('x-ratelimit-towait-sec', 0);
+    next();
+  });
+
+  if (process.env.LOG_REQUESTS) {
+    app.use((req, res, next) => {
+      console.log(Date.now(), req.url, 'received request');
+      onFinished(res, (err, res) => {
+        console.log(Date.now(), req.url, 'response finished');
+      });
+      next();
+    });
+  }
 
   app.get('/api/2.0/fo/activity_log/', (req, res) => {
     res.setHeader('content-type', 'text/csv;charset=UTF-8');
@@ -60,11 +79,33 @@ async function start() {
     res.render('host-details-list', { hosts });
   });
 
+  let detectionsConcurrencyRunning = 0;
   app.post('/api/2.0/fo/asset/host/vm/detection/', (req, res) => {
     const hostIds = req.body.ids.split(',');
     const hosts = hostIds.map((e) => hostData.hostsById.get(Number(e)));
-    res.setHeader('content-type', 'text/xml');
-    res.render('host-detection-list', { hosts });
+
+    detectionsConcurrencyRunning++;
+    console.log('concurrency: ', detectionsConcurrencyRunning);
+
+    res.set('x-concurrency-limit-limit', ['15']);
+    res.set('x-concurrency-limit-running', [
+      String(detectionsConcurrencyRunning),
+    ]);
+    res.set('content-type', 'text/xml');
+
+    const hostTime = Math.random() * 10;
+    const maximumTime = 1000 * 10;
+    const responseTime = Math.min(
+      hostIds.length * hostTime + Math.round(Math.random() * 1000),
+      maximumTime,
+    );
+
+    setTimeout(() => {
+      res.render('host-detection-list', { hosts }, (err, html) => {
+        detectionsConcurrencyRunning--;
+        res.send(Buffer.from(html));
+      });
+    }, responseTime);
   });
 
   app.post('/api/2.0/fo/knowledge_base/vuln', (req, res) => {

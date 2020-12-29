@@ -226,6 +226,10 @@ function extractRateLimitHeaders(
   let toWaitSeconds = limit
     ? Number(response.headers.get('x-ratelimit-towait-sec'))
     : defaultState.toWaitSeconds;
+
+  // Qualys docs indicate that when there is no `x-ratelimit-limit`, and there
+  // is a `x-concurrency-limit-limit`, then we've hit the concurrency limit and
+  // need to wait.
   if (!limit && concurrency) {
     toWaitSeconds = rateLimitConfig.concurrencyDelay / 1000;
   }
