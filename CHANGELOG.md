@@ -10,6 +10,10 @@
 - Mock Qualys server detections endpoint response times vary across invocations
   to simulate production variation
 
+## Fixed
+
+- Duplicate values in `Finding.targets` are removed
+
 ## 4.8.0 - 2020-12-27
 
 ### Changed

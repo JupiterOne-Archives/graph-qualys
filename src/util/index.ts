@@ -35,17 +35,21 @@ export function getQualysHost(qualysApiUrl: string): string {
 }
 
 /**
- * Given an Array of values, drops undefined and converts to string.
+ * Given an Array of values, drops undefined, null, duplicates and converts to
+ * string. This needs to be as fast as possible. Feel free to improve performance.
  */
 export function toStringArray(
   values: (string | number | undefined)[],
 ): string[] {
   const strings: string[] = [];
-  values.forEach((e) => {
+  for (const e of values) {
     if (e) {
-      strings.push(String(e));
+      const s = String(e);
+      if (strings.indexOf(s) === -1) {
+        strings.push(s);
+      }
     }
-  });
+  }
   return strings;
 }
 
