@@ -7,7 +7,11 @@ import {
   ListHostDetectionsResponse,
 } from '../../provider/client/types/vmpc';
 import { toArray } from '../../provider/client/util';
-import { createHostFindingEntity, getHostDetails } from './converters';
+import {
+  createHostFindingEntity,
+  getHostDetails,
+  getTargetsFromHostAsset,
+} from './converters';
 
 describe('createHostFindingEntity', () => {
   const detectionsXml = fs
@@ -60,5 +64,13 @@ describe('getHostDetails', () => {
     expect(getHostDetails({ os: {} })).toMatchObject({
       os: undefined,
     });
+  });
+});
+
+describe('getTargetsFromHostAsset', () => {
+  test('deduplicates values', () => {
+    expect(
+      getTargetsFromHostAsset({ dnsHostName: 'bob', fqdn: 'bob' }),
+    ).toEqual(['bob']);
   });
 });
