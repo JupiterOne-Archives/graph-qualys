@@ -63,7 +63,7 @@ async function start() {
 
     let nextUrl: URL | undefined;
     if (idEnd < hostData.hosts.length) {
-      nextUrl = new URL(req.originalUrl, 'http://localhost:8080');
+      nextUrl = new URL(req.originalUrl, `http://${req.hostname}:8080`);
       nextUrl.searchParams.set('id_max', String(idEnd));
     }
 
