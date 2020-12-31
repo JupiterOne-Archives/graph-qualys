@@ -205,8 +205,6 @@ export async function fetchScannedHostFindings({
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
-      const seenHostFindingEntityKeys = new Set<string>();
-
       // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
       // so that we don't have to know what the optimal batch size it
       for (const batchDetections of chunk(detections, 500)) {
@@ -223,9 +221,8 @@ export async function fetchScannedHostFindings({
             hostId: host.ID,
           });
 
-          if (seenHostFindingEntityKeys.has(findingKey)) continue;
+          if (await jobState.hasKey(findingKey)) continue;
 
-          seenHostFindingEntityKeys.add(findingKey);
           // vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
           //   detection.QID!,
           //   findingKey,
