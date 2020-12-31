@@ -16,6 +16,7 @@
 - Using new `JobState.hasKey()` in place of tracking integration had to do to
   detect generating duplicate Findings, to save memory for long running
   instances
+- Disable Service - IDENTIFIED -> Finding relationships temporarily
 
 ## Fixed
 

@@ -2,12 +2,12 @@ import { chunk } from 'lodash';
 import { v4 as uuid } from 'uuid';
 
 import {
-  createDirectRelationship,
+  // createDirectRelationship,
   Entity,
   IntegrationStep,
   IntegrationStepExecutionContext,
-  Relationship,
-  RelationshipClass,
+  // Relationship,
+  // RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
 import { createQualysAPIClient } from '../../provider';
@@ -192,9 +192,9 @@ export async function fetchScannedHostFindings({
   const hostTargetsMap = ((await jobState.getData(DATA_HOST_TARGETS)) ||
     {}) as HostAssetTargetsMap;
 
-  const serviceEntity = (await jobState.getData(
-    DATA_VMDR_SERVICE_ENTITY,
-  )) as Entity;
+  // const serviceEntity = (await jobState.getData(
+  //   DATA_VMDR_SERVICE_ENTITY,
+  // )) as Entity;
 
   let totalHostsProcessed = 0;
   let totalDetectionsProcessed = 0;
@@ -209,7 +209,7 @@ export async function fetchScannedHostFindings({
       // so that we don't have to know what the optimal batch size it
       for (const batchDetections of chunk(detections, 500)) {
         const entities: Entity[] = [];
-        const relationships: Relationship[] = [];
+        // const relationships: Relationship[] = [];
 
         for (const detection of batchDetections) {
           const findingKey = buildKey({
@@ -236,17 +236,17 @@ export async function fetchScannedHostFindings({
           );
           entities.push(findingEntity);
 
-          relationships.push(
-            createDirectRelationship({
-              _class: RelationshipClass.IDENTIFIED,
-              from: serviceEntity,
-              to: findingEntity,
-            }),
-          );
+          // relationships.push(
+          //   createDirectRelationship({
+          //     _class: RelationshipClass.IDENTIFIED,
+          //     from: serviceEntity,
+          //     to: findingEntity,
+          //   }),
+          // );
         }
 
         await jobState.addEntities(entities);
-        await jobState.addRelationships(relationships);
+        // await jobState.addRelationships(relationships);
       }
 
       // Ensure that `DATA_HOST_VULNERABILITY_FINDING_KEYS` is updated for each host
@@ -329,8 +329,7 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     name: 'Fetch Scanned Host Findings',
     entities: [VmdrEntities.HOST_FINDING],
     relationships: [
-      VmdrRelationships.SERVICE_HOST_FINDING,
-
+      // VmdrRelationships.SERVICE_HOST_FINDING,
       // Global mappings will do the work of building a relationship between the
       // `Finding` and `Host` entities. It depends on the `Finding.targets`
       // containing a value that matches certain properties on the `Host`.
