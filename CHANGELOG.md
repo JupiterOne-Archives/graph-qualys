@@ -9,6 +9,9 @@
 - Mock Qualys server answers a variable number of detections per host
 - Mock Qualys server detections endpoint response times vary across invocations
   to simulate production variation
+- Mock Qualys server generates hosts with different IDs so that subsequent
+  starts will produce overlapping ranges, to simulate getting different scanned
+  hosts across executions
 - Upgrade `@jupiterone/integration-sdk-*@5.4.0`
 - Using new `JobState.hasKey()` in place of tracking integration had to do to
   detect generating duplicate Findings, to save memory for long running

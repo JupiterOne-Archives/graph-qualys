@@ -1,3 +1,5 @@
+import assert from 'assert';
+
 type Host = {
   id: number;
 };
@@ -9,13 +11,23 @@ type Detection = {
 type HostData = {
   hosts: Host[];
   hostsById: Map<number, Host>;
+  hostIdRange: {
+    start: number;
+    end: number;
+  };
 };
 
-export function generateHostData(numberHosts: number = 100000): HostData {
-  const hostData: HostData = {
-    hosts: [],
-    hostsById: new Map(),
-  };
+/**
+ * Generates on average `numberHosts * 50` detections, assuming an even
+ * distribution of `Math.random()`. Host IDs will will start somewhere between 1
+ * and median.
+ *
+ * @param numberHosts number of hosts to generate, default `5000` for about
+ * `250000` detections
+ */
+export function generateHostData(numberHosts: number = 5000): HostData {
+  const hosts: Host[] = [];
+  const hostsById: Map<number, Host> = new Map();
 
   const detections = () => {
     const detections: Detection[] = [];
@@ -27,11 +39,33 @@ export function generateHostData(numberHosts: number = 100000): HostData {
     return detections;
   };
 
-  for (let id = 1; id <= numberHosts; id++) {
-    const host = { id, detections };
-    hostData.hosts.push(host);
-    hostData.hostsById.set(id, host);
+  const hostStartId = Math.floor((Math.random() * numberHosts) / 2) | 1;
+  const hostEndId = hostStartId + numberHosts;
+
+  assert.strictEqual(
+    hostEndId - hostStartId,
+    numberHosts,
+    'Expected a number of host IDs to equal to desired number of hosts',
+  );
+
+  for (let hostId = hostStartId; hostId < hostEndId; hostId++) {
+    const host = { id: hostId, detections };
+    hosts.push(host);
+    hostsById.set(hostId, host);
   }
 
-  return hostData;
+  assert.strictEqual(
+    hosts.length,
+    numberHosts,
+    'Expected number of generated hosts to equal desired number of hosts',
+  );
+
+  return {
+    hosts,
+    hostsById,
+    hostIdRange: {
+      start: hostStartId,
+      end: hostEndId,
+    },
+  };
 }

@@ -10,6 +10,11 @@ import { initializeEngine } from './templates';
 async function start() {
   const hostData = generateHostData();
 
+  console.log(
+    { hosts: { length: hostData.hosts.length, idRange: hostData.hostIdRange } },
+    'Generated hosts, restart to get new set',
+  );
+
   const app = express();
   const port = 8080;
 
