@@ -9,10 +9,15 @@
 - Mock Qualys server answers a variable number of detections per host
 - Mock Qualys server detections endpoint response times vary across invocations
   to simulate production variation
+- Upgrade `@jupiterone/integration-sdk-*@5.4.0`
+- Using new `JobState.hasKey()` in place of tracking integration had to do to
+  detect generating duplicate Findings, to save memory for long running
+  instances
 
 ## Fixed
 
 - Duplicate values in `Finding.targets` are removed
+- Memory leak in SDK impacting long running instances
 
 ## 4.8.0 - 2020-12-27
 
