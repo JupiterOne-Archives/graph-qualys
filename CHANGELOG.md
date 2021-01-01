@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.0.0 - 2020-01-01
+
 ### Changed
 
 - Mock Qualys server includes concurrency and rate limit headers to exercise
