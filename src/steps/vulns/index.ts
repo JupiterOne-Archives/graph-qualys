@@ -35,6 +35,10 @@ import {
  * we don't have to re-load the vuln CVE data. Do not store everything, only
  * that necessary for CVE info.
  *
+ * TODO: Consider a FindingUploaderThingy that has a cache/fetches Vulns at
+ * threshold, then patches Findings with some vuln details and then adds to
+ * jobState.
+ *
  * @see `createVulnerabilityTargetEntities`
  */
 export async function fetchFindingVulnerabilities({
@@ -58,6 +62,9 @@ export async function fetchFindingVulnerabilities({
     const vulnFindingKeys = vulnerabilityFindingKeysMap.get(vuln.QID!);
     if (vulnFindingKeys) {
       for (const findingKey of vulnFindingKeys) {
+        // TODO: don't use findEntity, we don't have them, and we don't need to
+        // prove that it exists; we could use jobState.hasKey() if we want to
+        // avoid bad relationships
         const findingEntity = await jobState.findEntity(findingKey);
         if (!findingEntity) {
           logger.warn(

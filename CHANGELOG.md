@@ -2,9 +2,16 @@
 
 ## [Unreleased]
 
+## 5.0.3 - 2020-01-04
+
+### Fixed
+
+- Detections request concurrency incorrectly calculated, reducing number of
+  active requests
+
 ## 5.0.2 - 2020-01-03
 
-## Changed
+### Changed
 
 - Mock Qualys server data generator may be configured to emit exact numbers of
   hosts and total detections across all hosts
@@ -18,14 +25,14 @@
   When `typeof QID !== 'number'`, the detection will be skipped and the number
   of times this occurrs is logged.
 
-## Fixed
+### Fixed
 
 - Mock Qualys server host IDs endpoint answered invalid host ID values, leading
   to a failure to list detections
 
-# 5.0.1 - 2020-01-02
+## 5.0.1 - 2020-01-02
 
-## Changed
+### Changed
 
 - Upgrade `@jupiterone/integration-sdk-\*@5.5.0`
 - Removed empty raw data from Finding entities to avoid unecessary use of space
@@ -49,7 +56,7 @@
   instances
 - Disable Service - IDENTIFIED -> Finding relationships temporarily
 
-## Fixed
+### Fixed
 
 - Duplicate values in `Finding.targets` are removed
 - Memory leak in SDK impacting long running instances
@@ -70,7 +77,7 @@
 - Request details for more hosts per request, submit more requests concurrently
   to reduce total time to fetch large numbers of hosts.
 
-## Added
+### Added
 
 - `yarn start:qualys` provides a mock implementation of some of the Qualys APIs
   used by the integration.

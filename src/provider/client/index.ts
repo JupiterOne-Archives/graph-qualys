@@ -198,6 +198,9 @@ export class QualysAPIClient {
     this.events = new EventEmitter();
   }
 
+  // TODO: return eventHandler to allow for deregistration
+  // TODO: add ability to deregister request listener
+  // TODO: support options.path matching like onResponse does
   public onRequest(eventHandler: (event: ClientRequestEvent) => void): void {
     this.events.on(ClientEvents.REQUEST, eventHandler);
   }
@@ -691,17 +694,54 @@ export class QualysAPIClient {
       }
     };
 
-    // Start with the standard subscription level until we know the current
-    // state after we get a response.
-    let rateLimitState = STANDARD_RATE_LIMIT_STATE;
-    const requestQueue = new PQueue({
-      concurrency: calculateConcurrency(rateLimitState),
+    /**
+     * Limit number of iterators to number of concurrent requests supported by
+     * the Qualys subscription. Start with the standard subscription level until
+     * we know the current state after we get a response.
+     */
+    const iteratorQueue = new PQueue({
+      concurrency: calculateConcurrency(0, STANDARD_RATE_LIMIT_STATE),
     });
 
+    /**
+     * Number of active iterator Promises. This must be tracked according to
+     * [p-queue documentation](https://github.com/sindresorhus/p-queue#events).
+     */
+    let activeIterators = 0;
+    iteratorQueue.on('active', () => {
+      activeIterators++;
+    });
+    iteratorQueue.on('next', () => {
+      activeIterators--;
+    });
+
+    /**
+     * Updates queue concurrency dynamically depending on availability reported
+     * by the API.
+     *
+     * The following considerations have been taken into account:
+     *
+     *   - Qualys API docs indicate `X-Concurrency-Limit-Running` is "Number of
+     *     API calls that are running right now (including the one identified in
+     *     the current HTTP response header)."
+     *   - The response headers come back before the stream is completely
+     *     processed.
+     *   - Until the stream has been completely processed, the request should be
+     *     considered active.
+     *   - The queue needs to be throttled back as soon as we know we cannot
+     *     make more requests, and throttled up as soon as we know more can be
+     *     made.
+     *
+     * The current implementation loads the complete XML response into memory.
+     * Once that has completed, the request stream should close so that
+     * theoretically another request could be started.
+     */
     const concurrencyResponseHandler = this.onResponse(
       (event) => {
-        rateLimitState = event.rateLimitState;
-        requestQueue.concurrency = calculateConcurrency(rateLimitState);
+        iteratorQueue.concurrency = calculateConcurrency(
+          activeIterators,
+          event.rateLimitState,
+        );
       },
       { path: endpoint },
     );
@@ -710,7 +750,7 @@ export class QualysAPIClient {
       hostIds,
       options?.pagination?.limit || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
     )) {
-      requestQueue
+      iteratorQueue
         .add(async () => {
           await performIteration(ids);
         })
@@ -719,7 +759,7 @@ export class QualysAPIClient {
         });
     }
 
-    await requestQueue.onIdle();
+    await iteratorQueue.onIdle();
 
     this.removeResponseListener(concurrencyResponseHandler);
   }
