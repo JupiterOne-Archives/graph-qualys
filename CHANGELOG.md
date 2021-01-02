@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+# 5.0.1 - 2020-01-02
+
+## Changed
+
+- Upgrade `@jupiterone/integration-sdk-\*@5.5.0`
+- Removed empty raw data from Finding entities to avoid unecessary use of space
+  (memory, data shipped, etc.)
+
 ## 5.0.0 - 2020-01-01
 
 ### Changed
@@ -29,7 +37,7 @@
 
 ### Changed
 
-- Upgrade `@jupiterone/integration-sdk-\*@5.3.0
+- Upgrade `@jupiterone/integration-sdk-\*@5.3.0`
 - Adopted `indexMetadata` in each step's graph object metadata to omit disk
   writes
 - Reduce frequency of host detection logging
