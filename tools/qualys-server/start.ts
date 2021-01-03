@@ -62,7 +62,7 @@ async function start() {
 
   app.get('/api/2.0/fo/asset/host/', (req, res) => {
     const truncationLimit = Number(req.query['truncation_limit']);
-    const idStart = Number(req.query['id_max']) || 0;
+    const idStart = Number(req.query['id_max']) || hostData.hostIdRange.start;
     const idEnd = idStart + truncationLimit;
     const hosts = hostData.hosts.slice(idStart, idEnd);
 
@@ -107,8 +107,13 @@ async function start() {
 
     setTimeout(() => {
       res.render('host-detection-list', { hosts }, (err, html) => {
+        if (err) {
+          console.error(err);
+          res.status(500);
+        } else {
+          res.send(Buffer.from(html));
+        }
         detectionsConcurrencyRunning--;
-        res.send(Buffer.from(html));
       });
     }, responseTime);
   });
