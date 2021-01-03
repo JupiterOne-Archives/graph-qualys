@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## Fixed
+
+- Mock Qualys server host IDs endpoint answered invalid host ID values, leading
+  to a failure to list detections
+
 # 5.0.1 - 2020-01-02
 
 ## Changed
