@@ -205,6 +205,8 @@ export async function fetchScannedHostFindings({
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
+      let numBadQids = 0;
+
       // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
       // so that we don't have to know what the optimal batch size it
       for (const batchDetections of chunk(detections, 500)) {
@@ -212,6 +214,15 @@ export async function fetchScannedHostFindings({
         // const relationships: Relationship[] = [];
 
         for (const detection of batchDetections) {
+          if (typeof detection.QID !== 'number') {
+            numBadQids++;
+            continue; // skip this one, we have no idea what's going on
+          }
+
+          /**
+           * A host may have many detections of the same vulnerability on
+           * different ports/protocols/ssl.
+           */
           const findingKey = buildKey({
             qid: detection.QID,
             type: detection.TYPE,
@@ -259,6 +270,15 @@ export async function fetchScannedHostFindings({
 
       totalHostsProcessed++;
       totalDetectionsProcessed += detections.length;
+
+      if (numBadQids > 0) {
+        logger.warn(
+          {
+            numBadQids,
+          },
+          'Skipping detections for QID values that are not typeof number',
+        );
+      }
 
       // This code is hot and we don't want to be logging all of the time.
       // We largely reduce the number of logs by ensuring that we only log every
