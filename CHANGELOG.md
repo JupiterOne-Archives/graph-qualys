@@ -2,15 +2,19 @@
 
 ## [Unreleased]
 
+## 5.0.2 - 2020-01-03
+
 ## Changed
 
 - Mock Qualys server data generator may be configured to emit exact numbers of
   hosts and total detections across all hosts
 - XML data for detections sometimes contain `DETECTION.QID` values such as:
+
   ```js
   '{"#text":"o��t�","��\u001dX�Ď��,</QID":{"TYPE":"Info","FIRST_FOUND_DATETIME":"2020-12-30T03:44:04Z","LAST_FOUND_DATETIME":"2020-12-30T03:44:04Z","TIMES_FOUND":1,"IS_DISABLED":0,"LAST_PROCESSED_DATETIME":"2020-12-30T03:44:35Z"},"DETECTION":[{"QID":"��\u001b�\u001c�\u0002$�{\b����#","TYPE":"Info","FIRST_FOUND_DATETIME":"2020-12-30T03:44:04Z","LAST_FOUND_DATETIME":"2020-12-30T03:44:04Z","TIMES_FOUND":1,"IS_DISABLED":0,"LAST_PROCESSED_DATETIME":"2020-12-30T03:44:35Z"},{"QID":"�4P��H����\n�V�\u0019","TYPE":"Info","FIRST_FOUND_DATETIME":"2020-12-30T03:44:04Z","LAST_FOUND_DATETIME":"2020-12-30T03:44:04Z","TIMES_FOUND":1,"IS_DISABLED":0,"LAST_PROCESSED_DATETIME":"2020-12-30T03:44:35Z"},{"QID":"�����\u000e\u0010�R\u000bq�U!�","TYPE":"Info","FIRST_FOUND_DATETIME":"2020-12-30T03:44:04Z","LAST_FOUND_DATETIME":"2020-12-30T03:44:04Z","TIMES_FOUND":1,"IS_DISABLED":0,"LAST_PROCESSED_DATETIME":"2020-12-30T03:44:35Z"},{"QID":":u��GĹ�K_���\u001d�","TYPE":"Info","FIRST_FOUND_DATETIME":"2020-12-30T03:44:04Z","LAST_FOUND_DATETIME":"2020-12-30T03:44:04Z","TIMES_FOUND":1,"IS_DISABLED":0,"LAST_PROCESSED_DATETIME":"2020-12-30T03:44:35Z"}]}';
 
   ```
+
   When `typeof QID !== 'number'`, the detection will be skipped and the number
   of times this occurrs is logged.
 
