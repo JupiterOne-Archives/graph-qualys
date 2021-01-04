@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## Changed
+
+- Mock Qualys server data generator may be configured to emit exact numbers of
+  hosts and total detections across all hosts
+
 ## Fixed
 
 - Mock Qualys server host IDs endpoint answered invalid host ID values, leading

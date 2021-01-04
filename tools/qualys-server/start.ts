@@ -11,7 +11,24 @@ async function start() {
   const hostData = generateHostData();
 
   console.log(
-    { hosts: { length: hostData.hosts.length, idRange: hostData.hostIdRange } },
+    {
+      numHosts: hostData.numHosts,
+      numDetections: hostData.numDetections,
+      hostIdRange: hostData.hostIdRange,
+
+      /**
+       * Uncomment the following to get a view of the distribution of detections
+       * across the hosts.
+       */
+      // distribution: hostData.hosts.reduce(
+      //   (acc, e) => {
+      //     const numHosts = acc.get(e.numDetections) || 0;
+      //     acc.set(e.numDetections, numHosts + 1);
+      //     return acc;
+      //   },
+      //   new Map<number, number>(),
+      // ),
+    },
     'Generated hosts, restart to get new set',
   );
 
