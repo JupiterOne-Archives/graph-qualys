@@ -12,10 +12,31 @@ export function toArray<T>(value: PossibleArray<T> | undefined): T[] {
   return Array.isArray(value) ? value : [value];
 }
 
-export function calculateConcurrency(state: RateLimitState): number {
-  const running = state.concurrencyRunning;
-  const available = Math.floor((state.concurrency - running) * 0.75);
-  return available || 1;
+/**
+ * Calculates the number of concurrent connections this process can maintain
+ * with the server represented by the provided state, targeting 75% of available
+ * concurrency (always leaves something open to other scripts).
+ *
+ * It is important to recognize that the current process is responsible for some
+ * of the active use of the available concurrency limits of the server.
+ * Therefore, this function must be careful to avoid pushing down the number of
+ * maintained active connections inadvertently.
+ *
+ * @param active number of active connections from this process
+ * @param state rate limit state of server provided in most recent response
+ */
+export function calculateConcurrency(
+  active: number,
+  state: RateLimitState,
+): number {
+  const otherRunning = Math.max(
+    state.concurrencyRunning ? state.concurrencyRunning - active : 0,
+    0,
+  );
+  const available = Math.floor((state.concurrency - otherRunning) * 0.75);
+  const concurrency =
+    !!otherRunning && active < available ? available + active : available;
+  return concurrency > 0 ? concurrency : 1;
 }
 
 export function buildServiceRequestBody({
