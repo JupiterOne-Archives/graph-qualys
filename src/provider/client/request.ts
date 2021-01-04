@@ -99,17 +99,11 @@ type APIResponse = {
   rateLimitState: RateLimitState;
 };
 
-type ResponseEventFunction = (event: ClientResponseEvent) => void;
-type DelayedEventFunction = (event: ClientDelayedRequestEvent) => void;
-type RequestEventFunction = (event: ClientRequestEvent) => void;
-
-type ClientEventListener<T> = T extends ClientEvents.RESPONSE
-  ? ResponseEventFunction
-  : T extends ClientEvents.DELAYED_REQUEST
-  ? DelayedEventFunction
-  : T extends ClientEvents.REQUEST
-  ? RequestEventFunction
-  : never;
+type ListenerEvent =
+  | ClientResponseEvent
+  | ClientDelayedRequestEvent
+  | ClientRequestEvent;
+type PickListenerEvent<L, E> = L extends { type: E } ? L : never;
 
 type RegisteredClientEventListener = {
   event: ClientEvents;
@@ -127,16 +121,18 @@ export class ClientEventEmitter {
     this.events = new EventEmitter();
   }
 
-  public on<T extends ClientEvents, F extends ClientEventListener<T>>(
-    event: T,
-    listener: F,
+  public on<E extends ClientEvents>(
+    event: E,
+    listener: (event: PickListenerEvent<ListenerEvent, E>) => void,
     options?: { path?: string },
   ): RegisteredClientEventListener {
     if (options?.path) {
       const path = options.path;
-      const registeredListener = (event: ClientEvent) => {
+      const registeredListener = (
+        event: PickListenerEvent<ListenerEvent, E>,
+      ) => {
         if (event.url.includes(path)) {
-          listener(event as any);
+          listener(event);
         }
       };
       this.events.on(event, registeredListener);
@@ -154,8 +150,8 @@ export class ClientEventEmitter {
     this.events.removeListener(listener.event, listener.listener);
   }
 
-  public emit(event: ClientEvents, data: ClientEvent) {
-    this.events.emit(event, data);
+  public emit<E extends ClientEvent>(event: E) {
+    this.events.emit(event.type, event);
   }
 }
 
@@ -174,6 +170,7 @@ async function attemptAPIRequest(
   const tryAfter = Math.max(Date.now() + toWaitSec * 1000, tryAfterCooldown);
 
   const requestEvent: ClientEvent = {
+    type: ClientEvents.REQUEST,
     url: request.url,
     hash: request.hash,
     retryConfig: request.retryConfig,
@@ -187,15 +184,16 @@ async function attemptAPIRequest(
 
   const now = Date.now();
   if (tryAfter > now) {
-    const delayedRequestEvent: ClientDelayedRequestEvent = {
+    const delay = tryAfter - now;
+    events.emit({
       ...requestEvent,
-      delay: tryAfter - now,
-    };
-    events.emit(ClientEvents.DELAYED_REQUEST, delayedRequestEvent);
-    await sleep(delayedRequestEvent.delay);
+      type: ClientEvents.DELAYED_REQUEST,
+      delay,
+    });
+    await sleep(delay);
   }
 
-  events.emit(ClientEvents.REQUEST, requestEvent);
+  events.emit(requestEvent);
 
   const response = await request.exec();
 
@@ -254,7 +252,8 @@ async function attemptAPIRequest(
     statusText: response.statusText,
   };
 
-  const responseEvent: ClientResponseEvent = {
+  events.emit({
+    type: ClientEvents.RESPONSE,
     url: request.url,
     hash: request.hash,
     status: response.status,
@@ -267,9 +266,7 @@ async function attemptAPIRequest(
     rateLimitState: responseRateLimitState,
     rateLimitedAttempts,
     totalAttempts,
-  };
-
-  events.emit(ClientEvents.RESPONSE, responseEvent);
+  });
 
   return apiResponse;
 }

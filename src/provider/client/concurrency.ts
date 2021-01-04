@@ -1,7 +1,7 @@
 import PQueue from 'p-queue';
 
 import { ClientEventEmitter } from './request';
-import { ClientEvents, ClientResponseEvent, RateLimitState } from './types';
+import { ClientEvents, RateLimitState } from './types';
 
 /**
  * The following considerations have been taken into account:
@@ -91,7 +91,7 @@ export async function withConcurrency(
    */
   const concurrencyResponseListener = events.on(
     ClientEvents.RESPONSE,
-    (event: ClientResponseEvent) => {
+    (event) => {
       reportedConcurrencyLimit = event.rateLimitState.concurrency;
       reportedConcurrencyRunning = event.rateLimitState.concurrencyRunning;
       concurrencyRunning = reportedConcurrencyRunning;
