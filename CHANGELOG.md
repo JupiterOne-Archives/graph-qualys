@@ -9,6 +9,11 @@
 - Mock Qualys server allows simulating additional number of concurrent requests
   that belong to other scripts, to assist testing concurrency code
 
+### Fixed
+
+- Fixed bug in concurrency calculation that allowed too many active requests
+- Fixed bug in detecting concurrency limit exceeded Qualys API response
+
 ## 5.0.3 - 2020-01-04
 
 ### Fixed

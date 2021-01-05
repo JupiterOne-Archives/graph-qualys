@@ -3,7 +3,7 @@ import { Response } from 'node-fetch';
 
 import { IntegrationError } from '@jupiterone/integration-sdk-core';
 
-import { PossibleArray, qps, RateLimitState, was } from './types';
+import { PossibleArray, qps, was } from './types';
 
 export function toArray<T>(value: PossibleArray<T> | undefined): T[] {
   if (value === undefined) {
@@ -23,20 +23,17 @@ export function toArray<T>(value: PossibleArray<T> | undefined): T[] {
  * maintained active connections inadvertently.
  *
  * @param active number of active connections from this process
- * @param state rate limit state of server provided in most recent response
+ * @param limit concurrency limit of server provided in most recent response
+ * @param running concurrency running of server provided in most recent response
  */
 export function calculateConcurrency(
   active: number,
-  state: RateLimitState,
+  limit: number,
+  running: number,
 ): number {
-  const otherRunning = Math.max(
-    state.concurrencyRunning ? state.concurrencyRunning - active : 0,
-    0,
-  );
-  const available = Math.floor((state.concurrency - otherRunning) * 0.75);
-  const concurrency =
-    !!otherRunning && active < available ? available + active : available;
-  return concurrency > 0 ? concurrency : 1;
+  const otherRunning = Math.max(running ? running - active : 0, 0);
+  const available = Math.floor((limit - otherRunning) * 0.75);
+  return available > 0 ? available : 1;
 }
 
 export function buildServiceRequestBody({
