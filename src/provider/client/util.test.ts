@@ -1,19 +1,6 @@
-import { RateLimitState } from './types';
 import { calculateConcurrency } from './util';
 
 describe('calculateConcurrency', () => {
-  function state(values?: Partial<RateLimitState>): RateLimitState {
-    return {
-      limit: 300,
-      limitRemaining: 300,
-      limitWindowSeconds: 60 * 60,
-      toWaitSeconds: 0,
-      concurrency: 2,
-      concurrencyRunning: 0,
-      ...values,
-    };
-  }
-
   test.each([
     // Always allow at least one request.
     [0, 0, 0, 1],
@@ -36,26 +23,28 @@ describe('calculateConcurrency', () => {
     // other scripts.
     [0, 15, 5, 7],
     [0, 15, 9, 4],
+    [7, 15, 14, 6],
 
     // Assume this script is the one that is active, so allow it more room.
     [5, 15, 5, 11],
 
     // Others appear to be active while this one is, but there isn't any reason
     // to avoid allowing more.
-    [4, 15, 9, 11],
+    [4, 15, 9, 7],
+    [7, 15, 8, 10],
 
     // Handle cases where we consider ourselves active, but the server has
     // completed one or all responses.
     [5, 15, 0, 11],
     [11, 15, 2, 11],
+
+    // Drive down our connections when something seems out of place.
+    [15, 15, 9, 11],
   ])(
     'active: %s, concurrency: %s, running: %s',
     (active, concurrency, concurrencyRunning, expected) => {
       expect(
-        calculateConcurrency(
-          active,
-          state({ concurrency, concurrencyRunning }),
-        ),
+        calculateConcurrency(active, concurrency, concurrencyRunning),
       ).toEqual(expected);
     },
   );

@@ -695,24 +695,62 @@ export class QualysAPIClient {
     };
 
     /**
+     * Number of concurrent requests in progress according to Qualys server,
+     * updated on each response that includes the information. Initialized from
+     * initial concurrency settings.
+     */
+    let qualysReportedConcurrencyLimit = STANDARD_RATE_LIMIT_STATE.concurrency;
+
+    /**
+     * Number of concurrent requests according to Qualys server, updated on each
+     * response that includes the information.
+     */
+    let qualysReportedConcurrencyRunning = 0;
+
+    /**
+     * Number of concurrent requests according to the number of requests
+     * generated, based on the last `qualysReportedConcurrencyRunning`.
+     *
+     * This is necessary to ensure that even when we've not received a response,
+     * but started additional requests, we help to avoid exceeding capacity. Of
+     * course, other threads could have taken availability, so we still have to
+     * handle 409 responses well in retry code.
+     */
+    let concurrencyRunning = 0;
+
+    /**
      * Limit number of iterators to number of concurrent requests supported by
      * the Qualys subscription. Start with the standard subscription level until
      * we know the current state after we get a response.
      */
     const iteratorQueue = new PQueue({
-      concurrency: calculateConcurrency(0, STANDARD_RATE_LIMIT_STATE),
+      concurrency: calculateConcurrency(
+        0,
+        qualysReportedConcurrencyLimit,
+        qualysReportedConcurrencyRunning,
+      ),
     });
 
     /**
+     * Number of requests currently being processed, including the time to send
+     * the request, stream over the body, and process its content.
+     *
      * Number of active iterator Promises. This must be tracked according to
      * [p-queue documentation](https://github.com/sindresorhus/p-queue#events).
      */
     let activeIterators = 0;
+
     iteratorQueue.on('active', () => {
       activeIterators++;
+      concurrencyRunning++;
     });
     iteratorQueue.on('next', () => {
       activeIterators--;
+      iteratorQueue.concurrency = calculateConcurrency(
+        activeIterators,
+        qualysReportedConcurrencyLimit,
+        concurrencyRunning,
+      );
     });
 
     /**
@@ -738,10 +776,10 @@ export class QualysAPIClient {
      */
     const concurrencyResponseHandler = this.onResponse(
       (event) => {
-        iteratorQueue.concurrency = calculateConcurrency(
-          activeIterators,
-          event.rateLimitState,
-        );
+        qualysReportedConcurrencyLimit = event.rateLimitState.concurrency;
+        qualysReportedConcurrencyRunning =
+          event.rateLimitState.concurrencyRunning;
+        concurrencyRunning = qualysReportedConcurrencyRunning;
       },
       { path: endpoint },
     );
