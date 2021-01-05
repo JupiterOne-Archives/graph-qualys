@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed bug in concurrency calculation that allowed too many active requests
+
 ## 5.0.3 - 2020-01-04
 
 ### Fixed
