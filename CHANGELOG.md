@@ -2,12 +2,18 @@
 
 ## [Unreleased]
 
+## 5.0.4 - 2020-01-05
+
 ### Added
 
 - Mock Qualys server prevents exceeding detections endpoint concurrency limit,
   answers `409` response when exceeded
 - Mock Qualys server allows simulating additional number of concurrent requests
   that belong to other scripts, to assist testing concurrency code
+
+### Changed
+
+- Disable receiving the `RESULTS` field from the Qualys host detections response
 
 ### Fixed
 

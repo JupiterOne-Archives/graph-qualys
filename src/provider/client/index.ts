@@ -667,6 +667,7 @@ export class QualysAPIClient {
         action: 'list',
         show_tags: '1',
         show_igs: '1',
+        show_results: '0',
         output_format: 'XML',
         truncation_limit: String(ids.length),
         ids: ids.map(String),
