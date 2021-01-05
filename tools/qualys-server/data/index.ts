@@ -42,10 +42,15 @@ type HostData = {
  * @param numDesiredDetections `100000`, total number of detections to generate
  * across all hosts
  */
-export function generateHostData(
-  numDesiredHosts: number = 5000,
-  numDesiredDetections: number = 100000,
-): HostData {
+export function generateHostData({
+  numDesiredHosts = 5000,
+  numDetectionsPerHostMin = 3,
+  numDesiredDetections = numDesiredHosts * numDetectionsPerHostMin,
+}: {
+  numDesiredHosts?: number;
+  numDesiredDetections?: number;
+  numDetectionsPerHostMin?: number;
+} = {}): HostData {
   const hosts: Host[] = [];
   const hostsById: Map<number, Host> = new Map();
 
@@ -60,6 +65,7 @@ export function generateHostData(
   const detectionCounts = generateDetectionCounts(
     numDesiredHosts,
     numDesiredDetections,
+    numDetectionsPerHostMin,
   );
 
   for (
@@ -113,18 +119,17 @@ function generateDetections(numDetections: number): Detection[] {
 function generateDetectionCounts(
   numHosts: number,
   numDesiredDetections: number,
+  numDetectionsPerHostMin: number,
 ) {
-  const minDetectionsPerHost = 3;
-
   const hostIndices = Array.from(Array(numHosts).keys());
   const numDetectionsToDistribute =
-    numDesiredDetections - numHosts * minDetectionsPerHost;
+    numDesiredDetections - numHosts * numDetectionsPerHostMin;
 
   let numDistributedDetections = 0;
 
   const hostDetections = hostIndices.reduce((acc, index) => {
-    acc.set(index, minDetectionsPerHost);
-    numDistributedDetections += minDetectionsPerHost;
+    acc.set(index, numDetectionsPerHostMin);
+    numDistributedDetections += numDetectionsPerHostMin;
     return acc;
   }, new Map<number, number>());
 

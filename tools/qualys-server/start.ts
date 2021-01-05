@@ -9,9 +9,23 @@ import { initializeEngine } from './templates';
 
 async function start() {
   const hostData = generateHostData();
+  // const hostData = generateHostData({
+  //   numDesiredHosts: 76000,
+  //   numDesiredDetections: 2500000,
+  //   numDetectionsPerHostMin: 3,
+  // });
+
+  // Change this to represent the concurrency limit of a subscription.
+  const detectionsConcurrencyLimit = 15;
+
+  // Change this to non-zero value to simulate other scripts consuming
+  // concurrency.
+  const detectionsOtherRunning = 0;
 
   console.log(
     {
+      detectionsConcurrencyLimit,
+      detectionsOtherRunning,
       numHosts: hostData.numHosts,
       numDetections: hostData.numDetections,
       hostIdRange: hostData.hostIdRange,
@@ -101,38 +115,54 @@ async function start() {
     res.render('host-details-list', { hosts });
   });
 
-  let detectionsConcurrencyRunning = 0;
+  let detectionsConcurrencyRunning = detectionsOtherRunning;
   app.post('/api/2.0/fo/asset/host/vm/detection/', (req, res) => {
-    const hostIds = req.body.ids.split(',');
-    const hosts = hostIds.map((e) => hostData.hostsById.get(Number(e)));
+    res.setHeader('x-concurrency-limit-limit', detectionsConcurrencyLimit);
 
-    detectionsConcurrencyRunning++;
-    console.log('concurrency: ', detectionsConcurrencyRunning);
+    if (detectionsConcurrencyRunning >= detectionsConcurrencyLimit) {
+      console.warn('concurrency: ', detectionsConcurrencyRunning, 409);
 
-    res.set('x-concurrency-limit-limit', ['15']);
-    res.set('x-concurrency-limit-running', [
-      String(detectionsConcurrencyRunning),
-    ]);
-    res.set('content-type', 'text/xml');
+      // This header becomes an indication of no more concurrency limit
+      // remaining in the Qualys API.
+      res.setHeader('x-ratelimit-remaining', 0);
+      res.setHeader(
+        'x-concurrency-limit-running',
+        detectionsConcurrencyRunning,
+      );
+      res.sendStatus(409);
+    } else {
+      // Increment concurrency running to include this request
+      detectionsConcurrencyRunning++;
+      console.warn('concurrency: ', detectionsConcurrencyRunning);
 
-    const hostTime = Math.random() * 10;
-    const maximumTime = 1000 * 10;
-    const responseTime = Math.min(
-      hostIds.length * hostTime + Math.round(Math.random() * 1000),
-      maximumTime,
-    );
+      const hostIds = req.body.ids.split(',');
+      const hosts = hostIds.map((e) => hostData.hostsById.get(Number(e)));
 
-    setTimeout(() => {
-      res.render('host-detection-list', { hosts }, (err, html) => {
-        if (err) {
-          console.error(err);
-          res.status(500);
-        } else {
-          res.send(Buffer.from(html));
-        }
-        detectionsConcurrencyRunning--;
-      });
-    }, responseTime);
+      const hostTime = Math.random() * 10;
+      const maximumTime = 1000 * 10;
+      const responseTime = Math.min(
+        hostIds.length * hostTime + Math.round(Math.random() * 1000),
+        maximumTime,
+      );
+
+      res.setHeader(
+        'x-concurrency-limit-running',
+        detectionsConcurrencyRunning,
+      );
+      res.setHeader('content-type', 'text/xml');
+
+      setTimeout(() => {
+        res.render('host-detection-list', { hosts }, (err, html) => {
+          if (err) {
+            console.error(err);
+            res.status(500);
+          } else {
+            res.send(Buffer.from(html));
+          }
+          detectionsConcurrencyRunning--;
+        });
+      }, responseTime);
+    }
   });
 
   app.post('/api/2.0/fo/knowledge_base/vuln', (req, res) => {
