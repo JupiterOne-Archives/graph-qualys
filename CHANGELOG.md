@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.0.4 - 2020-01-05
+
 ### Added
 
 - Mock Qualys server prevents exceeding detections endpoint concurrency limit,
