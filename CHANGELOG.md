@@ -9,6 +9,10 @@
 - Mock Qualys server allows simulating additional number of concurrent requests
   that belong to other scripts, to assist testing concurrency code
 
+### Changed
+
+- Disable receiving the `RESULTS` field from the Qualys host detections response
+
 ### Fixed
 
 - Fixed bug in concurrency calculation that allowed too many active requests
