@@ -1,4 +1,4 @@
-import { calculateConcurrency } from './util';
+import { calculateConcurrency } from './concurrency';
 
 describe('calculateConcurrency', () => {
   test.each([
