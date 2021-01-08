@@ -21,6 +21,7 @@ import {
   vmpc,
   was,
 } from './client';
+import { ClientEvents } from './client/types';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -64,6 +65,7 @@ describe('events', () => {
     await client.executeAuthenticatedAPIRequest(url, {});
 
     expect(requestEvent).toEqual({
+      type: ClientEvents.REQUEST,
       rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
       rateLimitState: STANDARD_RATE_LIMIT_STATE,
       rateLimitedAttempts: 0,
@@ -98,6 +100,7 @@ describe('events', () => {
     await client.executeAuthenticatedAPIRequest(url, {});
 
     expect(responseEvent).toEqual({
+      type: ClientEvents.RESPONSE,
       rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
       rateLimitState: {
         concurrency: 6,
@@ -141,6 +144,7 @@ describe('events', () => {
 
     expect(requestEvents).toEqual([
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 0,
@@ -152,6 +156,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 1,
@@ -163,6 +168,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 2,
@@ -174,6 +180,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 3,
@@ -185,6 +192,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 4,
@@ -199,6 +207,7 @@ describe('events', () => {
 
     expect(responseEvents).toEqual([
       {
+        type: ClientEvents.RESPONSE,
         completed: false,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
@@ -213,6 +222,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.RESPONSE,
         completed: false,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
@@ -227,6 +237,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.RESPONSE,
         completed: false,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
@@ -241,6 +252,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.RESPONSE,
         completed: false,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
@@ -255,6 +267,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.RESPONSE,
         completed: false,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
@@ -310,6 +323,7 @@ describe('events', () => {
 
     expect(requestEvents).toEqual([
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 0,
@@ -321,6 +335,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: {
           ...STANDARD_RATE_LIMIT_STATE,
@@ -340,6 +355,7 @@ describe('events', () => {
 
     expect(delayedRequestEvents).toEqual([
       {
+        type: ClientEvents.DELAYED_REQUEST,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: {
           ...STANDARD_RATE_LIMIT_STATE,
@@ -360,6 +376,7 @@ describe('events', () => {
 
     expect(responseEvents).toEqual([
       {
+        type: ClientEvents.RESPONSE,
         completed: false,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: {
@@ -379,6 +396,7 @@ describe('events', () => {
         hash: expect.any(String),
       },
       {
+        type: ClientEvents.RESPONSE,
         completed: true,
         rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
         rateLimitState: {

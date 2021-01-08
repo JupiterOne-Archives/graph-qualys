@@ -7,6 +7,7 @@ export enum ClientEvents {
 }
 
 export type ClientEvent = {
+  type: ClientEvents;
   url: string;
   hash: string;
   retryConfig: RetryConfig;
@@ -18,9 +19,12 @@ export type ClientEvent = {
   totalAttempts: number;
 };
 
-export type ClientRequestEvent = ClientEvent;
+export type ClientRequestEvent = ClientEvent & {
+  type: ClientEvents.REQUEST;
+};
 
-export type ClientDelayedRequestEvent = ClientRequestEvent & {
+export type ClientDelayedRequestEvent = ClientEvent & {
+  type: ClientEvents.DELAYED_REQUEST;
   /**
    * Number of milliseconds until request will be delivered.
    */
@@ -28,6 +32,7 @@ export type ClientDelayedRequestEvent = ClientRequestEvent & {
 };
 
 export type ClientResponseEvent = ClientEvent & {
+  type: ClientEvents.RESPONSE;
   status: number | string | undefined;
   statusText: string | undefined;
   completed: boolean;
