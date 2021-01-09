@@ -1,7 +1,9 @@
+import * as crypto from 'crypto';
 import EventEmitter from 'events';
-import { Response } from 'node-fetch';
-import { sleep } from '../../util';
+import { RequestInit, Response } from 'node-fetch';
+import { v4 as uuid } from 'uuid';
 
+import { sleep } from '../../util';
 import {
   CanRetryDecision,
   ClientDelayedRequestEvent,
@@ -14,8 +16,15 @@ import {
   RetryConfig,
 } from './types';
 
+/**
+ * @param events `ClientEventEmitter` to which request lifecycle `ClientEvents` will
+ * be published, allowing a client to reuse the emitter across a number of
+ * requests.
+ * @param request `APIRequest` defining everything necessary to execute a
+ * request
+ */
 export async function executeAPIRequest<T>(
-  events: EventEmitter,
+  events: ClientEventEmitter,
   request: APIRequest,
 ): Promise<APIResponse> {
   const { retryConfig, rateLimitConfig } = request;
@@ -90,23 +99,64 @@ type APIResponse = {
   rateLimitState: RateLimitState;
 };
 
-function emitRequestEvent(events: EventEmitter, event: ClientRequestEvent) {
-  events.emit(ClientEvents.REQUEST, event);
-}
+type ListenerEvent =
+  | ClientResponseEvent
+  | ClientDelayedRequestEvent
+  | ClientRequestEvent;
+type PickListenerEvent<L, E> = L extends { type: E } ? L : never;
 
-function emitDelayedRequestEvent(
-  events: EventEmitter,
-  event: ClientDelayedRequestEvent,
-) {
-  events.emit(ClientEvents.DELAYED_REQUEST, event);
-}
+type RegisteredClientEventListener = {
+  event: ClientEvents;
+  listener: (...args: any) => void;
+};
 
-function emitResponseEvent(events: EventEmitter, event: ClientResponseEvent) {
-  events.emit(ClientEvents.RESPONSE, event);
+/**
+ * An event emitter designed for specific events in the lifecycle of executing a
+ * request.
+ */
+export class ClientEventEmitter {
+  private events: EventEmitter;
+
+  constructor() {
+    this.events = new EventEmitter();
+  }
+
+  public on<E extends ClientEvents>(
+    event: E,
+    listener: (event: PickListenerEvent<ListenerEvent, E>) => void,
+    options?: { path?: string },
+  ): RegisteredClientEventListener {
+    if (options?.path) {
+      const path = options.path;
+      const registeredListener = (
+        event: PickListenerEvent<ListenerEvent, E>,
+      ) => {
+        if (event.url.includes(path)) {
+          listener(event);
+        }
+      };
+      this.events.on(event, registeredListener);
+      return {
+        event,
+        listener: registeredListener,
+      };
+    } else {
+      this.events.on(event, listener);
+      return { event, listener };
+    }
+  }
+
+  public removeListener(listener: RegisteredClientEventListener): void {
+    this.events.removeListener(listener.event, listener.listener);
+  }
+
+  public emit<E extends ClientEvent>(event: E) {
+    this.events.emit(event.type, event);
+  }
 }
 
 async function attemptAPIRequest(
-  events: EventEmitter,
+  events: ClientEventEmitter,
   request: APIRequestAttempt,
 ): Promise<APIResponse> {
   const { retryConfig, rateLimitConfig, rateLimitState } = request;
@@ -120,6 +170,7 @@ async function attemptAPIRequest(
   const tryAfter = Math.max(Date.now() + toWaitSec * 1000, tryAfterCooldown);
 
   const requestEvent: ClientEvent = {
+    type: ClientEvents.REQUEST,
     url: request.url,
     hash: request.hash,
     retryConfig: request.retryConfig,
@@ -134,11 +185,15 @@ async function attemptAPIRequest(
   const now = Date.now();
   if (tryAfter > now) {
     const delay = tryAfter - now;
-    emitDelayedRequestEvent(events, { ...requestEvent, delay });
+    events.emit({
+      ...requestEvent,
+      type: ClientEvents.DELAYED_REQUEST,
+      delay,
+    });
     await sleep(delay);
   }
 
-  emitRequestEvent(events, requestEvent);
+  events.emit(requestEvent);
 
   const response = await request.exec();
 
@@ -197,7 +252,8 @@ async function attemptAPIRequest(
     statusText: response.statusText,
   };
 
-  emitResponseEvent(events, {
+  events.emit({
+    type: ClientEvents.RESPONSE,
     url: request.url,
     hash: request.hash,
     status: response.status,
@@ -213,6 +269,55 @@ async function attemptAPIRequest(
   });
 
   return apiResponse;
+}
+
+export function hashAPIRequest(init: RequestInit) {
+  let fingerprint: string | undefined;
+
+  if (typeof init.body?.toString === 'function') {
+    fingerprint = init.body.toString();
+  } else if (typeof init.body === 'string') {
+    fingerprint = init.body;
+  } else if (init.body) {
+    fingerprint = JSON.stringify(init.body);
+  }
+
+  if (!fingerprint || fingerprint === '{}') {
+    fingerprint = uuid();
+  }
+
+  const shasum = crypto.createHash('sha1');
+  shasum.update(fingerprint);
+  return shasum.digest('hex');
+}
+
+export type UsernamePassword = {
+  username: string;
+  password: string;
+};
+
+export function basicAuthentication({
+  username,
+  password,
+}: UsernamePassword): string {
+  const authBuffer = Buffer.from(`${username}:${password}`, 'ascii');
+  return `Basic ${authBuffer.toString('base64')}`;
+}
+
+export function buildAuthenticatedRequestInit(
+  init: RequestInit,
+  basicAuth: string,
+): RequestInit {
+  return {
+    timeout: 0,
+    ...init,
+    headers: {
+      ...init.headers,
+      'x-requested-with': '@jupiterone/graph-qualys',
+      authorization: basicAuth,
+    },
+    size: 0,
+  };
 }
 
 function extractRateLimitHeaders(

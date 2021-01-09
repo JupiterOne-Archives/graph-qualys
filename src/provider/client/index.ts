@@ -1,5 +1,4 @@
 import * as crypto from 'crypto';
-import EventEmitter from 'events';
 import _ from 'lodash';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
@@ -16,7 +15,8 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { UserIntegrationConfig } from '../../types';
-import { executeAPIRequest } from './request';
+import { withConcurrency } from './concurrency';
+import { ClientEventEmitter, executeAPIRequest } from './request';
 import {
   assets,
   ClientDelayedRequestEvent,
@@ -35,7 +35,6 @@ import {
 import { PortalInfo } from './types/portal';
 import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
 import {
-  calculateConcurrency,
   isXMLResponse,
   parseXMLResponse,
   processServiceResponseBody,
@@ -176,7 +175,7 @@ export type QualysAPIClientConfig = {
 };
 
 export class QualysAPIClient {
-  private events: EventEmitter;
+  private events: ClientEventEmitter;
 
   private config: UserIntegrationConfig;
   private retryConfig: RetryConfig;
@@ -195,12 +194,9 @@ export class QualysAPIClient {
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
     this.rateLimitConfig = { ...DEFAULT_RATE_LIMIT_CONFIG, ...rateLimitConfig };
     this.rateLimitState = rateLimitState || STANDARD_RATE_LIMIT_STATE;
-    this.events = new EventEmitter();
+    this.events = new ClientEventEmitter();
   }
 
-  // TODO: return eventHandler to allow for deregistration
-  // TODO: add ability to deregister request listener
-  // TODO: support options.path matching like onResponse does
   public onRequest(eventHandler: (event: ClientRequestEvent) => void): void {
     this.events.on(ClientEvents.REQUEST, eventHandler);
   }
@@ -214,24 +210,8 @@ export class QualysAPIClient {
   public onResponse(
     eventHandler: (event: ClientResponseEvent) => void,
     options?: { path?: string },
-  ): (...args: any[]) => void {
-    if (options?.path) {
-      const path = options.path;
-      const registeredHandler = (event: ClientResponseEvent) => {
-        if (event.url.includes(path)) {
-          eventHandler(event);
-        }
-      };
-      this.events.on(ClientEvents.RESPONSE, registeredHandler);
-      return registeredHandler;
-    } else {
-      this.events.on(ClientEvents.RESPONSE, eventHandler);
-      return eventHandler;
-    }
-  }
-
-  public removeResponseListener(listener: (...args: any[]) => void): void {
-    this.events.removeListener(ClientEvents.RESPONSE, listener);
+  ): void {
+    this.events.on(ClientEvents.RESPONSE, eventHandler, options);
   }
 
   public async verifyAuthentication(): Promise<void> {
@@ -695,112 +675,23 @@ export class QualysAPIClient {
       }
     };
 
-    /**
-     * Number of concurrent requests in progress according to Qualys server,
-     * updated on each response that includes the information. Initialized from
-     * initial concurrency settings.
-     */
-    let qualysReportedConcurrencyLimit = STANDARD_RATE_LIMIT_STATE.concurrency;
-
-    /**
-     * Number of concurrent requests according to Qualys server, updated on each
-     * response that includes the information.
-     */
-    let qualysReportedConcurrencyRunning = 0;
-
-    /**
-     * Number of concurrent requests according to the number of requests
-     * generated, based on the last `qualysReportedConcurrencyRunning`.
-     *
-     * This is necessary to ensure that even when we've not received a response,
-     * but started additional requests, we help to avoid exceeding capacity. Of
-     * course, other threads could have taken availability, so we still have to
-     * handle 409 responses well in retry code.
-     */
-    let concurrencyRunning = 0;
-
-    /**
-     * Limit number of iterators to number of concurrent requests supported by
-     * the Qualys subscription. Start with the standard subscription level until
-     * we know the current state after we get a response.
-     */
-    const iteratorQueue = new PQueue({
-      concurrency: calculateConcurrency(
-        0,
-        qualysReportedConcurrencyLimit,
-        qualysReportedConcurrencyRunning,
-      ),
-    });
-
-    /**
-     * Number of requests currently being processed, including the time to send
-     * the request, stream over the body, and process its content.
-     *
-     * Number of active iterator Promises. This must be tracked according to
-     * [p-queue documentation](https://github.com/sindresorhus/p-queue#events).
-     */
-    let activeIterators = 0;
-
-    iteratorQueue.on('active', () => {
-      activeIterators++;
-      concurrencyRunning++;
-    });
-    iteratorQueue.on('next', () => {
-      activeIterators--;
-      iteratorQueue.concurrency = calculateConcurrency(
-        activeIterators,
-        qualysReportedConcurrencyLimit,
-        concurrencyRunning,
-      );
-    });
-
-    /**
-     * Updates queue concurrency dynamically depending on availability reported
-     * by the API.
-     *
-     * The following considerations have been taken into account:
-     *
-     *   - Qualys API docs indicate `X-Concurrency-Limit-Running` is "Number of
-     *     API calls that are running right now (including the one identified in
-     *     the current HTTP response header)."
-     *   - The response headers come back before the stream is completely
-     *     processed.
-     *   - Until the stream has been completely processed, the request should be
-     *     considered active.
-     *   - The queue needs to be throttled back as soon as we know we cannot
-     *     make more requests, and throttled up as soon as we know more can be
-     *     made.
-     *
-     * The current implementation loads the complete XML response into memory.
-     * Once that has completed, the request stream should close so that
-     * theoretically another request could be started.
-     */
-    const concurrencyResponseHandler = this.onResponse(
-      (event) => {
-        qualysReportedConcurrencyLimit = event.rateLimitState.concurrency;
-        qualysReportedConcurrencyRunning =
-          event.rateLimitState.concurrencyRunning;
-        concurrencyRunning = qualysReportedConcurrencyRunning;
+    await withConcurrency(
+      (queue) => {
+        for (const ids of chunk(
+          hostIds,
+          options?.pagination?.limit || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
+        )) {
+          queue
+            .add(async () => {
+              await performIteration(ids);
+            })
+            .catch((err) => {
+              options?.onRequestError?.(ids, err);
+            });
+        }
       },
-      { path: endpoint },
+      { events: this.events, rateLimitState: STANDARD_RATE_LIMIT_STATE },
     );
-
-    for (const ids of chunk(
-      hostIds,
-      options?.pagination?.limit || DEFAULT_HOST_DETECTIONS_PAGE_SIZE,
-    )) {
-      iteratorQueue
-        .add(async () => {
-          await performIteration(ids);
-        })
-        .catch((err) => {
-          options?.onRequestError?.(ids, err);
-        });
-    }
-
-    await iteratorQueue.onIdle();
-
-    this.removeResponseListener(concurrencyResponseHandler);
   }
 
   /**
