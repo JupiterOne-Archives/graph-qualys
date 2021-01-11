@@ -50,8 +50,9 @@ QUALYS_API_URL=http://localhost:8080
 
 ### Public Access
 
-You may also run the integration on a public IP address on a cheap computer in
-AWS (free tier).
+You may also run the integration on a public IP address on an Amazon Linux
+computer in AWS, 2 vCPU + 8GB is necessary to support concurrent requests
+(memory required to generate the response data).
 
 1. Launch an instance
    - Default VPC
@@ -69,9 +70,13 @@ curl -o- -L https://yarnpkg.com/install.sh | bash
 . ~/.bash_profile
 sudo yum install git
 git clone https://github.com/JupiterOne/graph-qualys.git
+cd graph-qualys
 yarn install
-LOG_REQUESTS=1 yarn start:qualys
+LOG_REQUESTS=1 NODE_OPTIONS='--max-old-space-size=8192' yarn start:qualys
 ```
+
+Edit `graph-qualys/tools/qualys-server/start.ts` to configure the amount of data
+generated.
 
 Test access with the following:
 
