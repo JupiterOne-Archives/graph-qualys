@@ -1,3 +1,5 @@
+import { v4 as uuid } from 'uuid';
+
 import {
   IntegrationStep,
   IntegrationStepExecutionContext,
@@ -24,6 +26,12 @@ import {
   createFindingVulnerabilityMappedRelationships,
   createVulnerabilityTargetEntities,
 } from './converters';
+
+/**
+ * This is the number of vulnerabilities that must be traversed before producing
+ * a more verbose set of logging.
+ */
+const VULNERABILTIES_LOG_FREQUENCY = 500;
 
 /**
  * Fetches vulnerability information for each ingested Finding and builds mapped
@@ -53,50 +61,86 @@ export async function fetchFindingVulnerabilities({
   );
   const vulnerabilityQIDs = Array.from(vulnerabilityFindingKeysMap.keys());
 
-  await apiClient.iterateVulnerabilities(vulnerabilityQIDs, async (vuln) => {
-    const targetEntities = createVulnerabilityTargetEntities(
-      getQualysHost(instance.config.qualysApiUrl),
-      vuln,
-    );
+  const errorCorrelationId = uuid();
 
-    const vulnFindingKeys = vulnerabilityFindingKeysMap.get(vuln.QID!);
-    if (vulnFindingKeys) {
-      for (const findingKey of vulnFindingKeys) {
-        // TODO: don't use findEntity, we don't have them, and we don't need to
-        // prove that it exists; we could use jobState.hasKey() if we want to
-        // avoid bad relationships
-        const findingEntity = await jobState.findEntity(findingKey);
-        if (!findingEntity) {
-          logger.warn(
-            { qid: vuln.QID, findingKey },
-            'Previous ingestion steps failed to store Finding in job state for _key',
-          );
-        } else {
-          const {
-            relationships,
-            duplicates,
-          } = createFindingVulnerabilityMappedRelationships(
-            findingEntity,
-            targetEntities,
-          );
+  let totalVulnerabilitiesProcessed = 0;
+  let totalFindingsProcessed = 0;
+  let totalPageErrors = 0;
 
-          await jobState.addRelationships(relationships);
-
-          if (duplicates.length > 0) {
-            logger.warn(
-              { qid: vuln.QID, duplicateKeys: duplicates.map((e) => e._key) },
-              'Finding appears to have duplicate related vulnerabilities, need to create a better Finding._key?',
-            );
-          }
-        }
-      }
-    } else {
-      logger.warn(
-        { qid: vuln.QID },
-        'Previous ingestion steps failed to associate Finding _keys with vulnerability',
+  await apiClient.iterateVulnerabilities(
+    vulnerabilityQIDs,
+    async (vuln) => {
+      const targetEntities = createVulnerabilityTargetEntities(
+        getQualysHost(instance.config.qualysApiUrl),
+        vuln,
       );
-    }
-  });
+
+      const vulnFindingKeys = vulnerabilityFindingKeysMap.get(vuln.QID!);
+      if (vulnFindingKeys) {
+        for (const findingKey of vulnFindingKeys) {
+          if (!jobState.hasKey(findingKey)) {
+            logger.warn(
+              { qid: vuln.QID, findingKey },
+              'Previous ingestion steps failed to store Finding in job state for _key',
+            );
+          } else {
+            const {
+              relationships,
+              duplicates,
+            } = createFindingVulnerabilityMappedRelationships(
+              findingKey,
+              targetEntities,
+            );
+
+            await jobState.addRelationships(relationships);
+
+            if (duplicates.length > 0) {
+              logger.warn(
+                { qid: vuln.QID, duplicateKeys: duplicates.map((e) => e._key) },
+                'Finding appears to have duplicate related vulnerabilities, need to create a better Finding._key?',
+              );
+            }
+          }
+
+          totalFindingsProcessed++;
+        }
+      } else {
+        logger.warn(
+          { qid: vuln.QID },
+          'Previous ingestion steps failed to associate Finding _keys with vulnerability',
+        );
+      }
+
+      totalVulnerabilitiesProcessed++;
+
+      // This code is hot and we don't want to be logging all of the time.
+      // We largely reduce the number of logs by ensuring that we only log every
+      // so often.
+      const shouldLogPageVerbose =
+        totalVulnerabilitiesProcessed % VULNERABILTIES_LOG_FREQUENCY === 0 &&
+        totalVulnerabilitiesProcessed !== 0;
+
+      if (shouldLogPageVerbose) {
+        logger.info(
+          {
+            totalVulnerabilitiesProcessed,
+            totalFindingsProcessed,
+            totalPageErrors,
+          },
+          'Processing vulnerabilities...',
+        );
+      }
+    },
+    {
+      onRequestError(pageIds, err) {
+        totalPageErrors++;
+        logger.error(
+          { pageIds, err, errorCorrelationId, totalPageErrors },
+          'Error processing page of vulnerabilities',
+        );
+      },
+    },
+  );
 }
 
 /**

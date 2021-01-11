@@ -2,12 +2,9 @@ import { chunk } from 'lodash';
 import { v4 as uuid } from 'uuid';
 
 import {
-  // createDirectRelationship,
   Entity,
   IntegrationStep,
   IntegrationStepExecutionContext,
-  // Relationship,
-  // RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
 import { createQualysAPIClient } from '../../provider';
@@ -19,7 +16,6 @@ import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 // import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
   DATA_HOST_TARGETS,
-  // DATA_HOST_VULNERABILITY_FINDING_KEYS,
   DATA_SCANNED_HOST_IDS,
   STEP_FETCH_SCANNED_HOST_DETAILS,
   STEP_FETCH_SCANNED_HOST_FINDINGS,
@@ -119,9 +115,10 @@ export async function fetchScannedHostDetails({
   )) as Entity;
   const apiClient = createQualysAPIClient(logger, instance.config);
 
-  let totalHostsProcessed = 0;
-  const totalPageErrors = 0;
   const errorCorrelationId = uuid();
+
+  let totalHostsProcessed = 0;
+  let totalPageErrors = 0;
 
   const hostAssetTargetsMap: HostAssetTargetsMap = {};
   await apiClient.iterateHostDetails(
@@ -154,8 +151,9 @@ export async function fetchScannedHostDetails({
     },
     {
       onRequestError(pageIds, err) {
+        totalPageErrors++;
         logger.error(
-          { pageIds, err, errorCorrelationId },
+          { pageIds, err, errorCorrelationId, totalPageErrors },
           'Error ingesting page of scanned host details',
         );
       },
@@ -196,10 +194,11 @@ export async function fetchScannedHostFindings({
   //   DATA_VMDR_SERVICE_ENTITY,
   // )) as Entity;
 
+  const errorCorrelationId = uuid();
+
   let totalHostsProcessed = 0;
   let totalDetectionsProcessed = 0;
-  const totalPageErrors = 0;
-  const errorCorrelationId = uuid();
+  let totalPageErrors = 0;
 
   // const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateHostDetections(
@@ -294,7 +293,7 @@ export async function fetchScannedHostFindings({
             totalHostsProcessed,
             totalPageErrors,
           },
-          'Processing host detections completed.',
+          'Processing detections for hosts...',
         );
       }
     },
@@ -304,9 +303,10 @@ export async function fetchScannedHostFindings({
         detection_updated_before: instance.config.maxFindingsSinceISODate,
       },
       onRequestError(pageIds, err) {
+        totalPageErrors++;
         logger.error(
-          { pageIds, err, errorCorrelationId },
-          'Error ingesting detections processing page of hosts',
+          { pageIds, err, errorCorrelationId, totalPageErrors },
+          'Error processing page of hosts',
         );
       },
     },
