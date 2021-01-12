@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Fetching knowledge base vulnerabilities using concurrency headers from Qualys
+  server responses
+
 ## 5.0.4 - 2020-01-05
 
 ### Added

@@ -703,8 +703,9 @@ export class QualysAPIClient {
   public async iterateVulnerabilities(
     qids: number[],
     iteratee: ResourceIteratee<vmpc.Vuln>,
-    options?: {
-      pagination: { limit: number };
+    options: {
+      pagination?: { limit: number };
+      onRequestError: (pageIds: number[], err: Error) => void;
     },
   ): Promise<void> {
     const fetchVulnerabilities = async (ids: number[]) => {
@@ -725,23 +726,37 @@ export class QualysAPIClient {
       const jsonFromXml = await parseXMLResponse<
         vmpc.ListQualysVulnerabilitiesResponse
       >(response);
-      const vulns: vmpc.Vuln[] = toArray(
+      return toArray(
         jsonFromXml.KNOWLEDGE_BASE_VULN_LIST_OUTPUT?.RESPONSE?.VULN_LIST?.VULN,
       );
+    };
 
-      for (const vuln of vulns) {
+    const performIteration = async (ids: number[]) => {
+      for (const vuln of await fetchVulnerabilities(ids)) {
         await iteratee(vuln);
       }
     };
 
-    // Starting simple, sequential requests for pages. Once client supports
-    // concurrency, add to queue to allow concurrency control.
-    for (const ids of chunk(
-      qids,
-      options?.pagination?.limit || DEFAULT_VULNERABILITIES_PAGE_SIZE,
-    )) {
-      await fetchVulnerabilities(ids);
-    }
+    await withConcurrency(
+      (queue) => {
+        for (const ids of chunk(
+          qids,
+          options.pagination?.limit || DEFAULT_VULNERABILITIES_PAGE_SIZE,
+        )) {
+          queue
+            .add(async () => {
+              await performIteration(ids);
+            })
+            .catch((err) => {
+              options.onRequestError(ids, err);
+            });
+        }
+      },
+      {
+        events: this.events,
+        rateLimitState: STANDARD_RATE_LIMIT_STATE,
+      },
+    );
   }
 
   public async executeAuthenticatedAPIRequest(

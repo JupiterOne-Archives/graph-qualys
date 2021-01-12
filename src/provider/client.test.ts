@@ -1341,9 +1341,13 @@ describe('iterateVulnerabilities', () => {
 
     const vulns: vmpc.Vuln[] = [];
 
-    await createClient().iterateVulnerabilities([], (vuln) => {
-      vulns.push(vuln);
-    });
+    await createClient().iterateVulnerabilities(
+      [],
+      (vuln) => {
+        vulns.push(vuln);
+      },
+      { onRequestError: jest.fn() },
+    );
 
     expect(vulns.length).toBe(0);
   });
@@ -1357,9 +1361,13 @@ describe('iterateVulnerabilities', () => {
 
     const vulns: vmpc.Vuln[] = [];
 
-    await createClient().iterateVulnerabilities([123], (vuln) => {
-      vulns.push(vuln);
-    });
+    await createClient().iterateVulnerabilities(
+      [123],
+      (vuln) => {
+        vulns.push(vuln);
+      },
+      { onRequestError: jest.fn() },
+    );
 
     expect(vulns.length).toBe(0);
   });
@@ -1371,14 +1379,25 @@ describe('iterateVulnerabilities', () => {
       options: { recordFailedRequests: true },
     });
 
-    await expect(
-      createClient().iterateVulnerabilities(
-        [('abc123' as unknown) as number],
-        async (_) => {
-          // noop
-        },
-      ),
-    ).rejects.toThrow(/Bad Request/);
+    const onRequestError = jest.fn();
+
+    await createClient().iterateVulnerabilities(
+      [('abc123' as unknown) as number],
+      async (_) => {
+        // noop
+      },
+      {
+        onRequestError,
+      },
+    );
+
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError).toHaveBeenCalledWith(
+      ['abc123'],
+      expect.objectContaining({
+        message: expect.stringMatching(/Bad Request/),
+      }),
+    );
   });
 
   test('some', async () => {
@@ -1390,9 +1409,13 @@ describe('iterateVulnerabilities', () => {
     const client = createClient();
     const vulns: vmpc.Vuln[] = [];
 
-    await client.iterateVulnerabilities([316760], (vuln) => {
-      vulns.push(vuln);
-    });
+    await client.iterateVulnerabilities(
+      [316760],
+      (vuln) => {
+        vulns.push(vuln);
+      },
+      { onRequestError: jest.fn() },
+    );
 
     expect(vulns.length).toBe(1);
   });

@@ -1,6 +1,5 @@
 import {
   createMappedRelationship,
-  Entity,
   generateRelationshipType,
   MappedRelationship,
   RelationshipClass,
@@ -10,6 +9,7 @@ import {
 
 import { vmpc } from '../../provider/client';
 import toArray from '../../util/toArray';
+import { ENTITY_TYPE_HOST_FINDING } from '../vmdr/constants';
 import {
   ENTITY_TYPE_CVE_VULNERABILITY,
   ENTITY_TYPE_QUALYS_VULNERABILITY,
@@ -24,7 +24,7 @@ import {
  * representing each vulnerability associated with the Finding
  */
 export function createFindingVulnerabilityMappedRelationships(
-  findingEntity: Entity,
+  findingKey: string,
   targetEntityProperties: TargetEntityProperties[],
 ): { relationships: MappedRelationship[]; duplicates: MappedRelationship[] } {
   const seenRelationshipKeys = new Set<string>();
@@ -36,12 +36,12 @@ export function createFindingVulnerabilityMappedRelationships(
       _class: RelationshipClass.IS,
       _type: generateRelationshipType(
         RelationshipClass.IS,
-        findingEntity._type,
+        ENTITY_TYPE_HOST_FINDING,
         targetEntity._type!,
       ),
       _mapping: {
         relationshipDirection: RelationshipDirection.FORWARD,
-        sourceEntityKey: findingEntity._key,
+        sourceEntityKey: findingKey,
         targetFilterKeys: [['_type', '_key']],
         targetEntity,
       },
