@@ -1,7 +1,10 @@
 <KNOWLEDGE_BASE_VULN_LIST_OUTPUT>
   <RESPONSE>
     <VULN_LIST>
-      {{#qidList}}{{> vuln}}{{/qidList}}
+      {{#vulns}}
+        {{#qualys}}{{> qualysVuln}}{{/qualys}}
+        {{#cve}}{{> cveVuln}}{{/cve}}
+      {{/vulns}}
     </VULN_LIST>
   </RESPONSE>
 </KNOWLEDGE_BASE_VULN_LIST_OUTPUT>

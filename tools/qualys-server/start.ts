@@ -16,16 +16,16 @@ async function start() {
   // });
 
   // Change this to represent the concurrency limit of a subscription.
-  const detectionsConcurrencyLimit = 15;
+  const concurrencyLimit = 15;
 
   // Change this to non-zero value to simulate other scripts consuming
   // concurrency.
-  const detectionsOtherRunning = 0;
+  const otherRunning = 0;
 
   console.log(
     {
-      detectionsConcurrencyLimit,
-      detectionsOtherRunning,
+      concurrencyLimit,
+      otherRunning,
       numHosts: hostData.numHosts,
       numDetections: hostData.numDetections,
       hostIdRange: hostData.hostIdRange,
@@ -45,6 +45,52 @@ async function start() {
     },
     'Generated hosts, restart to get new set',
   );
+
+  let concurrencyRunning = otherRunning;
+
+  // TODO: Figure out typing for req, res
+  const renderWithConcurrency = function (
+    req: any,
+    res: any,
+    responseTime: number,
+    template: string,
+    data: any,
+    contentType: string,
+  ) {
+    res.setHeader('x-concurrency-limit-limit', concurrencyLimit);
+
+    if (concurrencyRunning >= concurrencyLimit) {
+      console.warn(Date.now(), req.url, 'request concurrency exceeded', concurrencyRunning, 409);
+
+      // This header becomes an indication of no more concurrency limit
+      // remaining in the Qualys API.
+      res.setHeader('x-ratelimit-remaining', 0);
+      res.setHeader('x-concurrency-limit-running', concurrencyRunning);
+      res.sendStatus(409);
+    } else {
+      // Increment concurrency running to include this request
+      concurrencyRunning++;
+      console.info(Date.now(), req.url, 'request concurrency', concurrencyRunning);
+
+      res.setHeader('x-concurrency-limit-running', concurrencyRunning);
+      res.setHeader('content-type', contentType);
+
+      setTimeout(() => {
+        res.render(template, data, (err, rendered) => {
+          if (err) {
+            console.error(err);
+            res.status(500);
+          } else {
+            res.send(Buffer.from(rendered));
+          }
+
+          // Decrement after sending the response. There may be a better option
+          // to ensure this occurs after the socket is closed.
+          concurrencyRunning--;
+        });
+      }, responseTime);
+    }
+  };
 
   const app = express();
   const port = 8080;
@@ -67,9 +113,9 @@ async function start() {
 
   if (process.env.LOG_REQUESTS) {
     app.use((req, res, next) => {
-      console.log(Date.now(), req.url, 'received request');
+      console.info(Date.now(), req.url, 'request');
       onFinished(res, (err, res) => {
-        console.log(Date.now(), req.url, 'response finished');
+        console.info(Date.now(), req.url, 'response');
       });
       next();
     });
@@ -115,66 +161,51 @@ async function start() {
     res.render('host-details-list', { hosts });
   });
 
-  let detectionsConcurrencyRunning = detectionsOtherRunning;
   app.post('/api/2.0/fo/asset/host/vm/detection/', (req, res) => {
-    res.setHeader('x-concurrency-limit-limit', detectionsConcurrencyLimit);
-
-    if (detectionsConcurrencyRunning >= detectionsConcurrencyLimit) {
-      console.warn('concurrency: ', detectionsConcurrencyRunning, 409);
-
-      // This header becomes an indication of no more concurrency limit
-      // remaining in the Qualys API.
-      res.setHeader('x-ratelimit-remaining', 0);
-      res.setHeader(
-        'x-concurrency-limit-running',
-        detectionsConcurrencyRunning,
-      );
-      res.sendStatus(409);
-    } else {
-      // Increment concurrency running to include this request
-      detectionsConcurrencyRunning++;
-      console.warn('concurrency: ', detectionsConcurrencyRunning);
-
       const hostIds = req.body.ids.split(',');
       const hosts = hostIds.map((e) => hostData.hostsById.get(Number(e)));
 
-      const hostTime = Math.random() * 10;
-      const maximumTime = 1000 * 10;
-      const responseTime = Math.min(
-        hostIds.length * hostTime + Math.round(Math.random() * 1000),
-        maximumTime,
+    renderWithConcurrency(
+      req,
+      res,
+      responseTimeFromResourceCount(hostIds.length),
+      'host-detection-list',
+      { hosts },
+      'text/xml',
       );
-
-      res.setHeader(
-        'x-concurrency-limit-running',
-        detectionsConcurrencyRunning,
-      );
-      res.setHeader('content-type', 'text/xml');
-
-      setTimeout(() => {
-        res.render('host-detection-list', { hosts }, (err, html) => {
-          if (err) {
-            console.error(err);
-            res.status(500);
-          } else {
-            res.send(Buffer.from(html));
-          }
-          detectionsConcurrencyRunning--;
-        });
-      }, responseTime);
-    }
   });
 
   app.post('/api/2.0/fo/knowledge_base/vuln', (req, res) => {
-    const ids = req.query.ids as string | undefined;
-    const qidList = ids ? ids.split(',') : [];
-    res.setHeader('content-type', 'text/xml');
-    res.render('vuln-list', { qidList });
+    const ids = req.body.ids as string | '';
+    const qidList = ids.split(',');
+    const vulns = qidList.map((qid, index) => ({
+      qid,
+      qualys: index % 2 === 0,
+      cve: index % 2 === 1,
+    }));
+
+    renderWithConcurrency(
+      req,
+      res,
+      responseTimeFromResourceCount(qidList.length),
+      'vuln-list',
+      { vulns },
+      'text/xml',
+    );
   });
 
   app.listen(port, () => {
     console.log(`Listening at http://localhost:${port}`);
   });
+}
+
+function responseTimeFromResourceCount(resourceCount: number): number {
+  const timePerResource = Math.random() * 10;
+  const maximumTime = 1000 * 10;
+  return Math.min(
+    resourceCount * timePerResource + Math.round(Math.random() * 1000),
+    maximumTime,
+  );
 }
 
 start().catch((err) => {

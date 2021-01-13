@@ -6,6 +6,8 @@
 
 - Fetching knowledge base vulnerabilities using concurrency headers from Qualys
   server responses
+- Mock Qualys server enforces concurrency limits in vulnerabilities endpoint
+- Mock Qualys server answers vulnerabilities that have CVEs and some that don't
 
 ## 5.0.4 - 2020-01-05
 

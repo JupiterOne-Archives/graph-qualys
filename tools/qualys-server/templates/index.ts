@@ -27,7 +27,8 @@ async function parseTemplates(): Promise<Record<string, string>> {
     hostDetails: 'partials/host-details.mustache',
     hostDetections: 'partials/host-detections.mustache',
     hostDetection: 'partials/host-detection.mustache',
-    vuln: 'partials/vuln.mustache',
+    qualysVuln: 'partials/qualys-vuln.mustache',
+    cveVuln: 'partials/cve-vuln.mustache',
   };
 
   const templates: Record<string, string> = {};
