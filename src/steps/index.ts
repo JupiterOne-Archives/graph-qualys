@@ -1,9 +1,7 @@
 import { accountSteps } from './account';
 import { serviceSteps } from './services';
 import { hostDetectionSteps } from './vmdr';
-// TODO: Ingest vulnerability information
-// TODO: Re-enable QID -> Finding._key collection (VulnerabilityFindingKeysCollector)
-// import { vulnSteps } from './vulns';
+import { vulnSteps } from './vulns';
 import { webApplicationSteps } from './was';
 
 const integrationSteps = [
@@ -11,7 +9,7 @@ const integrationSteps = [
   ...serviceSteps,
   ...webApplicationSteps,
   ...hostDetectionSteps,
-  // ...vulnSteps,
+  ...vulnSteps,
 ];
 
 export { integrationSteps };

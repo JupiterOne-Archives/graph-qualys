@@ -7,6 +7,10 @@ describe('getQualysHost', () => {
     );
   });
 
+  test('mock', () => {
+    expect(getQualysHost('http://localhost:8080')).toEqual('localhost:8080');
+  });
+
   test('unexpected', () => {
     expect(() => getQualysHost('https://bobby.qg3.apps.qualys.com')).toThrow(
       /Unexpected Qualys API URL format/,

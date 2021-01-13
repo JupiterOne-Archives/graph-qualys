@@ -18,10 +18,15 @@ export function buildKey(
   return parts.join('|');
 }
 
+const QUALYS_MOCK_HOST_PATTERN = /http:\/\/(localhost(:\d+)?)/;
+const QUALYS_HOST_PATTERN = /https:\/\/qualysapi\.([-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*))/;
 export function getQualysHost(qualysApiUrl: string): string {
-  const match = /https:\/\/qualysapi\.([-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*))/.exec(
-    qualysApiUrl.trim(),
-  );
+  const trimmedUrl = qualysApiUrl.trim();
+
+  const match =
+    QUALYS_MOCK_HOST_PATTERN.exec(trimmedUrl) ||
+    QUALYS_HOST_PATTERN.exec(trimmedUrl);
+
   if (match) {
     return match[1];
   } else {

@@ -54,6 +54,7 @@ export async function fetchFindingVulnerabilities({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
+  const qualysHost = getQualysHost(instance.config.qualysApiUrl);
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   const vulnerabilityFindingKeysMap = await getVulnerabilityFindingKeysMap(
@@ -71,7 +72,7 @@ export async function fetchFindingVulnerabilities({
     vulnerabilityQIDs,
     async (vuln) => {
       const targetEntities = createVulnerabilityTargetEntities(
-        getQualysHost(instance.config.qualysApiUrl),
+        qualysHost,
         vuln,
       );
 
@@ -155,34 +156,46 @@ export async function fetchFindingVulnerabilities({
 async function getVulnerabilityFindingKeysMap(
   jobState: JobState,
 ): Promise<VulnerabilityFindingKeysMap> {
-  const hostSerializedKeysMap = new Map(
-    ((await jobState.getData(
-      DATA_HOST_VULNERABILITY_FINDING_KEYS,
-    )) as SerializedVulnerabilityFindingKeys) || [],
-  );
-
-  const webAppSerializedKeysMap = new Map(
-    ((await jobState.getData(
-      DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-    )) as SerializedVulnerabilityFindingKeys) || [],
-  );
-
   const keysMap = new Map() as VulnerabilityFindingKeysMap;
-  const addKeys = (qid: number, keys: Set<string>) => {
-    const allQidFindingKeys = keysMap.get(qid) || new Set();
-    if (allQidFindingKeys.size === 0) keysMap.set(qid, allQidFindingKeys);
-    keys.forEach((e) => allQidFindingKeys.add(e));
-  };
-
-  for (const [qid, findingKeys] of hostSerializedKeysMap.entries()) {
-    addKeys(qid, findingKeys);
-  }
-
-  for (const [qid, findingKeys] of webAppSerializedKeysMap.entries()) {
-    addKeys(qid, findingKeys);
-  }
-
+  await collectFindingKeys(
+    jobState,
+    keysMap,
+    DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+  );
+  await collectFindingKeys(
+    jobState,
+    keysMap,
+    DATA_HOST_VULNERABILITY_FINDING_KEYS,
+  );
   return keysMap;
+}
+
+async function collectFindingKeys(
+  jobState: JobState,
+  map: VulnerabilityFindingKeysMap,
+  dataKey: string,
+) {
+  for (const [qid, findingKeys] of await popFindingKeys(jobState, dataKey)) {
+    const allQidFindingKeys = map.get(qid) || new Set();
+    if (allQidFindingKeys.size === 0) map.set(qid, allQidFindingKeys);
+    for (const findingKey of findingKeys) {
+      allQidFindingKeys.add(findingKey);
+    }
+  }
+}
+
+/**
+ * Fetches from `jobState` and deserializes the map of QID -> `Finding._key[]`
+ * identified by `dataKey`. The data will be removed from the `jobState` to free
+ * up resources.
+ */
+async function popFindingKeys(jobState: JobState, dataKey: string) {
+  const findingKeys = new Map(
+    ((await jobState.getData(dataKey)) as SerializedVulnerabilityFindingKeys) ||
+      [],
+  );
+  await jobState.setData(dataKey, []);
+  return findingKeys;
 }
 
 export const vulnSteps: IntegrationStep<QualysIntegrationConfig>[] = [

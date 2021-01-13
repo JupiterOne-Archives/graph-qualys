@@ -13,10 +13,10 @@ import {
 import { createQualysAPIClient } from '../../provider';
 import { QualysIntegrationConfig } from '../../types';
 import { DATA_WAS_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
-// import { VulnerabilityFindingKeysCollector } from '../utils';
+import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
   DATA_SCANNED_WEBAPP_IDS,
-  // DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+  DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
   MAPPED_RELATIONSHIP_TYPE_WAS_SCANS_WEBAPP,
   STEP_FETCH_SCANNED_WEBAPP_FINDINGS,
   STEP_FETCH_SCANNED_WEBAPPS,
@@ -88,19 +88,19 @@ export async function fetchScannedWebAppFindings({
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
+
   const scannedWebAppIds = (await jobState.getData(
     DATA_SCANNED_WEBAPP_IDS,
   )) as number[];
-
   const serviceEntity = (await jobState.getData(
     DATA_WAS_SERVICE_ENTITY,
   )) as Entity;
+  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
 
   let numWebAppFindingsProcessed = 0;
   let numPageErrors = 0;
   const errorCorrelationId = uuid();
 
-  // const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateWebAppFindings(
     scannedWebAppIds,
     async (finding) => {
@@ -117,17 +117,10 @@ export async function fetchScannedWebAppFindings({
       );
 
       if (finding.qid) {
-        // vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-        //   finding.qid,
-        //   findingEntity._key,
-        // );
-        // Ensure that finding keys are updated for each finding
-        // so that should a partial set be ingested, we don't lose what we've seen
-        // for later steps.
-        // await jobState.setData(
-        //   DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-        //   vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
-        // );
+        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+          finding.qid,
+          findingEntity._key,
+        );
       } else {
         logger.info(
           { finding: { id: finding.id, uniqueId: finding.uniqueId } },
@@ -149,6 +142,11 @@ export async function fetchScannedWebAppFindings({
         numPageErrors++;
       },
     },
+  );
+
+  await jobState.setData(
+    DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
+    vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
   );
 
   logger.info(

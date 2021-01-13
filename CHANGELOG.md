@@ -8,6 +8,7 @@
   server responses
 - Mock Qualys server enforces concurrency limits in vulnerabilities endpoint
 - Mock Qualys server answers vulnerabilities that have CVEs and some that don't
+- Enable ingestion of Finding - IS -> Vulnerability mapped relationships
 
 ## 5.0.4 - 2020-01-05
 
