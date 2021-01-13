@@ -13,9 +13,10 @@ import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
 import { QualysIntegrationConfig } from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
-// import { VulnerabilityFindingKeysCollector } from '../utils';
+import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
   DATA_HOST_TARGETS,
+  DATA_HOST_VULNERABILITY_FINDING_KEYS,
   DATA_SCANNED_HOST_IDS,
   STEP_FETCH_SCANNED_HOST_DETAILS,
   STEP_FETCH_SCANNED_HOST_FINDINGS,
@@ -189,6 +190,7 @@ export async function fetchScannedHostFindings({
     []) as number[];
   const hostTargetsMap = ((await jobState.getData(DATA_HOST_TARGETS)) ||
     {}) as HostAssetTargetsMap;
+  const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
 
   // const serviceEntity = (await jobState.getData(
   //   DATA_VMDR_SERVICE_ENTITY,
@@ -200,7 +202,6 @@ export async function fetchScannedHostFindings({
   let totalDetectionsProcessed = 0;
   let totalPageErrors = 0;
 
-  // const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
@@ -233,10 +234,10 @@ export async function fetchScannedHostFindings({
 
           if (await jobState.hasKey(findingKey)) continue;
 
-          // vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
-          //   detection.QID!,
-          //   findingKey,
-          // );
+          vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+            detection.QID!,
+            findingKey,
+          );
 
           const findingEntity = createHostFindingEntity(
             findingKey,
@@ -258,14 +259,6 @@ export async function fetchScannedHostFindings({
         await jobState.addEntities(entities);
         // await jobState.addRelationships(relationships);
       }
-
-      // Ensure that `DATA_HOST_VULNERABILITY_FINDING_KEYS` is updated for each host
-      // so that should a partial set be ingested, we don't lose what we've seen
-      // for later steps.
-      // await jobState.setData(
-      //   DATA_HOST_VULNERABILITY_FINDING_KEYS,
-      //   vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
-      // );
 
       totalHostsProcessed++;
       totalDetectionsProcessed += detections.length;
@@ -310,6 +303,11 @@ export async function fetchScannedHostFindings({
         );
       },
     },
+  );
+
+  await jobState.setData(
+    DATA_HOST_VULNERABILITY_FINDING_KEYS,
+    vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
   );
 
   logger.publishEvent({
