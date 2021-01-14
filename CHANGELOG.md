@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.1.0 - 2021-01-14
+
 ### Changed
 
 - Fetching knowledge base vulnerabilities using concurrency headers from Qualys
@@ -10,7 +12,7 @@
 - Mock Qualys server answers vulnerabilities that have CVEs and some that don't
 - Enable ingestion of Finding - IS -> Vulnerability mapped relationships
 
-## 5.0.4 - 2020-01-05
+## 5.0.4 - 2021-01-05
 
 ### Added
 
@@ -28,14 +30,14 @@
 - Fixed bug in concurrency calculation that allowed too many active requests
 - Fixed bug in detecting concurrency limit exceeded Qualys API response
 
-## 5.0.3 - 2020-01-04
+## 5.0.3 - 2021-01-04
 
 ### Fixed
 
 - Detections request concurrency incorrectly calculated, reducing number of
   active requests
 
-## 5.0.2 - 2020-01-03
+## 5.0.2 - 2021-01-03
 
 ### Changed
 
@@ -56,7 +58,7 @@
 - Mock Qualys server host IDs endpoint answered invalid host ID values, leading
   to a failure to list detections
 
-## 5.0.1 - 2020-01-02
+## 5.0.1 - 2021-01-02
 
 ### Changed
 
@@ -64,7 +66,7 @@
 - Removed empty raw data from Finding entities to avoid unecessary use of space
   (memory, data shipped, etc.)
 
-## 5.0.0 - 2020-01-01
+## 5.0.0 - 2021-01-01
 
 ### Changed
 
