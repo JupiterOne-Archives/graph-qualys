@@ -234,7 +234,7 @@ export async function fetchScannedHostFindings({
 
           if (await jobState.hasKey(findingKey)) continue;
 
-          vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+          vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
             detection.QID!,
             findingKey,
           );
@@ -307,7 +307,7 @@ export async function fetchScannedHostFindings({
 
   await jobState.setData(
     DATA_HOST_VULNERABILITY_FINDING_KEYS,
-    vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+    vulnerabilityFindingKeysCollector.serialize(),
   );
 
   logger.publishEvent({
