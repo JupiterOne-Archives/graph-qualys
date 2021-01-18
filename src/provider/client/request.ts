@@ -320,6 +320,16 @@ export function buildAuthenticatedRequestInit(
   };
 }
 
+/**
+ * Extracts rate limit headers.
+ *
+ * Qualys documentation is confusing on this matter. For instance:
+ * - Some docs say `X-ConcurrencyLimit-Limit`, and some say `X-Concurrency-Limit-Limit`
+ * - There does not seem to be any headers like this on some endpoints
+ *
+ * @see https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
+ * @see https://www.qualys.com/docs/qualys-api-limits.pdf
+ */
 function extractRateLimitHeaders(
   response: Response,
   rateLimitConfig: RateLimitConfig,

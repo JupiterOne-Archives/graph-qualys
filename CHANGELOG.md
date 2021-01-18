@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Adjusted host details fetch settings:
+  - Page size `250` -> `2000`
+  - Request concurrency `10` -> `5`
+  - Timeout `5` -> `8` minutes
+
 ### Fixed
 
 - Fixed bug in QID -> finding key tracking that kept the program from
