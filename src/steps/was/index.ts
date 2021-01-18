@@ -117,7 +117,7 @@ export async function fetchScannedWebAppFindings({
       );
 
       if (finding.qid) {
-        vulnerabilityFindingKeysCollector.addVulnerabilityFinding(
+        vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
           finding.qid,
           findingEntity._key,
         );
@@ -146,7 +146,7 @@ export async function fetchScannedWebAppFindings({
 
   await jobState.setData(
     DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-    vulnerabilityFindingKeysCollector.toVulnerabilityFindingKeys(),
+    vulnerabilityFindingKeysCollector.serialize(),
   );
 
   logger.info(

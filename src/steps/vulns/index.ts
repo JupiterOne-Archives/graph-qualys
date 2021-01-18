@@ -11,7 +11,7 @@ import { QualysIntegrationConfig } from '../../types';
 import { getQualysHost } from '../../util';
 import {
   SerializedVulnerabilityFindingKeys,
-  VulnerabilityFindingKeysMap,
+  VulnerabilityFindingKeysCollector,
 } from '../utils';
 import {
   DATA_HOST_VULNERABILITY_FINDING_KEYS,
@@ -57,10 +57,11 @@ export async function fetchFindingVulnerabilities({
   const qualysHost = getQualysHost(instance.config.qualysApiUrl);
   const apiClient = createQualysAPIClient(logger, instance.config);
 
-  const vulnerabilityFindingKeysMap = await getVulnerabilityFindingKeysMap(
+  const vulnerabiltyFindingKeysCollector = new VulnerabilityFindingKeysCollector();
+  await loadVulnerabilityFindingKeys(
+    vulnerabiltyFindingKeysCollector,
     jobState,
   );
-  const vulnerabilityQIDs = Array.from(vulnerabilityFindingKeysMap.keys());
 
   const errorCorrelationId = uuid();
 
@@ -69,14 +70,17 @@ export async function fetchFindingVulnerabilities({
   let totalPageErrors = 0;
 
   await apiClient.iterateVulnerabilities(
-    vulnerabilityQIDs,
+    vulnerabiltyFindingKeysCollector.allQids(),
     async (vuln) => {
       const targetEntities = createVulnerabilityTargetEntities(
         qualysHost,
         vuln,
       );
 
-      const vulnFindingKeys = vulnerabilityFindingKeysMap.get(vuln.QID!);
+      const vulnFindingKeys = vulnerabiltyFindingKeysCollector.getVulnerabiltyFindingKeys(
+        vuln.QID!,
+      );
+
       if (vulnFindingKeys) {
         for (const findingKey of vulnFindingKeys) {
           if (!jobState.hasKey(findingKey)) {
@@ -153,34 +157,15 @@ export async function fetchFindingVulnerabilities({
  * `STEP_FETCH_FINDING_VULNS` to know which vulnerabilities to fetch and to
  * which Finding entites to map relationships.
  */
-async function getVulnerabilityFindingKeysMap(
+async function loadVulnerabilityFindingKeys(
+  collector: VulnerabilityFindingKeysCollector,
   jobState: JobState,
-): Promise<VulnerabilityFindingKeysMap> {
-  const keysMap = new Map() as VulnerabilityFindingKeysMap;
-  await collectFindingKeys(
-    jobState,
-    keysMap,
+): Promise<void> {
+  for (const dataKey of [
     DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-  );
-  await collectFindingKeys(
-    jobState,
-    keysMap,
     DATA_HOST_VULNERABILITY_FINDING_KEYS,
-  );
-  return keysMap;
-}
-
-async function collectFindingKeys(
-  jobState: JobState,
-  map: VulnerabilityFindingKeysMap,
-  dataKey: string,
-) {
-  for (const [qid, findingKeys] of await popFindingKeys(jobState, dataKey)) {
-    const allQidFindingKeys = map.get(qid) || new Set();
-    if (allQidFindingKeys.size === 0) map.set(qid, allQidFindingKeys);
-    for (const findingKey of findingKeys) {
-      allQidFindingKeys.add(findingKey);
-    }
+  ]) {
+    collector.loadSerialized(await popFindingKeys(jobState, dataKey));
   }
 }
 
@@ -190,10 +175,9 @@ async function collectFindingKeys(
  * up resources.
  */
 async function popFindingKeys(jobState: JobState, dataKey: string) {
-  const findingKeys = new Map(
+  const findingKeys =
     ((await jobState.getData(dataKey)) as SerializedVulnerabilityFindingKeys) ||
-      [],
-  );
+    [];
   await jobState.setData(dataKey, []);
   return findingKeys;
 }

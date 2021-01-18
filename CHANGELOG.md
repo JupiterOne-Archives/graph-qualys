@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed bug in QID -> finding key tracking that kept the program from
+  associating all findings to their vulnerabilities
+
 ## 5.1.0 - 2021-01-14
 
 ### Changed
