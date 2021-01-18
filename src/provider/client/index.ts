@@ -52,26 +52,41 @@ const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
 /**
  * Number of hosts to fetch details for per request.
  */
-const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 2000;
 
 /**
  * Number of concurrent requests to fetch details.
  *
+ * The Qualys docs suggest the Premium license supports a maximum of 10
+ * concurrent requests, 2000 per hour, and the response headers should indicate
+ * the subscription level. However, logs of these requests indicates these
+ * headers are in fact not provided by this endpoint.
+ *
+ * This represents a common pattern of instability in the API:
+ *
+ * 1. `21:38:48.212 Sending request...`
+ * 2. `21:43:48.222 Sending request...`
+ * 3. `21:43:48.226 Request failed, reason: socket hang up`
+ * 4. `21:45:20.246 Received response`
+ *
+ * Notice that the first request times out after 5 minutes, but the second
+ * attempt for the same amount of data/host IDs succeeds in 1.5 minutes. It is
+ * not clear whether waiting longer than 5 minutes would have helped, nor
+ * whether timing out at 2 minutes would be the better approach.
+ *
  * Attempted combinations:
  *
- * - ✅ page 250, concurrency 10, timeout 5min
+ * - 🚫 page 250, concurrency 10, timeout 5min
  * - 🚫 page 500, concurrency 15, timeout 10min
- *   - https://status.qualys.com/ was showing some problems, unclear if they were related
- *   - "socket hang up"
  * - 🚫 page 1000, concurrency 20, timeout 10min
- *   - "socket hang up"
+ * - page 1000, concurrency 5, timeout 10min
  */
-const DEFAULT_HOST_DETAILS_CONCURRENCY = 10;
+const DEFAULT_HOST_DETAILS_CONCURRENCY = 5;
 
 /**
  * Time to wait for data to come back from host details endpoint.
  */
-const DEFAULT_HOST_DETAILS_SOCKET_TIMEOUT_MS = 1000 * 60 * 5;
+const DEFAULT_HOST_DETAILS_SOCKET_TIMEOUT_MS = 1000 * 60 * 10;
 
 /**
  * Number of hosts to fetch detections for per request. This is NOT the number
