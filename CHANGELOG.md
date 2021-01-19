@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.2.0 - 2020-01-19
+
 ### Changed
 
 - Adjusted host details fetch settings:
