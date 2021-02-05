@@ -52,7 +52,7 @@ const DEFAULT_HOST_IDS_PAGE_SIZE = 10000;
 /**
  * Number of hosts to fetch details for per request.
  */
-const DEFAULT_HOST_DETAILS_PAGE_SIZE = 2000;
+const DEFAULT_HOST_DETAILS_PAGE_SIZE = 250;
 
 /**
  * Number of concurrent requests to fetch details.
@@ -81,12 +81,12 @@ const DEFAULT_HOST_DETAILS_PAGE_SIZE = 2000;
  * - 🚫 page 1000, concurrency 20, timeout 10min
  * - page 1000, concurrency 5, timeout 10min
  */
-const DEFAULT_HOST_DETAILS_CONCURRENCY = 5;
+const DEFAULT_HOST_DETAILS_CONCURRENCY = 10;
 
 /**
  * Time to wait for data to come back from host details endpoint.
  */
-const DEFAULT_HOST_DETAILS_SOCKET_TIMEOUT_MS = 1000 * 60 * 10;
+const DEFAULT_HOST_DETAILS_SOCKET_TIMEOUT_MS = 1000 * 60 * 5;
 
 /**
  * Number of hosts to fetch detections for per request. This is NOT the number
