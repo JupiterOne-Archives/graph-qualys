@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## 5.2.1 - 2020-02-05
+
+- Adjusted host details fetch settings:
+  - Page size `2000` -> `250`
+  - Request concurrency `10` -> `5`
+  - Timeout `10` -> `5` minutes
+
 ## 5.2.0 - 2020-01-19
 
 ### Changed
