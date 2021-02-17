@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.3.0 - 2020-02-17
+
 ### Changed
 
 - Host `Finding.targets` has been adjusted to include only
