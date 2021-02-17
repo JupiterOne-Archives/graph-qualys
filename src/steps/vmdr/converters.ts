@@ -44,16 +44,20 @@ export function createServiceScansDiscoveredHostRelationship(
     _mapping: {
       sourceEntityKey: serviceEntity._key,
       relationshipDirection: RelationshipDirection.FORWARD,
-      targetFilterKeys: [['_class', 'qualysAssetId']],
+      /**
+       * The primary value of this mapped relationship is to contribute details
+       * to the Host entity. The `targetFilterKeys` are designed to coordinate
+       * with the integration's mapping rule that will:
+       *
+       * - Map Finding to Host using `Finding.fqdn`
+       * - `CREATE_OR_UPDATE` the Host before or after this mapped relationship
+       *   is processed
+       */
+      targetFilterKeys: [['_class', 'fqdn']],
       targetEntity: {
         _class: 'Host',
         _type: ENTITY_TYPE_DISCOVERED_HOST,
         _key: generateHostAssetKey(host),
-
-        // Add to the entity's `id` property values that this host is known as
-        // in the Qualys system. These values are also added to the
-        // `Finding.targets` to allow for global mappings of Findings to these
-        // Host entities.
         id: toStringArray([host.id, host.qwebHostId]),
         ...getHostDetails(host),
         ...getHostIPAddresses(host),
@@ -97,9 +101,6 @@ export function createServiceScansEC2HostRelationship(
         _class: 'Host',
         _type: ENTITY_TYPE_EC2_HOST,
         _key: instanceArn,
-
-        // This value is also added to the `Finding.targets` to allow for global
-        // mappings of Findings to these Host entities.
         id: instanceId,
         ...getHostDetails(host),
         ...getHostIPAddresses(host),
@@ -124,6 +125,15 @@ export function createHostFindingEntity(
 ): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
+  // prepare values for matching integration mapping rules
+  let fqdn: string | undefined;
+  let ec2InstanceArn: string | null = null;
+  if (hostTargets && hostTargets.length === 2) {
+    fqdn = hostTargets[0];
+    if (hostTargets[1].startsWith('arn:aws:ec2'))
+      ec2InstanceArn = hostTargets[1];
+  }
+
   return createIntegrationEntity({
     entityData: {
       // Do NOT include the host in every Finding, there will be a relationship to it.
@@ -134,6 +144,9 @@ export function createHostFindingEntity(
         _type: ENTITY_TYPE_HOST_FINDING,
         _key: key,
         _class: 'Finding',
+
+        ec2InstanceArn,
+        fqdn,
 
         displayName: findingDisplayName,
         name: findingDisplayName,
@@ -180,40 +193,26 @@ export function createHostFindingEntity(
 }
 
 /**
- * Answers `Finding.targets` values for the `DetectionHost`.
+ * Answers `Finding.targets` values for the `DetectionHost` reflecting the
+ * values used in the integration's rules for mapping the Finding to Host and a
+ * few more for completeness in the entity.
  *
- * * Host.id === host.ID
- * * Host.id === host.EC2_INSTANCE_ID
- * * Host.ipAddress === host.IP
- * * getTargetsFromHostAsset()
+ * This integration does NOT rely on the global mapping rules. It provides its
+ * own rules designed to reduce load on the mapping system by limiting the
+ * mapping to conditions known to exist in this integration's data.
  *
- * These values are used in global mappings to relate the `Finding` to any
- * entity of `_class: 'Host'` that has a property matching one of these
- * `Finding.targets` values. The properties on the `Host` that will be matched
- * to `Finding.targets`:
- *
- * * `id`
- * * `name`
- * * `fqdn`
- * * `hostname`
- * * `address`,
- * * `ipAddress`
- * * `publicIpAddress`
- * * `privateIpAddress`
- *
- * Results may include additional values, though these may not be used in
- * building the relationship.
+ * - Finding.fqdn === Host.fqdn
+ * - Finding.ec2InstanceArn === Host._key && Host._type === aws_instance
  *
  * @param host the host associated with a vulnerability detection
- * @param assetTargets additional targets collected from the corresponding `HostAsset`
+ * @param assetTargets additional targets collected from the corresponding
+ * `HostAsset`
  */
 export function getTargetsForDetectionHost(
   host: vmpc.DetectionHost,
   assetTargets: string[] | undefined,
 ): string[] {
-  const targets = new Set(
-    toStringArray([host.ID, host.IP, host.EC2_INSTANCE_ID]),
-  );
+  const targets = new Set(toStringArray([host.IP]));
   if (assetTargets) {
     for (const target of assetTargets) {
       targets.add(target);
@@ -223,24 +222,14 @@ export function getTargetsForDetectionHost(
 }
 
 /**
- * Answers `Finding.targets` values for the `HostAsset`.
- *
- * * Host.id === host.id
- * * Host.id === getEC2InstanceId(host)
- * * Host.ipAddress === host.address
- * * Host.fqdn === host.dnsHostName
- * * Host.fqdn === host.fqdn
+ * Answers `[fqdn, ec2InstanceArn]` values for the `HostAsset`. These values are
+ * not available on the detection host data and so much be captured from the
+ * asset data.
  *
  * @param host an Asset Manager host
  */
 export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
-  return toStringArray([
-    host.id,
-    host.address,
-    host.dnsHostName,
-    host.fqdn,
-    getEC2InstanceId(host),
-  ]);
+  return toStringArray([host.fqdn, getEC2HostArn(host)]);
 }
 
 export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {

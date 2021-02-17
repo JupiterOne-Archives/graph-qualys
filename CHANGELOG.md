@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Host `Finding.targets` has been adjusted to include only
+  `[detection.HOST.IP, assetHost.fqdn, assetHost.ec2InstanceArn]`. At this time,
+  only `fqdn` and `ec2InstanceArn` will be used for mapping to the `Host`
+  entity.
+
+### Added
+
+- Host `Finding` entities now has properties `fqdn`, `ec2InstanceArn`. These are
+  used to map the `Finding` to the `Host` entities, which may be owned by other
+  integrations (such as AWS).
+
 ## 5.2.1 - 2020-02-05
 
 - Adjusted host details fetch settings:

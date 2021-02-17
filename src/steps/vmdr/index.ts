@@ -214,9 +214,13 @@ export async function fetchScannedHostFindings({
         // const relationships: Relationship[] = [];
 
         for (const detection of batchDetections) {
+          // The Qualys API has been broken in the past so that the XML was
+          // invalid in some way, producing a bunch of invalid detection
+          // objects. In that case, it was possible to detect by checking they
+          // type of the value.
           if (typeof detection.QID !== 'number') {
             numBadQids++;
-            continue; // skip this one, we have no idea what's going on
+            continue;
           }
 
           /**
