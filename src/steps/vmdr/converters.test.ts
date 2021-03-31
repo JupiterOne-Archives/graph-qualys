@@ -65,6 +65,15 @@ describe('getHostDetails', () => {
       os: undefined,
     });
   });
+
+  test('normalizes fqdn', () => {
+    expect(getHostDetails({ fqdn: 'THIS.IS.MY.HOST' })).toMatchObject({
+      fqdn: 'this.is.my.host',
+    });
+    expect(getHostDetails({ fqdn: undefined })).toMatchObject({
+      fqdn: undefined,
+    });
+  });
 });
 
 describe('getTargetsFromHostAsset', () => {
@@ -72,5 +81,12 @@ describe('getTargetsFromHostAsset', () => {
     expect(
       getTargetsFromHostAsset({ dnsHostName: 'bob', fqdn: 'bob' }),
     ).toEqual(['bob']);
+  });
+
+  test('normalizes fqdn', () => {
+    expect(getTargetsFromHostAsset({ fqdn: 'THIS.IS.MY.HOST' })).toEqual([
+      'this.is.my.host',
+    ]);
+    expect(getTargetsFromHostAsset({ fqdn: undefined })).toEqual([]);
   });
 });

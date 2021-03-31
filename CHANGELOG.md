@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The value of the Qualys `HostAsset.fqdn` is now normalized with
+  `toLowerCase()`. The value is stored in `Finding.targets` and as `Host.fqdn`.
+  This supports mapping rules that work by finding matching values.
+
 ## 5.3.0 - 2020-02-17
 
 ### Changed
