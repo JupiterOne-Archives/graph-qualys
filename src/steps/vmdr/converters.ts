@@ -73,6 +73,8 @@ export function createServiceScansDiscoveredHostRelationship(
  * existing EC2 Host entities and, when they don't already exist, allows the AWS
  * integration to adopt the placeholder entity.
  *
+ * @see createServiceScansDiscoveredHostRelationship
+ *
  * @param serviceEntity the Service that provides scanning of the host
  * @param host a HostAsset that is scanned by the Service
  */
@@ -125,7 +127,8 @@ export function createHostFindingEntity(
 ): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
-  // prepare values for matching integration mapping rules
+  // Prepare values for matching integration mapping rules.
+  // `fqdn` has been normalized by the `hostTargets` collecting code.
   let fqdn: string | undefined;
   let ec2InstanceArn: string | null = null;
   if (hostTargets && hostTargets.length === 2) {
@@ -223,13 +226,13 @@ export function getTargetsForDetectionHost(
 
 /**
  * Answers `[fqdn, ec2InstanceArn]` values for the `HostAsset`. These values are
- * not available on the detection host data and so much be captured from the
- * asset data.
+ * not available on the detection host data and so must be captured from the
+ * asset data. `fqdn` is normalized with `toLowerCase()`.
  *
  * @param host an Asset Manager host
  */
 export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
-  return toStringArray([host.fqdn, getEC2HostArn(host)]);
+  return toStringArray([host.fqdn?.toLowerCase(), getEC2HostArn(host)]);
 }
 
 export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
@@ -239,6 +242,12 @@ export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
   }
 }
 
+/**
+ * Answers properties to assign to `Host` entities representing a `HostAsset`.
+ * `fqdn` is normalized with `toLowerCase()`.
+ *
+ * @param host an Asset Manager host
+ */
 export function getHostDetails(host: assets.HostAsset) {
   const hostname =
     host.dnsHostName || host.fqdn || host.address || String(host.id!);
@@ -247,7 +256,7 @@ export function getHostDetails(host: assets.HostAsset) {
 
   return {
     hostname,
-    fqdn: host.fqdn,
+    fqdn: host.fqdn?.toLowerCase(),
     os,
     platform,
 
