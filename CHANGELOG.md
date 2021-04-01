@@ -2,13 +2,15 @@
 
 ## [Unreleased]
 
+## 5.3.1 - 2021-03-31
+
 ### Changed
 
 - The value of the Qualys `HostAsset.fqdn` is now normalized with
   `toLowerCase()`. The value is stored in `Finding.targets` and as `Host.fqdn`.
   This supports mapping rules that work by finding matching values.
 
-## 5.3.0 - 2020-02-17
+## 5.3.0 - 2021-02-17
 
 ### Changed
 
@@ -23,14 +25,14 @@
   used to map the `Finding` to the `Host` entities, which may be owned by other
   integrations (such as AWS).
 
-## 5.2.1 - 2020-02-05
+## 5.2.1 - 2021-02-05
 
 - Adjusted host details fetch settings:
   - Page size `2000` -> `250`
   - Request concurrency `10` -> `5`
   - Timeout `10` -> `5` minutes
 
-## 5.2.0 - 2020-01-19
+## 5.2.0 - 2021-01-19
 
 ### Changed
 
