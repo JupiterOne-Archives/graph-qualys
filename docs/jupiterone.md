@@ -1,5 +1,23 @@
 # Integration with JupiterOne
 
+## Qualys + JupiterOne Integration Benefits
+
+- Visualize Qualys scanners and findings in the JupiterOne graph.
+- Monitor Checkmarx findings within the alerts app.
+- Monitor changes to Checkmarx scanners using JupiterOne alerts.
+
+## How it Works
+
+- JupiterOne periodically fetches Qualys scanners to update the graph.
+- Write JupiterOne queries to review and monitor updates to the graph.
+- Configure alerts to reduce the noise of findings.
+
+## Requirements
+
+- JupiterOne requires the username and password of a Qualys user that has permission
+ to access to the API. JupiterOne also requires the url of the API.
+- You must have permission in JupiterOne to install new integrations.
+
 ## Setup
 
 The Qualys API requires usage of a username and password associated with a user.
