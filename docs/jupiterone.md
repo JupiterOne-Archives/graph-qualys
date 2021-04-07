@@ -18,16 +18,50 @@
  to access to the API. JupiterOne also requires the url of the API.
 - You must have permission in JupiterOne to install new integrations.
 
-## Setup
+## Support
+
+If you need help with this integration, please contact
+[JupiterOne Support](https://support.jupiterone.io).
+
+## Integration Walkthrough
+
+### In Qualys
 
 The Qualys API requires usage of a username and password associated with a user.
 Also, by default, trial users do not have access to the Qualys API so you must
-request access to the API.
+request access to the API. See 
+[Qualys API docs](https://debug.qualys.com/qwebhelp/fo_portal/api_doc/scans/index.htm#t=get_started%2Fget_started.htm)
+for more information.
 
 After testing for quite a bit, this integration was unable to ingest host
 findings with the built-in READER role event after adding all of the modules.
 This may be related to parts of the Qualys "host detection" feature being
 controlled by a license setting.
+
+### In JupiterOne
+
+1. From the configuration **Gear Icon**, select **Integrations**.
+2. Scroll to the **Qualys** integration tile and click it.
+3. Click the **Add Configuration** button and configure the following settings:
+- Enter the **Account Name** by which you'd like to identify this Qualys
+   account in JupiterOne. Ingested entities will have this value stored in
+   `tag.AccountName` when **Tag with Account Name** is checked.
+- Enter a **Description** that will further assist your team when identifying
+   the integration instance.
+- Select a **Polling Interval** that you feel is sufficient for your monitoring
+   needs. You may leave this as `DISABLED` and manually execute the integration.
+- Enter the **Qualys Username** of a user configured for read access.
+- Enter the **Qualys Password** of a user configured for read access.
+- Enter the **API URL** for your Qualys account.
+4. Click **Create Configuration** once all values are provided.
+
+## How to Uninstall
+
+1. From the configuration **Gear Icon**, select **Integrations**.
+2. Scroll to the **Qualys** integration tile and click it.
+3. Identify and click the **integration to delete**.
+4. Click the **trash can** icon.
+5. Click the **Remove** button to delete the integration.
 
 <!-- {J1_DOCUMENTATION_MARKER_START} -->
 <!--
