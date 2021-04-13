@@ -57,17 +57,15 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
 
   /**
    * Adds host detections request filter parameter `"severities"`.
-   *
-   * Uncommenting this setting will have no effect without code changes; it's
-   * here for documenation.
-   *
-   * TODO: Request only selected severities, "3,4,5"
    */
-  // vmdrFindingSeverities: {
-  //   type: 'string',
-  //   // options: [1,2,3,4,5]
-  //   // defaultValue: [3,4,5]
-  // },
+  vmdrFindingSeverities: {
+    // TODO: Add support for `number[]`. Will come in as a `string[]` when
+    // executing in JupiterOne and a `string` in local execution (from `.env`
+    // file). See https://github.com/JupiterOne/sdk/issues/462
+    type: 'string',
+    // options: [1,2,3,4,5]
+    // defaultValue: [3,4,5]
+  },
 
   /**
    * The integration runs with the default behavior of the detections endpoint,

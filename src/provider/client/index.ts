@@ -189,6 +189,13 @@ export type QualysAPIClientConfig = {
   retryConfig?: Partial<RetryConfig>;
 };
 
+export type IterateHostDetectionsOptions = {
+  filters?: vmpc.ListHostDetectionsFilters;
+  pagination?: { limit: number };
+  // TODO make this a required argument and update tests
+  onRequestError?: (pageIds: number[], err: Error) => void;
+};
+
 export class QualysAPIClient {
   private events: ClientEventEmitter;
 
@@ -637,19 +644,16 @@ export class QualysAPIClient {
       host: vmpc.DetectionHost;
       detections: vmpc.HostDetection[];
     }>,
-    options?: {
-      filters?: vmpc.ListHostDetectionsFilters;
-      pagination?: { limit: number };
-      // TODO make this a required argument and update tests
-      onRequestError?: (pageIds: number[], err: Error) => void;
-    },
+    options?: IterateHostDetectionsOptions,
   ): Promise<void> {
     const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
 
     const filters: Record<string, string> = {};
     if (options?.filters) {
       for (const [k, v] of Object.entries(options.filters)) {
-        filters[k] = String(v);
+        if (v && (!Array.isArray(v) || v.length > 0)) {
+          filters[k] = String(v);
+        }
       }
     }
 

@@ -8,6 +8,7 @@ import { calculateConfig } from './calculateConfig';
 import {
   DEFAULT_FINDINGS_SINCE_DAYS,
   DEFAULT_SCANNED_SINCE_DAYS,
+  DEFAULT_VMDR_FINDING_SEVERITIES,
 } from './constants';
 import { QualysIntegrationConfig } from './types';
 
@@ -31,6 +32,75 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.resetAllMocks();
+});
+
+describe('vmdrFindingSeverityNumbers', () => {
+  beforeEach(() => {
+    delete process.env.VMDR_FINDING_SEVERITIES;
+  });
+
+  test('defaults when none provided', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig(),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingSeverityNumbers).toEqual(
+      DEFAULT_VMDR_FINDING_SEVERITIES,
+    );
+  });
+
+  test('handles string value, empty', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingSeverities: '  ',
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingSeverityNumbers).toEqual(
+      DEFAULT_VMDR_FINDING_SEVERITIES,
+    );
+  });
+
+  test('handles string value, single entry', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingSeverities: '1',
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingSeverityNumbers).toEqual([1]);
+  });
+
+  test('handles string value, multiple entry', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingSeverities: ' 1, 2 ',
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingSeverityNumbers).toEqual([1, 2]);
+  });
+
+  test('handles string[]', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingSeverities: [' 1', '2 '],
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingSeverityNumbers).toEqual([1, 2]);
+  });
+
+  test('VMDR_FINDING_SEVERITIES environment variable', () => {
+    process.env.VMDR_FINDING_SEVERITIES = '1, 2 ';
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingSeverities: ['3', '4 '],
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingSeverityNumbers).toEqual([1, 2]);
+  });
 });
 
 describe('maxScannedSinceISODate', () => {

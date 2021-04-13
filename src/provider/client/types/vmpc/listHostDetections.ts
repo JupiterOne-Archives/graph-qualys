@@ -6,7 +6,8 @@ import { ISODateString, PossibleArray } from '../util';
 
 export type ListHostDetectionsFilterInputParameter =
   | 'detection_updated_since'
-  | 'detection_updated_before';
+  | 'detection_updated_before'
+  | 'severities';
 
 export type ListHostDetectionsFilters = Partial<
   Record<

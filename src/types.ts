@@ -18,13 +18,19 @@ export type UserIntegrationConfig = {
    * The minimum number of days since execution time (now) to use when searching
    * for scanned web applications and hosts.
    */
-  minScannedSinceDays: number;
+  minScannedSinceDays: string | number;
 
   /**
    * The minimum number of days since execution time (now) to use when searching
    * for web app findings and host detections.
    */
-  minFindingsSinceDays: number;
+  minFindingsSinceDays: string | number;
+
+  /**
+   * The severities to use when searching for host detections, used to limit
+   * data fetched to only severities a security team wants to ingest.
+   */
+  vmdrFindingSeverities?: string | string[];
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {
@@ -51,6 +57,13 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
    * execution start time.
    */
   maxFindingsSinceISODate: string;
+
+  /**
+   * The severities to use when searching for host detections, used to limit
+   * data fetched to only severities a security team wants to ingest. Defaults
+   * to `DEFAULT_VMDR_FINDING_SEVERITIES`.
+   */
+  vmdrFindingSeverityNumbers: number[];
 };
 
 /**
