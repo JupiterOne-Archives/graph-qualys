@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Added `Vulnerability.qid` to support mapping
+  `TheatIntel.vulnId === Vulnerability.qid`. Note that `ThreatIntel.vulnId` must
+  be of type `number` for the mapping to function.
+
+  A Qualys detection may be associated with many CVEs. These detections become
+  entities having
+  `{ _class: 'Vulnerability', _type: 'cve', id: 'CVE-ID-HERE', qid: 123456 }`.
+  When there are no CVEs associated with the detection, entities are produced as
+  `{ _class: 'Vulnerability', _type: 'qualys_vuln', id: '123456', qid: 123456 }`.
+  All `id` properties are intended to be String values; `qid` is a number to
+  reflect the type of the value from the source, supporting queries such as
+  `find Vulnerabilty with qid=123456`.
+
 ## 5.3.1 - 2021-03-31
 
 ### Changed
