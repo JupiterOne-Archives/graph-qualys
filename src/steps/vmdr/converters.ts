@@ -1,4 +1,5 @@
 import {
+  assignTags,
   createIntegrationEntity,
   createMappedRelationship,
   Entity,
@@ -11,7 +12,9 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { assets, vmpc } from '../../provider/client';
+import { EC2Tag } from '../../provider/client/types/assets';
 import { toStringArray } from '../../util';
+import toArray from '../../util/toArray';
 import {
   convertNumericSeverityToString,
   normalizeNumericSeverity,
@@ -82,9 +85,6 @@ export function createServiceScansEC2HostRelationship(
   serviceEntity: Entity,
   host: assets.HostAsset,
 ): Relationship {
-  const instanceId = getEC2InstanceId(host);
-  const instanceArn = getEC2HostArn(host);
-
   return createMappedRelationship({
     // Ensure unique key based on host identity, not EC2 ARN.
     _key: generateRelationshipKey(
@@ -99,16 +99,24 @@ export function createServiceScansEC2HostRelationship(
       sourceEntityKey: serviceEntity._key,
       relationshipDirection: RelationshipDirection.FORWARD,
       targetFilterKeys: [['_type', '_key']],
-      targetEntity: {
-        _class: 'Host',
-        _type: ENTITY_TYPE_EC2_HOST,
-        _key: instanceArn,
-        id: instanceId,
-        ...getHostDetails(host),
-        ...getHostIPAddresses(host),
-      },
+      targetEntity: createEC2HostTargetEntity(host),
     },
   });
+}
+
+export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
+  const hostEntity = {
+    _class: ['Host'],
+    _type: ENTITY_TYPE_EC2_HOST,
+    _key: getEC2HostArn(hostAsset),
+    ...getHostDetails(hostAsset),
+    ...getHostIPAddresses(hostAsset),
+    ...getEC2HostDetails(hostAsset),
+  };
+
+  assignTags(hostEntity, getEC2HostTags(hostAsset));
+
+  return hostEntity;
 }
 
 /**
@@ -237,9 +245,44 @@ export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
 
 export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
-  if ('EC_2' === ec2?.type && ec2.region && ec2.accountId && ec2.instanceId) {
+  if (ec2?.region && ec2.accountId && ec2.instanceId) {
     return `arn:aws:ec2:${ec2.region}:${ec2.accountId}:instance/${ec2.instanceId}`;
   }
+}
+
+export function getEC2HostTags(
+  hostAsset: assets.HostAsset,
+): EC2Tag[] | undefined {
+  const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+  return toArray(ec2?.ec2InstanceTags?.tags?.list?.EC2Tags);
+}
+
+export function getEC2HostDetails(
+  hostAsset: assets.HostAsset,
+): object | undefined {
+  const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+  if (!ec2) return undefined;
+
+  return {
+    qualysFirstDiscoveredOn: parseTimePropertyValue(ec2.firstDiscovered),
+    qualysLastUpdatedOn: parseTimePropertyValue(ec2.lastUpdated),
+
+    id: ec2.instanceId,
+    instanceId: ec2.instanceId,
+    accountId: ec2.accountId,
+    region: ec2.region,
+    state: ec2.instanceState?.toLowerCase(),
+    reservationId: ec2.reservationId,
+    availabilityZone: ec2.availabilityZone,
+    subnetId: ec2.subnetId,
+    vpcId: ec2.vpcId,
+    instanceType: ec2.instanceType,
+    imageId: ec2.imageId,
+    privateDnsName: ec2.privateDnsName,
+    privateIpAddress: ec2.privateIpAddress,
+    publicDnsName: ec2.publicDnsName,
+    publicIpAddress: ec2.publicIpAddress,
+  };
 }
 
 /**
@@ -262,23 +305,18 @@ export function getHostDetails(host: assets.HostAsset) {
 
     qualysAssetId: host.id,
     qualysHostId: host.qwebHostId,
+    qualysCreatedOn: parseTimePropertyValue(host.created),
 
     scannedBy: 'qualys',
     lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
 
+    name: host.name || hostname,
     displayName: host.name || hostname,
   };
 }
 
 function generateHostAssetKey(host: assets.HostAsset): string {
   return `qualys-host:${host.qwebHostId!}`;
-}
-
-function getEC2InstanceId(hostAsset: assets.HostAsset): string | undefined {
-  const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
-  if ('EC_2' === ec2?.type) {
-    return ec2.instanceId;
-  }
 }
 
 function getHostIPAddresses(host: assets.HostAsset) {

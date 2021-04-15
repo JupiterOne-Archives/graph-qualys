@@ -186,8 +186,14 @@ export type Ec2InstanceTags = {
 };
 
 export type Ec2InstanceTagsTags = {
-  list?: PossibleArray<string>;
+  list?: Ec2Tags;
 };
+
+export type Ec2Tags = {
+  EC2Tags?: PossibleArray<EC2Tag>;
+};
+
+export type EC2Tag = { key: string; value: string };
 
 export type HostAssetTags = {
   list?: TagsList;

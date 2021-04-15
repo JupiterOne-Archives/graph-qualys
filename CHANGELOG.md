@@ -4,6 +4,25 @@
 
 ### Changed
 
+- Added additional properties to `aws_instance` `Host` mapped entities:
+
+  - `tag.*` properties
+  - `qualysFirstDiscoveredOn`
+  - `qualysLastUpdatedOn`
+  - `accountId`
+  - `region`
+  - `state`
+  - `reservationId`
+  - `availabilityZone`
+  - `subnetId`
+  - `vpcId`
+  - `instanceId`
+  - `instanceType`
+  - `imageId`
+  - `privateDnsName`
+  - `publicDnsName`
+  - `publicIpAddress`
+
 - Added `Vulnerability.qid` to support mapping
   `TheatIntel.vulnId === Vulnerability.qid`. Note that `ThreatIntel.vulnId` must
   be of type `number` for the mapping to function.
@@ -16,6 +35,10 @@
   All `id` properties are intended to be String values; `qid` is a number to
   reflect the type of the value from the source, supporting queries such as
   `find Vulnerabilty with qid=123456`.
+
+### Fixed
+
+- Fixed missing `_key` on `aws_instance` `Host` mapped entities.
 
 ## 5.3.1 - 2021-03-31
 
