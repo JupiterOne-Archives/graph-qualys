@@ -58,7 +58,6 @@ describe('createEC2HostTargetEntity', () => {
             imageId: { type: 'string' },
             privateDnsName: { type: 'string' },
             publicDnsName: { type: 'string' },
-            publicIpAddress: { type: 'string' },
             'tag.Department': { type: 'string' },
           },
           required: [

@@ -5,7 +5,7 @@ import {
 
 import { calculateConfig } from './calculateConfig';
 import { createQualysAPIClient } from './provider';
-import { QualysIntegrationConfig } from './types';
+import { UserIntegrationConfig } from './types';
 import { validateApiUrl } from './validateApiUrl';
 
 const REQUIRED_PROPERTIES = [
@@ -15,7 +15,7 @@ const REQUIRED_PROPERTIES = [
 ];
 
 export default async function validateInvocation(
-  context: IntegrationExecutionContext<QualysIntegrationConfig>,
+  context: IntegrationExecutionContext<UserIntegrationConfig>,
 ): Promise<void> {
   const { logger, instance } = context;
 

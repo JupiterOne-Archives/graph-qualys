@@ -1,3 +1,8 @@
+/**
+ * The integration config managed by the user. This will provide input into the
+ * calculation of the `QualysIntegrationConfig` used throughout integration
+ * execution.
+ */
 export type UserIntegrationConfig = {
   qualysUsername: string;
   qualysPassword: string;
@@ -48,6 +53,10 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
   maxFindingsSinceISODate: string;
 };
 
+/**
+ * The integration config expected throughout the integration execution,
+ * including all calculated properties.
+ */
 export type QualysIntegrationConfig = CalculatedIntegrationConfig;
 
 export type PossibleArray<T> = T | T[];

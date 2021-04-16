@@ -6,7 +6,7 @@ import { QualysIntegrationConfig } from './types';
 import validateInvocation from './validateInvocation';
 
 export const invocationConfig: IntegrationInvocationConfig<QualysIntegrationConfig> = {
-  instanceConfigFields,
+  instanceConfigFields: instanceConfigFields as any,
   validateInvocation,
   integrationSteps,
 };
