@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd">
+  <responseCode>SUCCESS</responseCode>
+  <count>1</count>
+  <data><HostAsset>
+      <id>709837</id>
+      <name>my-ec2-target</name>
+      <created>2017-07-27T18:14:28Z</created>
+      <modified>2017-07-27T18:21:31Z</modified>
+      <type>HOST</type>
+      <tags>
+        <list />
+      </tags>
+      <sourceInfo>
+        <list>
+          <Ec2AssetSourceSimple>
+            <firstDiscovered>2017-07-27T18:14:28Z</firstDiscovered>
+            <lastUpdated>2017-07-27T19:51:03Z</lastUpdated>
+            <assetId>709837</assetId>
+            <ec2InstanceTags>
+              <tags>
+                <list>
+                  <EC2Tags>
+                    <key>Department</key>
+                    <value>Security</value>
+                  </EC2Tags>
+                </list>
+              </tags>
+            </ec2InstanceTags>
+            <availabilityZone>us-east1e</availabilityZone>
+            <instanceId>i-023b166432b1c7afc</instanceId>
+            <instanceType>t2.medium</instanceType>
+            <createdDate>2017-07-27T19:58:34Z</createdDate>
+            <instanceState>STOPPED</instanceState>
+            <groupId>sg-6b619117</groupId>
+            <groupName>default</groupName>
+            <spotInstance>true</spotInstance>
+            <accountId>205767712438</accountId>
+            <subnetId>subnet-7bbbcd56</subnetId>
+            <vpcId>vpc-2da7154b</vpcId>
+            <region>us-east-1</region>
+            <zone>VPC</zone>
+            <imageId>ami-22ce4934</imageId>
+            <publicIpAddress>127.0.0.1</publicIpAddress>
+            <privateIpAddress>10.97.15.117</privateIpAddress>
+            <reservationId>r03ca004864372ef32</reservationId>
+            <privateDnsName>ip-172-31-3-82.ap-south1.compute.internal</privateDnsName>
+            <publicDnsName>ec2-13-232-170-59.ap-south1.compute.amazonaws.com</publicDnsName>
+            <monitoringEnabled>false</monitoringEnabled>
+          </Ec2AssetSourceSimple>
+        </list>
+      </sourceInfo>
+      <qwebHostId>12864</qwebHostId>
+      <os>Linux</os>
+      <address>10.97.15.117</address>
+      <trackingMethod>INSTANCE_ID</trackingMethod>
+      <openPort>
+        <list />
+      </openPort>
+      <software>
+        <list />
+      </software>
+      <vuln>
+        <list />
+      </vuln>
+      <processor>
+        <list />
+      </processor>
+      <volume>
+        <list />
+      </volume>
+      <account>
+        <list />
+      </account>
+      <networkInterface>
+        <list>
+          <HostAssetInterface>
+            <interfaceId>eni-09f901fe</interfaceId>
+            <interfaceName>Primary network
+interface</interfaceName>
+            <type>PRIVATE</type>
+            <address>10.97.15.117</address>
+          </HostAssetInterface>
+        </list>
+      </networkInterface>
+    </HostAsset>
+    <HostAsset>
+      <id>709838</id>
+      <name>my-ec2-target</name>
+      <created>2017-07-27T18:14:28Z</created>
+      <modified>2017-07-27T18:21:31Z</modified>
+      <type>HOST</type>
+      <tags>
+        <list />
+      </tags>
+      <sourceInfo>
+        <list>
+          <Ec2AssetSourceSimple>
+            <firstDiscovered>2017-07-27T18:14:28Z</firstDiscovered>
+            <lastUpdated>2017-07-27T19:51:03Z</lastUpdated>
+            <assetId>709838</assetId>
+            <ec2InstanceTags>
+              <tags>
+                <list>
+                  <EC2Tags>
+                    <key>Department</key>
+                    <value>Security</value>
+                  </EC2Tags>
+                  <EC2Tags>
+                    <key>Owner</key>
+                    <value>Jason Kim</value>
+                  </EC2Tags>
+                  <EC2Tags>
+                    <key>Email</key>
+                    <value>jkim@acme.com</value>
+                  </EC2Tags>
+                  <EC2Tags>
+                    <key>JIRA</key>
+                    <value>POR-6719</value>
+                  </EC2Tags>
+                  <EC2Tags>
+                    <key>Name</key>
+                    <value>my-ec2-target</value>
+                  </EC2Tags>
+                  <EC2Tags>
+                    <key>Lifecycle</key>
+                    <value>20171231</value>
+                  </EC2Tags>
+                </list>
+              </tags>
+            </ec2InstanceTags>
+            <availabilityZone>us-east1e</availabilityZone>
+            <instanceId>i-023b166432b1c7afc</instanceId>
+            <instanceType>t2.medium</instanceType>
+            <createdDate>2017-07-27T19:58:34Z</createdDate>
+            <instanceState>STOPPED</instanceState>
+            <groupId>sg-6b619117</groupId>
+            <groupName>default</groupName>
+            <spotInstance>true</spotInstance>
+            <accountId>205767712438</accountId>
+            <subnetId>subnet-7bbbcd56</subnetId>
+            <vpcId>vpc-2da7154b</vpcId>
+            <region>us-east-1</region>
+            <zone>VPC</zone>
+            <imageId>ami-22ce4934</imageId>
+            <publicIpAddress>127.0.0.1</publicIpAddress>
+            <privateIpAddress>10.97.15.117</privateIpAddress>
+            <reservationId>r03ca004864372ef32</reservationId>
+            <privateDnsName>ip-172-31-3-82.ap-south1.compute.internal</privateDnsName>
+            <publicDnsName>ec2-13-232-170-59.ap-south1.compute.amazonaws.com</publicDnsName>
+            <monitoringEnabled>false</monitoringEnabled>
+          </Ec2AssetSourceSimple>
+        </list>
+      </sourceInfo>
+      <qwebHostId>12864</qwebHostId>
+      <os>Linux</os>
+      <address>10.97.15.117</address>
+      <trackingMethod>INSTANCE_ID</trackingMethod>
+      <openPort>
+        <list />
+      </openPort>
+      <software>
+        <list />
+      </software>
+      <vuln>
+        <list />
+      </vuln>
+      <processor>
+        <list />
+      </processor>
+      <volume>
+        <list />
+      </volume>
+      <account>
+        <list />
+      </account>
+      <networkInterface>
+        <list>
+          <HostAssetInterface>
+            <interfaceId>eni-09f901fe</interfaceId>
+            <interfaceName>Primary network
+interface</interfaceName>
+            <type>PRIVATE</type>
+            <address>10.97.15.117</address>
+          </HostAssetInterface>
+        </list>
+      </networkInterface>
+    </HostAsset>
+  </data>
+</ServiceResponse>

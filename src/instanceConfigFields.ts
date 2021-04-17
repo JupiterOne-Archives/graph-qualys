@@ -1,6 +1,8 @@
 import { IntegrationInstanceConfigFieldMap } from '@jupiterone/integration-sdk-core';
 
-const instanceConfigFields: IntegrationInstanceConfigFieldMap = {
+import { UserIntegrationConfig } from './types';
+
+const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationConfig> = {
   qualysUsername: {
     type: 'string',
   },
