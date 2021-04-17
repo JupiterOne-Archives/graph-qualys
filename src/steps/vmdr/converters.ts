@@ -57,14 +57,7 @@ export function createServiceScansDiscoveredHostRelationship(
        *   is processed
        */
       targetFilterKeys: [['_class', 'fqdn']],
-      targetEntity: {
-        _class: 'Host',
-        _type: ENTITY_TYPE_DISCOVERED_HOST,
-        _key: generateHostAssetKey(host),
-        id: toStringArray([host.id, host.qwebHostId]),
-        ...getHostDetails(host),
-        ...getHostIPAddresses(host),
-      },
+      targetEntity: createDiscoveredHostTargetEntity(host),
     },
   });
 }
@@ -104,6 +97,21 @@ export function createServiceScansEC2HostRelationship(
   });
 }
 
+export function createDiscoveredHostTargetEntity(hostAsset: assets.HostAsset) {
+  const hostEntity = {
+    _class: ['Host'],
+    _type: ENTITY_TYPE_DISCOVERED_HOST,
+    _key: generateHostAssetKey(hostAsset),
+    id: toStringArray([hostAsset.id, hostAsset.qwebHostId]),
+    ...getHostDetails(hostAsset),
+    ...getHostIPAddresses(hostAsset),
+  };
+
+  assignTags(hostEntity, getHostTags(hostAsset));
+
+  return hostEntity;
+}
+
 export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
   const hostEntity = {
     _class: ['Host'],
@@ -114,6 +122,7 @@ export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
     ...getEC2HostDetails(hostAsset),
   };
 
+  assignTags(hostEntity, getHostTags(hostAsset));
   assignTags(hostEntity, getEC2HostTags(hostAsset));
 
   return hostEntity;
@@ -241,6 +250,11 @@ export function getTargetsForDetectionHost(
  */
 export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
   return toStringArray([host.fqdn?.toLowerCase(), getEC2HostArn(host)]);
+}
+
+export function getHostTags(hostAsset: assets.HostAsset): string[] | undefined {
+  const simpleTagList = toArray(hostAsset.tags?.list?.TagSimple);
+  return simpleTagList.map((e) => e.name);
 }
 
 export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {

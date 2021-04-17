@@ -160,7 +160,7 @@ export type Ec2AssetSourceSimple = {
   type?: string;
   firstDiscovered?: ISODateString;
   lastUpdated?: ISODateString;
-  ec2InstanceTags?: Ec2InstanceTags;
+  ec2InstanceTags?: EC2InstanceTags;
   reservationId?: string;
   availabilityZone?: string;
   privateDnsName?: string;
@@ -181,15 +181,15 @@ export type Ec2AssetSourceSimple = {
   macAddress?: string;
 };
 
-export type Ec2InstanceTags = {
-  tags?: Ec2InstanceTagsTags;
+export type EC2InstanceTags = {
+  tags?: EC2InstanceTagsList;
 };
 
-export type Ec2InstanceTagsTags = {
-  list?: Ec2Tags;
+export type EC2InstanceTagsList = {
+  list?: EC2Tags;
 };
 
-export type Ec2Tags = {
+export type EC2Tags = {
   EC2Tags?: PossibleArray<EC2Tag>;
 };
 
@@ -200,7 +200,12 @@ export type HostAssetTags = {
 };
 
 export type TagsList = {
-  TagSimple?: PossibleArray<AgentConfiguration>;
+  TagSimple?: PossibleArray<TagSimple>;
+};
+
+export type TagSimple = {
+  id: number;
+  name: string;
 };
 
 export type Volume = {

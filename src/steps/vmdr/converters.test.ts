@@ -2,13 +2,17 @@ import xmlParser from 'fast-xml-parser';
 import fs from 'fs';
 import path from 'path';
 
-import { ListHostAssetsResponse } from '../../provider/client/types/assets';
+import {
+  HostAsset,
+  ListHostAssetsResponse,
+} from '../../provider/client/types/assets';
 import {
   DetectionHost,
   ListHostDetectionsResponse,
 } from '../../provider/client/types/vmpc';
 import { toArray } from '../../provider/client/util';
 import {
+  createDiscoveredHostTargetEntity,
   createEC2HostTargetEntity,
   createHostFindingEntity,
   getEC2HostArn,
@@ -16,26 +20,93 @@ import {
   getTargetsFromHostAsset,
 } from './converters';
 
-describe('createEC2HostTargetEntity', () => {
-  const hostAssetsXml = fs
-    .readFileSync(
-      path.join(
-        __dirname,
-        '..',
-        '..',
-        '..',
-        'test',
-        'fixtures',
-        'ec2-host-assets.xml',
-      ),
-    )
-    .toString('utf8');
+describe('createDiscoveredHostTargetEntity', () => {
+  let hosts: HostAsset[];
 
-  const hostList = xmlParser.parse(hostAssetsXml) as ListHostAssetsResponse;
+  beforeEach(() => {
+    const hostAssetsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'list-host-assets.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const hostList = xmlParser.parse(hostAssetsXml) as ListHostAssetsResponse;
+    hosts = toArray(hostList.ServiceResponse?.data?.HostAsset);
+  });
 
   test('properties transferred', () => {
-    const hosts = toArray(hostList.ServiceResponse?.data?.HostAsset);
+    for (const host of hosts) {
+      expect(createDiscoveredHostTargetEntity(host)).toMatchGraphObjectSchema({
+        _class: 'Host',
+        schema: {
+          properties: {
+            _type: { const: 'discovered_host' },
+            qualysAssetId: { type: 'number' },
+            qualysHostId: { type: 'number' },
+            qualysCreatedOn: { type: 'number' },
 
+            scannedBy: { type: 'string' },
+            lastScannedOn: { type: 'number' },
+          },
+          required: [
+            'hostname',
+            'os',
+            'platform',
+            'qualysAssetId',
+            'qualysHostId',
+            'qualysCreatedOn',
+            'scannedBy',
+            'lastScannedOn',
+            'name',
+            'displayName',
+            'tags',
+          ],
+        },
+      });
+    }
+  });
+
+  test('fqdn lowercased', () => {
+    const host = hosts[0];
+    expect(
+      createEC2HostTargetEntity({ ...host, fqdn: 'SOMETHING.com' }),
+    ).toMatchObject({
+      fqdn: 'something.com',
+    });
+  });
+});
+
+describe('createEC2HostTargetEntity', () => {
+  let hosts: HostAsset[];
+
+  beforeEach(() => {
+    const hostAssetsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'ec2-host-assets.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const hostList = xmlParser.parse(hostAssetsXml) as ListHostAssetsResponse;
+    hosts = toArray(hostList.ServiceResponse?.data?.HostAsset);
+  });
+
+  test('properties transferred', () => {
     for (const host of hosts) {
       const arn = getEC2HostArn(host);
       expect(createEC2HostTargetEntity(host)).toMatchGraphObjectSchema({
@@ -84,10 +155,19 @@ describe('createEC2HostTargetEntity', () => {
   });
 
   test('instanceState lowercased', () => {
-    const host = toArray(hostList.ServiceResponse?.data?.HostAsset)[0];
+    const host = hosts[0];
     const ec2 = host.sourceInfo?.list?.Ec2AssetSourceSimple;
-    expect(ec2?.instanceState).toMatch(/[A-Z]+/);
-    expect((createEC2HostTargetEntity(host) as any).state).toMatch(/[a-z]+/);
+    if (ec2) ec2.instanceState = 'STOPPED';
+    expect(createEC2HostTargetEntity(host)).toMatchObject({
+      state: 'stopped',
+    });
+  });
+
+  test('tags', () => {
+    const host = hosts[1];
+    expect(createEC2HostTargetEntity(host)).toMatchObject({
+      tags: ['Cloud Agent'],
+    });
   });
 });
 

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qualysapi.qualys.com/qps/xsd/2.0 /am/hostasset.xsd">
+  <responseCode>SUCCESS</responseCode>
+  <count>6</count>
+  <hasMoreRecords>false</hasMoreRecords>
+  <lastId>5693290</lastId>
+  <data>
+    <HostAsset>
+      <id>3043442</id>
+      <name>102115-M83</name>
+      <created>2016-11-04T11:43:40Z</created>
+      <modified>2016-11-08T22:35:53Z</modified>
+      <type>HOST</type>
+      <tags>
+        <list>
+          <TagSimple>
+            <id>8832525</id>
+            <name>Cloud Agent</name>
+          </TagSimple>
+        </list>
+      </tags>
+      <sourceInfo>
+        <list>
+          <AssetSource />
+        </list>
+      </sourceInfo>
+      <qwebHostId>12688456922</qwebHostId>
+      <dnsHostName>102115-M83</dnsHostName>
+      <os>Linux</os>
+      <fqdn>something.com</fqdn>
+      <lastVulnScan>2018-06-15T11:48:58Z</lastVulnScan>
+      <agentInfo>
+        <agentVersion>1.4.5.168</agentVersion>
+        <agentId>2e689bb2-53ab-4a58-be0a-
+ a7576964f310</agentId>
+        <status>STATUS_INACTIVE</status>
+        <lastCheckedIn>2016-10-21T19:03:30Z</lastCheckedIn>
+        <connectedFrom>10.100.11.163</connectedFrom>
+        <chirpStatus>Manifest Downloaded</chirpStatus>
+        <platform>Windows</platform>
+        <agentConfiguration>
+          <id>8099</id>
+          <name>Initial Profile - SSN3</name>
+        </agentConfiguration>
+        <activationKey>
+          <activationId>3ae32b8d-a8cf-4c0e-a477-
+ 86fad2dda4f4</activationId>
+          <title>harshal</title>
+        </activationKey>
+      </agentInfo>
+      <netbiosName>102115-M83</netbiosName>
+      <address>10.100.11.163</address>
+      <trackingMethod>QAGENT</trackingMethod>
+      <openPort>
+        <list />
+      </openPort>
+      <software>
+        <list />
+      </software>
+      <vuln>
+        <list />
+      </vuln>
+      <processor>
+        <list />
+      </processor>
+      <volume>
+        <list />
+      </volume>
+      <account>
+        <list />
+      </account>
+      <networkInterface>
+        <list />
+      </networkInterface>
+    </HostAsset>
+  </data>
+</ServiceResponse>

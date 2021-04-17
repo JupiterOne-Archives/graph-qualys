@@ -4,9 +4,14 @@
 
 ### Changed
 
+- Added additional properties to `discovered_host` `Host` mapped entities:
+
+  - `tags`: Simple Qualys asset tag values (i.e. `tags: ["Cloud Agent"]`)
+
 - Added additional properties to `aws_instance` `Host` mapped entities:
 
-  - `tag.*` properties
+  - `tag.*`: Named tag properties from EC2 instance (i.e. `tag.Owner = "value"`)
+  - `tags`: Simple Qualys asset tag values (i.e. `tags: ["Cloud Agent"]`)
   - `qualysFirstDiscoveredOn`
   - `qualysLastUpdatedOn`
   - `accountId`
