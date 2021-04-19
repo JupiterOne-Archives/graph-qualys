@@ -9,6 +9,7 @@ import {
   Relationship,
   RelationshipClass,
   RelationshipDirection,
+  TargetEntityProperties,
 } from '@jupiterone/integration-sdk-core';
 
 import { assets, vmpc } from '../../provider/client';
@@ -98,7 +99,7 @@ export function createServiceScansEC2HostRelationship(
 }
 
 export function createDiscoveredHostTargetEntity(hostAsset: assets.HostAsset) {
-  const hostEntity = {
+  const hostEntity: TargetEntityProperties = {
     _class: ['Host'],
     _type: ENTITY_TYPE_DISCOVERED_HOST,
     _key: generateHostAssetKey(hostAsset),
@@ -113,7 +114,7 @@ export function createDiscoveredHostTargetEntity(hostAsset: assets.HostAsset) {
 }
 
 export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
-  const hostEntity = {
+  const hostEntity: TargetEntityProperties = {
     _class: ['Host'],
     _type: ENTITY_TYPE_EC2_HOST,
     _key: getEC2HostArn(hostAsset),
