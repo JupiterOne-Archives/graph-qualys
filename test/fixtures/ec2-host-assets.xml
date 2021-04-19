@@ -91,7 +91,12 @@ interface</interfaceName>
       <modified>2017-07-27T18:21:31Z</modified>
       <type>HOST</type>
       <tags>
-        <list />
+        <list>
+          <TagSimple>
+            <id>10125654</id>
+            <name>Cloud Agent</name>
+          </TagSimple>
+        </list>
       </tags>
       <sourceInfo>
         <list>
