@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.4.0 - 2021-04-19
+
 ### Changed
 
 - Added additional properties to `discovered_host` `Host` mapped entities:
