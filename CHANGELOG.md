@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.4.1 - 2021-04-20
+
 ### Added
 
 - Added support for host asset tags returned as `tags.TAG[]`.
