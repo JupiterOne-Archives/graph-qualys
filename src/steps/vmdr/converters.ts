@@ -1,3 +1,5 @@
+import { uniq } from 'lodash';
+
 import {
   assignTags,
   createIntegrationEntity,
@@ -13,7 +15,6 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { assets, vmpc } from '../../provider/client';
-import { EC2Tag } from '../../provider/client/types/assets';
 import { toStringArray } from '../../util';
 import toArray from '../../util/toArray';
 import {
@@ -110,7 +111,7 @@ export function createDiscoveredHostTargetEntity(hostAsset: assets.HostAsset) {
 
   assignTags(hostEntity, getHostTags(hostAsset));
 
-  return hostEntity;
+  return markInvalidTags(hostEntity);
 }
 
 export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
@@ -123,10 +124,48 @@ export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
     ...getEC2HostDetails(hostAsset),
   };
 
-  assignTags(hostEntity, getHostTags(hostAsset));
-  assignTags(hostEntity, getEC2HostTags(hostAsset));
+  // Bug: https://github.com/JupiterOne/sdk/issues/460
+  let allTags: string[] = [];
 
-  return hostEntity;
+  assignTags(hostEntity, getHostTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = hostEntity.tags as string[];
+  }
+
+  assignTags(hostEntity, getEC2HostTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = [...allTags, ...(hostEntity.tags as string[])];
+  }
+
+  hostEntity.tags = uniq(allTags);
+
+  return markInvalidTags(hostEntity);
+}
+
+export function isTagsValid(properties: TargetEntityProperties): boolean {
+  if (!properties.tags) return true;
+  if (typeof properties.tags === 'string') return true;
+  if (
+    Array.isArray(properties.tags) &&
+    properties.tags.find((e) => !['string', 'number'].includes(typeof e)) ===
+      undefined
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function markInvalidTags(
+  properties: TargetEntityProperties,
+): TargetEntityProperties {
+  if (isTagsValid(properties)) {
+    return properties;
+  } else {
+    return {
+      ...properties,
+      tags: 'INVALID_TAGS',
+    };
+  }
 }
 
 /**
@@ -253,9 +292,20 @@ export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
   return toStringArray([host.fqdn?.toLowerCase(), getEC2HostArn(host)]);
 }
 
-export function getHostTags(hostAsset: assets.HostAsset): string[] | undefined {
+export function getHostTags(hostAsset: assets.HostAsset): string[] {
+  const tags: string[] = [];
+
   const simpleTagList = toArray(hostAsset.tags?.list?.TagSimple);
-  return simpleTagList.map((e) => e.name);
+  simpleTagList
+    ?.filter((e) => typeof e.name === 'string')
+    .forEach((e) => tags.push(e.name));
+
+  const oldTagList = toArray(hostAsset.tags?.TAG);
+  oldTagList
+    ?.filter((e) => typeof e.NAME === 'string')
+    .forEach((e) => tags.push(e.NAME));
+
+  return uniq(tags);
 }
 
 export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
@@ -267,9 +317,12 @@ export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
 
 export function getEC2HostTags(
   hostAsset: assets.HostAsset,
-): EC2Tag[] | undefined {
+): { key: string; value: string }[] | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
-  return toArray(ec2?.ec2InstanceTags?.tags?.list?.EC2Tags);
+  const tags = toArray(ec2?.ec2InstanceTags?.tags?.list?.EC2Tags);
+  return tags
+    .filter((e) => typeof e.key === 'string' && typeof e.value !== 'object')
+    .map((e) => ({ key: e.key, value: String(e.value) }));
 }
 
 export function getEC2HostDetails(
