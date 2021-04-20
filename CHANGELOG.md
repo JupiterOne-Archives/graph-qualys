@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added support for host asset tags returned as `tags.TAG[]`.
+- Added lots more tests for tags processing.
+
+### Fixed
+
+- Fixed bug where EC2 tags would overwrite `host.tags` values when they had the
+  same name.
+
+- Fix bug where `Host.tags` could be an `object` and fail to validate uploads to
+  J1. The code will set `Host.tags = 'INVALID'` when it cannot resolve the tags.
+  Please let us know if you find this value in your `Host.tags`, we may need
+  your help to see what Qualys APIs return for your data.
+
 ## 5.4.0 - 2021-04-19
 
 ### Changed

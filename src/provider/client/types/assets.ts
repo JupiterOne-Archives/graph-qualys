@@ -193,10 +193,11 @@ export type EC2Tags = {
   EC2Tags?: PossibleArray<EC2Tag>;
 };
 
-export type EC2Tag = { key: string; value: string };
+export type EC2Tag = { key: string; value: string | number | boolean };
 
 export type HostAssetTags = {
   list?: TagsList;
+  TAG?: PossibleArray<TAG>;
 };
 
 export type TagsList = {
@@ -206,6 +207,11 @@ export type TagsList = {
 export type TagSimple = {
   id: number;
   name: string;
+};
+
+export type TAG = {
+  TAG_ID: number;
+  NAME: string;
 };
 
 export type Volume = {
