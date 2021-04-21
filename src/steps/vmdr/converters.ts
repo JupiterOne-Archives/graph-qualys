@@ -398,13 +398,16 @@ function getHostIPAddresses(host: assets.HostAsset) {
 }
 
 function determinePlatform(os: string): string | undefined {
-  os = os.toLowerCase();
+  // Somehow, this can not be a function
+  // https://github.com/JupiterOne/graph-qualys/issues/101
+  const lowerOs =
+    typeof os.toLowerCase === 'function' ? os.toLowerCase() : undefined;
 
-  if (os.indexOf('linux') !== -1) {
+  if (lowerOs?.indexOf('linux') !== -1) {
     return 'linux';
   }
 
-  if (os.indexOf('windows') !== -1) {
+  if (lowerOs?.indexOf('windows') !== -1) {
     return 'windows';
   }
 }
