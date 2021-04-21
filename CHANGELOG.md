@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- #101 Fixed error handling host details with `os.toLowerCase not a function`
+
 ## 5.4.1 - 2021-04-20
 
 ### Added
