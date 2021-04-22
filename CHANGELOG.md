@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## 5.4.3 - 2021-04-20
+
+### Added
+
+- Added `Finding.id` to equal `Finding._key` to allow for mapping by
+  `ThreatIntel.findingId`. Users must identify the `Finding.id` value in
+  JupiterOne and provide it when uploading `ThreatIntel`. Please note in the
+  case where the `_key` changes, the `id` will also change! This may occur
+  should the `_key` prove to be insufficiently unique.
+
+### Fixed
+
+- #101 Fixed error handling host details with
+  `host.fqdn.toLowerCase not a function`
+
 ## 5.4.2 - 2021-04-20
 
 ### Fixed

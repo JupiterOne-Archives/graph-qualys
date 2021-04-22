@@ -279,6 +279,14 @@ describe('createHostFindingEntity', () => {
           ),
         ).toMatchGraphObjectSchema({
           _class: 'Finding',
+          schema: {
+            properties: {
+              id: {
+                const: 'finding-key',
+              },
+            },
+            required: ['id'],
+          },
         });
       }
     }
@@ -625,6 +633,9 @@ describe('getHostDetails', () => {
   test('normalizes fqdn', () => {
     expect(getHostDetails({ fqdn: 'THIS.IS.MY.HOST' })).toMatchObject({
       fqdn: 'this.is.my.host',
+    });
+    expect(getHostDetails({ fqdn: {} as any })).toMatchObject({
+      fqdn: undefined,
     });
     expect(getHostDetails({ fqdn: undefined })).toMatchObject({
       fqdn: undefined,
