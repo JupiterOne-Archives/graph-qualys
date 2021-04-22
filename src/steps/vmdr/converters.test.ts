@@ -279,6 +279,14 @@ describe('createHostFindingEntity', () => {
           ),
         ).toMatchGraphObjectSchema({
           _class: 'Finding',
+          schema: {
+            properties: {
+              id: {
+                const: 'finding-key',
+              },
+            },
+            required: ['id'],
+          },
         });
       }
     }

@@ -205,6 +205,7 @@ export function createHostFindingEntity(
         _key: key,
         _class: 'Finding',
 
+        id: key,
         ec2InstanceArn,
         fqdn,
 
