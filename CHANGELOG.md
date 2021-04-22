@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 5.4.3 - 2021-04-20
+
 ### Added
 
 - Added `Finding.id` to equal `Finding._key` to allow for mapping by
