@@ -367,7 +367,7 @@ export function getHostDetails(host: assets.HostAsset) {
 
   return {
     hostname,
-    fqdn: host.fqdn?.toLowerCase(),
+    fqdn: safeLowerCase(host.fqdn),
     os,
     platform,
 
@@ -398,10 +398,8 @@ function getHostIPAddresses(host: assets.HostAsset) {
 }
 
 function determinePlatform(os: string): string | undefined {
-  // Somehow, this can not be a function
   // https://github.com/JupiterOne/graph-qualys/issues/101
-  const lowerOs =
-    typeof os.toLowerCase === 'function' ? os.toLowerCase() : undefined;
+  const lowerOs = safeLowerCase(os);
 
   if (lowerOs?.indexOf('linux') !== -1) {
     return 'linux';
@@ -409,5 +407,16 @@ function determinePlatform(os: string): string | undefined {
 
   if (lowerOs?.indexOf('windows') !== -1) {
     return 'windows';
+  }
+}
+
+// Somehow, the values passed to this function may not have a `toLowerCase` function.
+function safeLowerCase(value: string | undefined): string | undefined {
+  if (value) {
+    if (typeof value.toLowerCase === 'function') {
+      return value.toLowerCase();
+    } else if (typeof value !== 'object') {
+      return String(value);
+    }
   }
 }
