@@ -290,7 +290,7 @@ export function getTargetsForDetectionHost(
  * @param host an Asset Manager host
  */
 export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
-  return toStringArray([host.fqdn?.toLowerCase(), getEC2HostArn(host)]);
+  return toStringArray([safeLowerCase(host.fqdn), getEC2HostArn(host)]);
 }
 
 export function getHostTags(hostAsset: assets.HostAsset): string[] {
@@ -362,7 +362,7 @@ export function getEC2HostDetails(
  */
 export function getHostDetails(host: assets.HostAsset) {
   const hostname =
-    host.dnsHostName || host.fqdn || host.address || String(host.id!);
+    host.dnsHostName || String(host.fqdn) || host.address || String(host.id!);
   const os = typeof host.os === 'string' ? host.os : undefined;
   const platform = os && determinePlatform(os);
 

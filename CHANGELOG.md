@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- #101 Fixed another error handling host details with
+  `host.fqdn.toLowerCase not a function`
+
 ## 5.4.3 - 2021-04-20
 
 ### Added
