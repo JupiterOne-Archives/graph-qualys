@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Configure host detection severities with `2,3,4` in the
+  `vmdrFindingSeverities` instance config field (`VMDR_FINDING_SEVERITIES` in
+  `.env`).
+
+### Changed
+
+- Only host detections with severities `3,4,5` are ingested by default. It is
+  recommended to avoid ingesting lower severity detections until you're ready to
+  process them in a meaningful way.
+
+## 5.4.4 - 2021-04-23
+
 ### Fixed
 
 - #101 Fixed another error handling host details with

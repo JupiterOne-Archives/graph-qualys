@@ -15,6 +15,7 @@ import {
   ClientResponseEvent,
   DEFAULT_RATE_LIMIT_CONFIG,
   DEFAULT_RETRY_CONFIG,
+  IterateHostDetectionsOptions,
   QualysAPIClient,
   QWebHostId,
   STANDARD_RATE_LIMIT_STATE,
@@ -1257,7 +1258,7 @@ describe('iterateHostDetections', () => {
     // expect(hosts.length).toBeGreaterThan(0);
   });
 
-  test('some mocked', async () => {
+  function mockedRecording(expectedRequestBodyRegex: RegExp[]) {
     recording = setupQualysRecording({
       directory: __dirname,
       name: 'iterateHostDetectionsMocked',
@@ -1269,8 +1270,7 @@ describe('iterateHostDetections', () => {
       )
       .toString('utf8');
 
-    const requests = [/%2C298%2C299$/, /ids=300%2C301$/].reverse();
-
+    const requests = expectedRequestBodyRegex.reverse();
     recording.server.any().intercept((req, res) => {
       const expectedBody = requests.pop();
       if (!expectedBody) throw 'no more requests expected';
@@ -1279,55 +1279,66 @@ describe('iterateHostDetections', () => {
       res.status(200).type('application/xml').send(detectionsXml);
     });
 
+    return recording;
+  }
+
+  async function executeIterateHostDetections(
+    hostIds: number[],
+    options: IterateHostDetectionsOptions,
+  ): Promise<vmpc.DetectionHost[]> {
     const hosts: vmpc.DetectionHost[] = [];
     await createClient().iterateHostDetections(
-      [...Array(302)].map((_, i) => i),
+      hostIds,
       ({ host, detections }) => {
         hosts.push(host);
       },
+      options,
+    );
+    return hosts;
+  }
+
+  test('paginate (mocked)', async () => {
+    recording = mockedRecording([/%2C298%2C299$/, /ids=300%2C301$/]);
+    const hosts = await executeIterateHostDetections(
+      [...Array(302)].map((_, i) => i),
       {
         pagination: { limit: 300 },
       },
     );
-
     expect(hosts.length).toBe(2);
   });
 
-  test('some mocked, date filter', async () => {
-    recording = setupQualysRecording({
-      directory: __dirname,
-      name: 'iterateHostDetectionsMocked',
-    });
-
-    const detectionsXml = fs
-      .readFileSync(
-        path.join(__dirname, '..', '..', 'test', 'fixtures', 'detections.xml'),
-      )
-      .toString('utf8');
-
-    const requests = [
+  test('filter by date (mocked)', async () => {
+    recording = mockedRecording([
       /detection_updated_since=2020-09-11T23%3A00%3A30Z/,
-    ].reverse();
-
-    recording.server.any().intercept((req, res) => {
-      const expectedBody = requests.pop();
-      if (!expectedBody) throw 'no more requests expected';
-      expect(req.method).toBe('POST');
-      expect(req.body).toMatch(expectedBody);
-      res.status(200).type('application/xml').send(detectionsXml);
+    ]);
+    const hosts = await executeIterateHostDetections([1], {
+      filters: { detection_updated_since: '2020-09-11T23:00:30Z' },
     });
+    expect(hosts.length).toBeGreaterThan(0);
+  });
 
-    const hosts: vmpc.DetectionHost[] = [];
-    await createClient().iterateHostDetections(
-      [1],
-      ({ host, detections }) => {
-        hosts.push(host);
-      },
-      {
-        filters: { detection_updated_since: '2020-09-11T23:00:30Z' },
-      },
-    );
+  test('filter by severities (mocked)', async () => {
+    recording = mockedRecording([/severities=1%2C2/]);
+    const hosts = await executeIterateHostDetections([1], {
+      filters: { severities: [1, 2] },
+    });
+    expect(hosts.length).toBeGreaterThan(0);
+  });
 
+  test('filter by severities, undefined', async () => {
+    recording = mockedRecording([/^((?!severities).)*$/gm]);
+    const hosts = await executeIterateHostDetections([1], {
+      filters: { severities: undefined },
+    });
+    expect(hosts.length).toBeGreaterThan(0);
+  });
+
+  test('filter by severities, empty', async () => {
+    recording = mockedRecording([/^((?!severities).)*$/gm]);
+    const hosts = await executeIterateHostDetections([1], {
+      filters: { severities: [] },
+    });
     expect(hosts.length).toBeGreaterThan(0);
   });
 });

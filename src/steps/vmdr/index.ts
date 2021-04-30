@@ -298,6 +298,7 @@ export async function fetchScannedHostFindings({
       filters: {
         detection_updated_since: instance.config.minFindingsSinceISODate,
         detection_updated_before: instance.config.maxFindingsSinceISODate,
+        severities: instance.config.vmdrFindingSeverityNumbers,
       },
       onRequestError(pageIds, err) {
         totalPageErrors++;

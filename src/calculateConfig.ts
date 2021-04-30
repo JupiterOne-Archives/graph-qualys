@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_FINDINGS_SINCE_DAYS,
   DEFAULT_SCANNED_SINCE_DAYS,
+  DEFAULT_VMDR_FINDING_SEVERITIES,
 } from './constants';
 import { CalculatedIntegrationConfig, UserIntegrationConfig } from './types';
 
@@ -53,6 +54,12 @@ export function calculateConfig({
       : isoDate(minFindingsSinceTime);
   const maxFindingsSinceISODate = isoDate(executionHistory.current.startedOn);
 
+  const vmdrFindingSeverityNumbers = readPropertyAsNumberArrayFromEnvOrConfig(
+    config,
+    'vmdrFindingSeverities',
+    DEFAULT_VMDR_FINDING_SEVERITIES,
+  );
+
   return {
     ...config,
 
@@ -63,6 +70,8 @@ export function calculateConfig({
     minFindingsSinceDays,
     minFindingsSinceISODate,
     maxFindingsSinceISODate,
+
+    vmdrFindingSeverityNumbers,
   };
 }
 
@@ -85,6 +94,35 @@ function parsePropertyAsNumber(
   return numericValue;
 }
 
+function parsePropertyAsNumberArray(
+  propertyName: string,
+  value: string | string[] | undefined,
+): number[] | undefined {
+  const parseArray = (arr: string[]) => {
+    const numbers: number[] = [];
+    for (const v of arr) {
+      const numericValue = parsePropertyAsNumber(propertyName, v);
+      if (numericValue) {
+        numbers.push(numericValue);
+      }
+    }
+    if (numbers.length > 0) {
+      return numbers;
+    }
+  };
+
+  if (value && Array.isArray(value)) {
+    return parseArray(value);
+  } else if (value && value.indexOf(',')) {
+    return parseArray(value.split(','));
+  } else {
+    const numericValue = parsePropertyAsNumber(propertyName, value);
+    if (numericValue) {
+      return [numericValue];
+    }
+  }
+}
+
 function readPropertyAsNumberFromEnvOrConfig(
   config: UserIntegrationConfig,
   propertyName: keyof UserIntegrationConfig,
@@ -95,6 +133,20 @@ function readPropertyAsNumberFromEnvOrConfig(
   return (
     parsePropertyAsNumber(propertyName, envValue) ||
     parsePropertyAsNumber(propertyName, configValue) ||
+    defaultValue
+  );
+}
+
+function readPropertyAsNumberArrayFromEnvOrConfig(
+  config: UserIntegrationConfig,
+  propertyName: keyof UserIntegrationConfig,
+  defaultValue: number[],
+): number[] {
+  const envValue = readPropertyFromEnv(propertyName);
+  const configValue = config[propertyName as string];
+  return (
+    parsePropertyAsNumberArray(propertyName, envValue) ||
+    parsePropertyAsNumberArray(propertyName, configValue) ||
     defaultValue
   );
 }
