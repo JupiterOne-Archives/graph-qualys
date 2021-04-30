@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+### 5.5.0 - 2021-04-30
+
 ### Added
 
 - Configure host detection severities with `2,3,4` in the
