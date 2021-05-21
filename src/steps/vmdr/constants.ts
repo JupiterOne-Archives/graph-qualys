@@ -12,7 +12,13 @@ export const STEP_FETCH_SCANNED_HOST_DETAILS = 'fetch-scanned-host-details';
 export const STEP_FETCH_SCANNED_HOST_FINDINGS = 'fetch-scanned-host-detections';
 
 export const DATA_SCANNED_HOST_IDS = 'DATA_SCANNED_HOST_IDS';
-export const DATA_HOST_TARGETS = 'DATA_HOST_TARGETS';
+
+/**
+ * Detection target values pulled from a host asset that serve as additional
+ * information for building Finding entities during host detection processing.
+ */
+export const DATA_HOST_ASSET_TARGETS = 'DATA_HOST_ASSET_TARGETS';
+
 export const DATA_HOST_VULNERABILITY_FINDING_KEYS =
   'DATA_HOST_VULNERABILITY_FINDING_KEYS';
 

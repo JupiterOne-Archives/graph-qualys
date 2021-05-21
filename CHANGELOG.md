@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Use host asset `dnsHostName` in `Finding.targets` and `Finding.fqdn` when
+  available and fall back to host asset `fqdn`. The latter is often an empty
+  string and not useful for intended purpose.
+
+- Use host asset `hostname` as `Host.hostname` when available.
+
 ### 5.5.0 - 2021-04-30
 
 ### Added
