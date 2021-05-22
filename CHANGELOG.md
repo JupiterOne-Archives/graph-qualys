@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+### 5.6.0 - 2021-05-22
+
 ### Changed
 
 - Use host asset `dnsHostName` in `Finding.targets` and `Finding.fqdn` when
