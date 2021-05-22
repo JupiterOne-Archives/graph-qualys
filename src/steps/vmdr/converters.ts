@@ -28,17 +28,18 @@ import {
   MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
 } from './constants';
+import { HostAssetTargets } from './types';
 
 /**
  * Creates a mapped relationship between a Service and Host. This should not be
  * used when the target is known to be an EC2 Host.
  *
- * @see createServiceScansEC2HostRelationship
+ * @see createServiceScansEC2HostAssetRelationship
  *
  * @param serviceEntity the Service that provides scanning of the host
  * @param host a HostAsset that is scanned by the Service
  */
-export function createServiceScansDiscoveredHostRelationship(
+export function createServiceScansDiscoveredHostAssetRelationship(
   serviceEntity: Entity,
   host: assets.HostAsset,
 ): Relationship {
@@ -59,7 +60,7 @@ export function createServiceScansDiscoveredHostRelationship(
        *   is processed
        */
       targetFilterKeys: [['_class', 'fqdn']],
-      targetEntity: createDiscoveredHostTargetEntity(host),
+      targetEntity: createDiscoveredHostAssetTargetEntity(host),
     },
   });
 }
@@ -71,12 +72,12 @@ export function createServiceScansDiscoveredHostRelationship(
  * existing EC2 Host entities and, when they don't already exist, allows the AWS
  * integration to adopt the placeholder entity.
  *
- * @see createServiceScansDiscoveredHostRelationship
+ * @see createServiceScansDiscoveredHostAssetRelationship
  *
  * @param serviceEntity the Service that provides scanning of the host
  * @param host a HostAsset that is scanned by the Service
  */
-export function createServiceScansEC2HostRelationship(
+export function createServiceScansEC2HostAssetRelationship(
   serviceEntity: Entity,
   host: assets.HostAsset,
 ): Relationship {
@@ -94,45 +95,47 @@ export function createServiceScansEC2HostRelationship(
       sourceEntityKey: serviceEntity._key,
       relationshipDirection: RelationshipDirection.FORWARD,
       targetFilterKeys: [['_type', '_key']],
-      targetEntity: createEC2HostTargetEntity(host),
+      targetEntity: createEC2HostAssetTargetEntity(host),
     },
   });
 }
 
-export function createDiscoveredHostTargetEntity(hostAsset: assets.HostAsset) {
+export function createDiscoveredHostAssetTargetEntity(
+  hostAsset: assets.HostAsset,
+) {
   const hostEntity: TargetEntityProperties = {
     _class: ['Host'],
     _type: ENTITY_TYPE_DISCOVERED_HOST,
     _key: generateHostAssetKey(hostAsset),
     id: toStringArray([hostAsset.id, hostAsset.qwebHostId]),
-    ...getHostDetails(hostAsset),
-    ...getHostIPAddresses(hostAsset),
+    ...getHostAssetDetails(hostAsset),
+    ...getHostAssetIPAddresses(hostAsset),
   };
 
-  assignTags(hostEntity, getHostTags(hostAsset));
+  assignTags(hostEntity, getHostAssetTags(hostAsset));
 
   return markInvalidTags(hostEntity);
 }
 
-export function createEC2HostTargetEntity(hostAsset: assets.HostAsset) {
+export function createEC2HostAssetTargetEntity(hostAsset: assets.HostAsset) {
   const hostEntity: TargetEntityProperties = {
     _class: ['Host'],
     _type: ENTITY_TYPE_EC2_HOST,
-    _key: getEC2HostArn(hostAsset),
-    ...getHostDetails(hostAsset),
-    ...getHostIPAddresses(hostAsset),
-    ...getEC2HostDetails(hostAsset),
+    _key: getEC2HostAssetArn(hostAsset),
+    ...getHostAssetDetails(hostAsset),
+    ...getHostAssetIPAddresses(hostAsset),
+    ...getEC2HostAssetDetails(hostAsset),
   };
 
   // Bug: https://github.com/JupiterOne/sdk/issues/460
   let allTags: string[] = [];
 
-  assignTags(hostEntity, getHostTags(hostAsset));
+  assignTags(hostEntity, getHostAssetTags(hostAsset));
   if (Array.isArray(hostEntity.tags)) {
     allTags = hostEntity.tags as string[];
   }
 
-  assignTags(hostEntity, getEC2HostTags(hostAsset));
+  assignTags(hostEntity, getEC2HostAssetTags(hostAsset));
   if (Array.isArray(hostEntity.tags)) {
     allTags = [...allTags, ...(hostEntity.tags as string[])];
   }
@@ -175,24 +178,16 @@ export function markInvalidTags(
  * @param key the Finding entity _key value
  * @param host the Host for which a vulnerability was detected
  * @param detection the detection of a vulnerability
+ * @param hostAssetTargets detection target information by host, collected from
+ * the host asset API, which is not available in the detection data itself
  */
 export function createHostFindingEntity(
   key: string,
   host: vmpc.DetectionHost,
   detection: vmpc.HostDetection,
-  hostTargets: string[] | undefined,
+  hostAssetTargets: HostAssetTargets | undefined,
 ): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
-
-  // Prepare values for matching integration mapping rules.
-  // `fqdn` has been normalized by the `hostTargets` collecting code.
-  let fqdn: string | undefined;
-  let ec2InstanceArn: string | null = null;
-  if (hostTargets && hostTargets.length === 2) {
-    fqdn = hostTargets[0];
-    if (hostTargets[1].startsWith('arn:aws:ec2'))
-      ec2InstanceArn = hostTargets[1];
-  }
 
   return createIntegrationEntity({
     entityData: {
@@ -206,8 +201,8 @@ export function createHostFindingEntity(
         _class: 'Finding',
 
         id: key,
-        ec2InstanceArn,
-        fqdn,
+        ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
+        fqdn: hostAssetTargets?.fqdn,
 
         displayName: findingDisplayName,
         name: findingDisplayName,
@@ -243,7 +238,9 @@ export function createHostFindingEntity(
         // See comments in `instanceConfigFields.ts`, `vmdrFindingStatuses`
         open: !detection.STATUS || !/fixed/i.test(detection.STATUS),
 
-        targets: getTargetsForDetectionHost(host, hostTargets),
+        // Not used by global mappings for this integration, added here for
+        // consistency with Finding schema.
+        targets: getDetectionHostTargets(host, hostAssetTargets),
 
         // TODO: These are required but not sure what values to use
         production: true,
@@ -266,34 +263,46 @@ export function createHostFindingEntity(
  * - Finding.ec2InstanceArn === Host._key && Host._type === aws_instance
  *
  * @param host the host associated with a vulnerability detection
- * @param assetTargets additional targets collected from the corresponding
+ * @param hostAssetTargets additional targets collected from the corresponding
  * `HostAsset`
  */
-export function getTargetsForDetectionHost(
+export function getDetectionHostTargets(
   host: vmpc.DetectionHost,
-  assetTargets: string[] | undefined,
+  hostAssetTargets: HostAssetTargets | undefined,
 ): string[] {
-  const targets = new Set(toStringArray([host.IP]));
-  if (assetTargets) {
-    for (const target of assetTargets) {
-      targets.add(target);
-    }
-  }
-  return [...targets];
+  return toStringArray([
+    host.IP,
+    hostAssetTargets?.fqdn,
+    hostAssetTargets?.ec2InstanceArn,
+  ]);
 }
 
 /**
- * Answers `[fqdn, ec2InstanceArn]` values for the `HostAsset`. These values are
- * not available on the detection host data and so must be captured from the
- * asset data. `fqdn` is normalized with `toLowerCase()`.
+ * Answers `HostAssetTargets` for the `HostAsset`. These values are not
+ * available on the detection host data and so must be captured from the asset
+ * data. `fqdn` is normalized with `toLowerCase()`.
  *
  * @param host an Asset Manager host
  */
-export function getTargetsFromHostAsset(host: assets.HostAsset): string[] {
-  return toStringArray([safeLowerCase(host.fqdn), getEC2HostArn(host)]);
+export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
+  return {
+    fqdn: getHostAssetFqdn(host),
+    ec2InstanceArn: getEC2HostAssetArn(host),
+  };
 }
 
-export function getHostTags(hostAsset: assets.HostAsset): string[] {
+export function getHostAssetFqdn(host: assets.HostAsset): string | undefined {
+  let fqdn = safeLowerCase(host.dnsHostName);
+  if (!fqdn || fqdn === '') {
+    fqdn = safeLowerCase(host.fqdn);
+  }
+  if (!fqdn || fqdn === '') {
+    fqdn = undefined;
+  }
+  return fqdn;
+}
+
+export function getHostAssetTags(hostAsset: assets.HostAsset): string[] {
   const tags: string[] = [];
 
   const simpleTagList = toArray(hostAsset.tags?.list?.TagSimple);
@@ -309,14 +318,16 @@ export function getHostTags(hostAsset: assets.HostAsset): string[] {
   return uniq(tags);
 }
 
-export function getEC2HostArn(hostAsset: assets.HostAsset): string | undefined {
+export function getEC2HostAssetArn(
+  hostAsset: assets.HostAsset,
+): string | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
   if (ec2?.region && ec2.accountId && ec2.instanceId) {
     return `arn:aws:ec2:${ec2.region}:${ec2.accountId}:instance/${ec2.instanceId}`;
   }
 }
 
-export function getEC2HostTags(
+export function getEC2HostAssetTags(
   hostAsset: assets.HostAsset,
 ): { key: string; value: string }[] | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
@@ -326,7 +337,7 @@ export function getEC2HostTags(
     .map((e) => ({ key: e.key, value: String(e.value) }));
 }
 
-export function getEC2HostDetails(
+export function getEC2HostAssetDetails(
   hostAsset: assets.HostAsset,
 ): object | undefined {
   const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
@@ -356,19 +367,19 @@ export function getEC2HostDetails(
 
 /**
  * Answers properties to assign to `Host` entities representing a `HostAsset`.
- * `fqdn` is normalized with `toLowerCase()`.
  *
  * @param host an Asset Manager host
  */
-export function getHostDetails(host: assets.HostAsset) {
+export function getHostAssetDetails(host: assets.HostAsset) {
   const hostname =
-    host.dnsHostName || String(host.fqdn) || host.address || String(host.id!);
+    host.hostname || getHostAssetFqdn(host) || host.address || String(host.id!);
+  const fqdn = getHostAssetFqdn(host);
   const os = typeof host.os === 'string' ? host.os : undefined;
   const platform = os && determinePlatform(os);
 
   return {
     hostname,
-    fqdn: safeLowerCase(host.fqdn),
+    fqdn,
     os,
     platform,
 
@@ -388,7 +399,7 @@ function generateHostAssetKey(host: assets.HostAsset): string {
   return `qualys-host:${host.qwebHostId!}`;
 }
 
-function getHostIPAddresses(host: assets.HostAsset) {
+function getHostAssetIPAddresses(host: assets.HostAsset) {
   return {
     ipAddress: host.address,
     publicIpAddress:

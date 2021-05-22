@@ -15,7 +15,7 @@ import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 import { VulnerabilityFindingKeysCollector } from '../utils';
 import {
-  DATA_HOST_TARGETS,
+  DATA_HOST_ASSET_TARGETS,
   DATA_HOST_VULNERABILITY_FINDING_KEYS,
   DATA_SCANNED_HOST_IDS,
   STEP_FETCH_SCANNED_HOST_DETAILS,
@@ -26,10 +26,10 @@ import {
 } from './constants';
 import {
   createHostFindingEntity,
-  createServiceScansDiscoveredHostRelationship,
-  createServiceScansEC2HostRelationship,
-  getEC2HostArn,
-  getTargetsFromHostAsset,
+  createServiceScansDiscoveredHostAssetRelationship,
+  createServiceScansEC2HostAssetRelationship,
+  getEC2HostAssetArn,
+  getHostAssetTargets,
 } from './converters';
 import { HostAssetTargetsMap } from './types';
 
@@ -125,22 +125,21 @@ export async function fetchScannedHostDetails({
   await apiClient.iterateHostDetails(
     hostIds,
     async (host) => {
-      if (getEC2HostArn(host)) {
+      if (getEC2HostAssetArn(host)) {
         await jobState.addRelationship(
-          createServiceScansEC2HostRelationship(vdmrServiceEntity, host),
+          createServiceScansEC2HostAssetRelationship(vdmrServiceEntity, host),
         );
       } else {
         await jobState.addRelationship(
-          createServiceScansDiscoveredHostRelationship(vdmrServiceEntity, host),
+          createServiceScansDiscoveredHostAssetRelationship(
+            vdmrServiceEntity,
+            host,
+          ),
         );
       }
 
-      // Ensure that `DATA_HOST_TARGETS` is updated for each host so that should
-      // a partial set be ingested, we don't lose what we've seen for later
-      // steps.
       if (host.qwebHostId) {
-        hostAssetTargetsMap[host.qwebHostId] = getTargetsFromHostAsset(host);
-        await jobState.setData(DATA_HOST_TARGETS, hostAssetTargetsMap);
+        hostAssetTargetsMap[host.qwebHostId] = getHostAssetTargets(host);
       } else {
         logger.info(
           { host: { id: host.id } },
@@ -160,6 +159,8 @@ export async function fetchScannedHostDetails({
       },
     },
   );
+
+  await jobState.setData(DATA_HOST_ASSET_TARGETS, hostAssetTargetsMap);
 
   logger.publishEvent({
     name: 'stats',
@@ -188,8 +189,9 @@ export async function fetchScannedHostFindings({
 
   const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
     []) as number[];
-  const hostTargetsMap = ((await jobState.getData(DATA_HOST_TARGETS)) ||
-    {}) as HostAssetTargetsMap;
+  const hostAssetTargetsMap = ((await jobState.getData(
+    DATA_HOST_ASSET_TARGETS,
+  )) || {}) as HostAssetTargetsMap;
   const vulnerabilityFindingKeysCollector = new VulnerabilityFindingKeysCollector();
 
   // const serviceEntity = (await jobState.getData(
@@ -208,7 +210,7 @@ export async function fetchScannedHostFindings({
       let numBadQids = 0;
 
       // TODO: consider having jobState.batch(detections, ([detection, ...]) => {...})
-      // so that we don't have to know what the optimal batch size it
+      // so that we don't have to know what the optimal batch size is
       for (const batchDetections of chunk(detections, 500)) {
         const entities: Entity[] = [];
         // const relationships: Relationship[] = [];
@@ -247,7 +249,7 @@ export async function fetchScannedHostFindings({
             findingKey,
             host,
             detection,
-            hostTargetsMap[host.ID!],
+            hostAssetTargetsMap[host.ID!],
           );
           entities.push(findingEntity);
 

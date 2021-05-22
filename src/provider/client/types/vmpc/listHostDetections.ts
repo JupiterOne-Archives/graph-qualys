@@ -2,7 +2,7 @@ import { QualyNumericSeverity } from '../../../../types';
 import { QWebHostId } from '../index';
 import { ISODateString, PossibleArray } from '../util';
 
-// https://qualysapi.qualys.com/api/2.0/fo/asset/host/vm/detection/host_list_vm_detection_output.dtd
+// https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
 
 export type ListHostDetectionsFilterInputParameter =
   | 'detection_updated_since'

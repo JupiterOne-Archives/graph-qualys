@@ -12,18 +12,20 @@ import {
 } from '../../provider/client/types/vmpc';
 import { toArray } from '../../provider/client/util';
 import {
-  createDiscoveredHostTargetEntity,
-  createEC2HostTargetEntity,
+  createDiscoveredHostAssetTargetEntity,
+  createEC2HostAssetTargetEntity,
   createHostFindingEntity,
-  getEC2HostArn,
-  getEC2HostTags,
-  getHostDetails,
-  getHostTags,
-  getTargetsFromHostAsset,
+  getEC2HostAssetArn,
+  getEC2HostAssetTags,
+  getHostAssetDetails,
+  getHostAssetFqdn,
+  getHostAssetTags,
+  getHostAssetTargets,
   isTagsValid,
 } from './converters';
+import { HostAssetTargets } from './types';
 
-describe('createDiscoveredHostTargetEntity', () => {
+describe('createDiscoveredHostAssetTargetEntity', () => {
   let hosts: HostAsset[];
 
   beforeEach(() => {
@@ -47,7 +49,9 @@ describe('createDiscoveredHostTargetEntity', () => {
 
   test('properties transferred', () => {
     for (const host of hosts) {
-      expect(createDiscoveredHostTargetEntity(host)).toMatchGraphObjectSchema({
+      expect(
+        createDiscoveredHostAssetTargetEntity(host),
+      ).toMatchGraphObjectSchema({
         _class: 'Host',
         schema: {
           properties: {
@@ -67,45 +71,48 @@ describe('createDiscoveredHostTargetEntity', () => {
   });
 
   test('required properties', () => {
-    expect(createDiscoveredHostTargetEntity(hosts[0])).toMatchGraphObjectSchema(
-      {
-        _class: 'Host',
-        schema: {
-          required: [
-            'hostname',
-            'os',
-            'platform',
-            'qualysAssetId',
-            'qualysHostId',
-            'qualysCreatedOn',
-            'scannedBy',
-            'lastScannedOn',
-            'name',
-            'displayName',
-            'tags',
-          ],
-        },
+    expect(
+      createDiscoveredHostAssetTargetEntity(hosts[0]),
+    ).toMatchGraphObjectSchema({
+      _class: 'Host',
+      schema: {
+        required: [
+          'hostname',
+          'os',
+          'platform',
+          'qualysAssetId',
+          'qualysHostId',
+          'qualysCreatedOn',
+          'scannedBy',
+          'lastScannedOn',
+          'name',
+          'displayName',
+          'tags',
+        ],
       },
-    );
+    });
   });
 
   test('fqdn lowercased', () => {
     const host = hosts[0];
     expect(
-      createDiscoveredHostTargetEntity({ ...host, fqdn: 'SOMETHING.com' }),
+      createDiscoveredHostAssetTargetEntity({
+        ...host,
+        dnsHostName: 'SOMETHING.com',
+      }),
     ).toMatchObject({
       fqdn: 'something.com',
     });
   });
 
   test('tags', () => {
-    expect(createDiscoveredHostTargetEntity(hosts[0])).toMatchObject({
+    expect(createDiscoveredHostAssetTargetEntity(hosts[0])).toMatchObject({
       tags: ['Cloud Agent'],
     });
   });
 });
 
-describe('createEC2HostTargetEntity', () => {
+describe('createEC2HostAssetTargetEntity', () => {
   let hosts: HostAsset[];
 
   beforeEach(() => {
@@ -129,8 +136,8 @@ describe('createEC2HostTargetEntity', () => {
 
   test('properties transferred', () => {
     for (const host of hosts) {
-      const arn = getEC2HostArn(host);
-      expect(createEC2HostTargetEntity(host)).toMatchGraphObjectSchema({
+      const arn = getEC2HostAssetArn(host);
+      expect(createEC2HostAssetTargetEntity(host)).toMatchGraphObjectSchema({
         _class: 'Host',
         schema: {
           properties: {
@@ -158,7 +165,7 @@ describe('createEC2HostTargetEntity', () => {
   });
 
   test('required properties', () => {
-    expect(createEC2HostTargetEntity(hosts[0])).toMatchGraphObjectSchema({
+    expect(createEC2HostAssetTargetEntity(hosts[0])).toMatchGraphObjectSchema({
       _class: 'Host',
       schema: {
         required: [
@@ -187,14 +194,14 @@ describe('createEC2HostTargetEntity', () => {
     const host = hosts[0];
     const ec2 = host.sourceInfo?.list?.Ec2AssetSourceSimple;
     if (ec2) ec2.instanceState = 'STOPPED';
-    expect(createEC2HostTargetEntity(host)).toMatchObject({
+    expect(createEC2HostAssetTargetEntity(host)).toMatchObject({
       state: 'stopped',
     });
   });
 
   test('tags', () => {
     const host = hosts[1];
-    expect(createEC2HostTargetEntity(host)).toMatchObject({
+    expect(createEC2HostAssetTargetEntity(host)).toMatchObject({
       tags: ['Cloud Agent'],
     });
   });
@@ -202,7 +209,7 @@ describe('createEC2HostTargetEntity', () => {
   test('boolean ec2 tags', () => {
     const host = hosts[1];
     expect(
-      createEC2HostTargetEntity({
+      createEC2HostAssetTargetEntity({
         ...host,
         sourceInfo: {
           list: {
@@ -223,7 +230,7 @@ describe('createEC2HostTargetEntity', () => {
   test('number ec2 tags', () => {
     const host = hosts[1];
     expect(
-      createEC2HostTargetEntity({
+      createEC2HostAssetTargetEntity({
         ...host,
         sourceInfo: {
           list: {
@@ -269,7 +276,10 @@ describe('createHostFindingEntity', () => {
       for (const hostDetection of toArray(
         detectionHost.DETECTION_LIST?.DETECTION,
       )) {
-        const hostTargets = ['abc', '123'];
+        const hostTargets: HostAssetTargets = {
+          fqdn: 'some.host.domain',
+          ec2InstanceArn: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
+        };
         expect(
           createHostFindingEntity(
             'finding-key',
@@ -284,6 +294,12 @@ describe('createHostFindingEntity', () => {
               id: {
                 const: 'finding-key',
               },
+              fqdn: {
+                const: 'some.host.domain',
+              },
+              ec2InstanceArn: {
+                const: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
+              },
             },
             required: ['id'],
           },
@@ -293,14 +309,14 @@ describe('createHostFindingEntity', () => {
   });
 });
 
-describe('getHostTags older XML', () => {
+describe('getHostAssetTags older XML', () => {
   function hostFromXml(xml: string): HostAsset {
     return xmlParser.parse(xml);
   }
 
   test('one tag', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags>
             <TAG>
@@ -315,7 +331,7 @@ describe('getHostTags older XML', () => {
 
   test('multiple tags', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags>
             <TAG>
@@ -333,12 +349,12 @@ describe('getHostTags older XML', () => {
   });
 
   test('no tags list', () => {
-    expect(getHostTags(hostFromXml(`<tags></tags>`))).toEqual([]);
+    expect(getHostAssetTags(hostFromXml(`<tags></tags>`))).toEqual([]);
   });
 
   test('empty tag data', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags>
             <TAG></TAG>
@@ -350,7 +366,7 @@ describe('getHostTags older XML', () => {
 
   test('unexpected tag data', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags>
             <TAG>
@@ -364,14 +380,14 @@ describe('getHostTags older XML', () => {
   });
 });
 
-describe('getHostTags api-v2 XML', () => {
+describe('getHostAssetTags api-v2 XML', () => {
   function hostFromXml(xml: string): HostAsset {
     return xmlParser.parse(xml);
   }
 
   test('one tag', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags><list>
             <TagSimple>
@@ -386,7 +402,7 @@ describe('getHostTags api-v2 XML', () => {
 
   test('multiple tags', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags><list>
             <TagSimple>
@@ -404,20 +420,20 @@ describe('getHostTags api-v2 XML', () => {
   });
 
   test('empty tags list', () => {
-    expect(getHostTags(hostFromXml(`<tags><list/></tags>`))).toEqual([]);
+    expect(getHostAssetTags(hostFromXml(`<tags><list/></tags>`))).toEqual([]);
   });
 
   test('no tags', () => {
-    expect(getHostTags(hostFromXml(``))).toEqual([]);
+    expect(getHostAssetTags(hostFromXml(``))).toEqual([]);
   });
 
   test('no tags list', () => {
-    expect(getHostTags(hostFromXml(`<tags></tags>`))).toEqual([]);
+    expect(getHostAssetTags(hostFromXml(`<tags></tags>`))).toEqual([]);
   });
 
   test('empty tag data', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags><list>
             <TagSimple></TagSimple>
@@ -429,7 +445,7 @@ describe('getHostTags api-v2 XML', () => {
 
   test('unexpected tag data', () => {
     expect(
-      getHostTags(
+      getHostAssetTags(
         hostFromXml(
           `<tags><list>
             <TagSimple>
@@ -443,14 +459,14 @@ describe('getHostTags api-v2 XML', () => {
   });
 });
 
-describe('getEC2HostTags', () => {
+describe('getEC2HostAssetTags', () => {
   function hostFromXml(xml: string): HostAsset {
     return xmlParser.parse(xml);
   }
 
   test('one tag', () => {
     expect(
-      getEC2HostTags(
+      getEC2HostAssetTags(
         hostFromXml(
           `<sourceInfo>
             <list>
@@ -475,7 +491,7 @@ describe('getEC2HostTags', () => {
 
   test('multiple tags', () => {
     expect(
-      getEC2HostTags(
+      getEC2HostAssetTags(
         hostFromXml(
           `<sourceInfo>
             <list>
@@ -507,13 +523,13 @@ describe('getEC2HostTags', () => {
 
   test('no Ec2AssetSourceSimple', () => {
     expect(
-      getEC2HostTags(hostFromXml(`<sourceInfo><list/></sourceInfo>`)),
+      getEC2HostAssetTags(hostFromXml(`<sourceInfo><list/></sourceInfo>`)),
     ).toEqual([]);
   });
 
   test('no ec2InstanceTags', () => {
     expect(
-      getEC2HostTags(
+      getEC2HostAssetTags(
         hostFromXml(`<sourceInfo>
                       <list>
                         <Ec2AssetSourceSimple/>
@@ -525,7 +541,7 @@ describe('getEC2HostTags', () => {
 
   test('empty tags list', () => {
     expect(
-      getEC2HostTags(
+      getEC2HostAssetTags(
         hostFromXml(`<sourceInfo>
                       <list>
                         <Ec2AssetSourceSimple>
@@ -542,12 +558,12 @@ describe('getEC2HostTags', () => {
   });
 
   test('no sourceInfo', () => {
-    expect(getEC2HostTags(hostFromXml(``))).toEqual([]);
+    expect(getEC2HostAssetTags(hostFromXml(``))).toEqual([]);
   });
 
   test('empty tag data', () => {
     expect(
-      getEC2HostTags(
+      getEC2HostAssetTags(
         hostFromXml(
           `<sourceInfo>
             <list>
@@ -574,7 +590,7 @@ describe('getEC2HostTags', () => {
 
   test('unexpected tag data', () => {
     expect(
-      getEC2HostTags(
+      getEC2HostAssetTags(
         hostFromXml(
           `<sourceInfo>
             <list>
@@ -620,40 +636,68 @@ describe('isTagsValid', () => {
   });
 });
 
-describe('getHostDetails', () => {
+describe('getHostAssetFqdn', () => {
+  test('normalizes fqdn', () => {
+    expect(getHostAssetFqdn({ dnsHostName: 'THIS.IS.MY.HOST' })).toEqual(
+      'this.is.my.host',
+    );
+    expect(getHostAssetFqdn({ dnsHostName: '' })).toEqual(undefined);
+    expect(getHostAssetFqdn({ dnsHostName: {} as any })).toEqual(undefined);
+    expect(getHostAssetFqdn({ dnsHostName: undefined })).toEqual(undefined);
+    expect(getHostAssetFqdn({ fqdn: 'THIS.IS.MY.HOST' })).toEqual(
+      'this.is.my.host',
+    );
+    expect(getHostAssetFqdn({ fqdn: '' })).toEqual(undefined);
+    expect(getHostAssetFqdn({ fqdn: {} as any })).toEqual(undefined);
+    expect(getHostAssetFqdn({ fqdn: undefined })).toEqual(undefined);
+  });
+
+  test('uses dnsHostName over fqdn', () => {
+    expect(getHostAssetFqdn({ dnsHostName: 'bobby', fqdn: 'bob' })).toEqual(
+      'bobby',
+    );
+    expect(getHostAssetFqdn({ dnsHostName: '', fqdn: 'bob' })).toEqual('bob');
+    expect(getHostAssetFqdn({ dnsHostName: {} as any, fqdn: 'bob' })).toEqual(
+      'bob',
+    );
+    expect(getHostAssetFqdn({ dnsHostName: undefined, fqdn: 'bob' })).toEqual(
+      'bob',
+    );
+  });
+
+  test('normalizes with toLowerCase', () => {
+    expect(getHostAssetFqdn({ fqdn: 'THIS.IS.MY.HOST' })).toEqual(
+      'this.is.my.host',
+    );
+    expect(getHostAssetFqdn({ fqdn: undefined })).toEqual(undefined);
+  });
+});
+
+describe('getHostAssetDetails', () => {
   test('non-string os', () => {
     // https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd says it should
     // be a string, but we received `os.toLowerCase is not a function` in
     // production 🤷🏼‍♂️
-    expect(getHostDetails({ os: {} })).toMatchObject({
+    expect(getHostAssetDetails({ os: {} })).toMatchObject({
       os: undefined,
     });
   });
 
-  test('normalizes fqdn', () => {
-    expect(getHostDetails({ fqdn: 'THIS.IS.MY.HOST' })).toMatchObject({
+  test('use getHostAssetFqdn', () => {
+    expect(
+      getHostAssetDetails({ dnsHostName: 'THIS.IS.MY.HOST' }),
+    ).toMatchObject({
       fqdn: 'this.is.my.host',
-    });
-    expect(getHostDetails({ fqdn: {} as any })).toMatchObject({
-      fqdn: undefined,
-    });
-    expect(getHostDetails({ fqdn: undefined })).toMatchObject({
-      fqdn: undefined,
     });
   });
 });
 
-describe('getTargetsFromHostAsset', () => {
-  test('deduplicates values', () => {
+describe('getHostAssetTargets', () => {
+  test('uses getHostAssetFqdn', () => {
     expect(
-      getTargetsFromHostAsset({ dnsHostName: 'bob', fqdn: 'bob' }),
-    ).toEqual(['bob']);
-  });
-
-  test('normalizes fqdn', () => {
-    expect(getTargetsFromHostAsset({ fqdn: 'THIS.IS.MY.HOST' })).toEqual([
-      'this.is.my.host',
-    ]);
-    expect(getTargetsFromHostAsset({ fqdn: undefined })).toEqual([]);
+      getHostAssetTargets({ dnsHostName: 'bobby', fqdn: 'bob' }),
+    ).toMatchObject({
+      fqdn: 'bobby',
+    });
   });
 });

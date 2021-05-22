@@ -23,10 +23,31 @@ export type HostAsset = {
   lastComplianceScan?: ISODateString;
   lastSystemBoot?: ISODateString;
   lastLoggedOnUser?: string;
+
+  /**
+   * Customers have provided evidence this may exist on results. The schema
+   * indicates there is a complex type of `HostAssetInterface` which does
+   * include this property, but there is no indication in the schema that the
+   * `HostAsset` complex type extends it.
+   */
+  hostname?: string;
+
+  /**
+   * Very possible this is an empty string, ''. Use `dnsHostName` when possible,
+   * handle ''.
+   */
   fqdn?: string;
-  // Documented as string, but incoming value may not be!
+
+  /**
+   * Documented as string, but incoming value may not be!
+   */
   os?: any;
+
+  /**
+   * Expected to be the combination of `hostname.domain`.
+   */
   dnsHostName?: string;
+
   agentInfo?: AgentInfo;
   networkGuid?: string;
   address?: string;
