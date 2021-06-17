@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 5.7.0 - 2021-06-17
+
 ### Added
 
 - Configure host detection types with `Potential,Confirmed` in the
@@ -13,7 +15,7 @@
   It is recommended to avoid ingesting `Info` detections until you're ready to
   process them in a meaningful way.
 
-### 5.6.0 - 2021-05-22
+## 5.6.0 - 2021-05-22
 
 ### Changed
 
@@ -23,7 +25,7 @@
 
 - Use host asset `hostname` as `Host.hostname` when available.
 
-### 5.5.0 - 2021-04-30
+## 5.5.0 - 2021-04-30
 
 ### Added
 
