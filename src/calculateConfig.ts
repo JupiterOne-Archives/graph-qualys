@@ -9,6 +9,8 @@ import {
   DEFAULT_FINDINGS_SINCE_DAYS,
   DEFAULT_SCANNED_SINCE_DAYS,
   DEFAULT_VMDR_FINDING_SEVERITIES,
+  DEFAULT_VMDR_FINDING_TYPES,
+  VALID_VMDR_FINDING_TYPES,
 } from './constants';
 import { CalculatedIntegrationConfig, UserIntegrationConfig } from './types';
 
@@ -54,11 +56,18 @@ export function calculateConfig({
       : isoDate(minFindingsSinceTime);
   const maxFindingsSinceISODate = isoDate(executionHistory.current.startedOn);
 
-  const vmdrFindingSeverityNumbers = readPropertyAsNumberArrayFromEnvOrConfig(
+  const vmdrFindingSeverityNumbers = readPropertyAsNumberArrayFromEnvOrConfig({
     config,
-    'vmdrFindingSeverities',
-    DEFAULT_VMDR_FINDING_SEVERITIES,
-  );
+    propertyName: 'vmdrFindingSeverities',
+    defaultValue: DEFAULT_VMDR_FINDING_SEVERITIES,
+  });
+
+  const vmdrFindingTypeValues = readPropertyAsStringArrayFromEnvOrConfig({
+    config,
+    propertyName: 'vmdrFindingTypes',
+    defaultValue: DEFAULT_VMDR_FINDING_TYPES,
+    validValues: VALID_VMDR_FINDING_TYPES,
+  });
 
   return {
     ...config,
@@ -72,6 +81,7 @@ export function calculateConfig({
     maxFindingsSinceISODate,
 
     vmdrFindingSeverityNumbers,
+    vmdrFindingTypeValues,
   };
 }
 
@@ -113,13 +123,57 @@ function parsePropertyAsNumberArray(
 
   if (value && Array.isArray(value)) {
     return parseArray(value);
-  } else if (value && value.indexOf(',')) {
+  } else if (value && value.includes(',')) {
     return parseArray(value.split(','));
   } else {
     const numericValue = parsePropertyAsNumber(propertyName, value);
     if (numericValue) {
       return [numericValue];
     }
+  }
+}
+
+function parsePropertyAsStringArray(
+  propertyName: string,
+  value: string | string[] | undefined,
+  validValues?: string[],
+): string[] | undefined {
+  const parseArray = (arr: string[]) => {
+    const strings: string[] = [];
+    for (const v of arr) {
+      strings.push(v.trim());
+    }
+    if (strings.length > 0) {
+      return strings;
+    }
+  };
+
+  let values: string[] | undefined;
+
+  if (value && Array.isArray(value)) {
+    values = parseArray(value);
+  } else if (value && value.includes(',')) {
+    values = parseArray(value.split(','));
+  } else if (value && !/^\s+$/.test(value)) {
+    values = [value.trim()];
+  }
+
+  if (values && values.length > 0 && validValues && validValues.length > 0) {
+    const invalidValues = values.reduce((invalid: string[], e) => {
+      if (!validValues.includes(e)) {
+        invalid.push(e);
+      }
+      return invalid;
+    }, []);
+    if (invalidValues.length > 0) {
+      throw new IntegrationValidationError(
+        `Invalid ${propertyName}: ${JSON.stringify(invalidValues)}`,
+      );
+    } else {
+      return values;
+    }
+  } else {
+    return values;
   }
 }
 
@@ -137,16 +191,40 @@ function readPropertyAsNumberFromEnvOrConfig(
   );
 }
 
-function readPropertyAsNumberArrayFromEnvOrConfig(
-  config: UserIntegrationConfig,
-  propertyName: keyof UserIntegrationConfig,
-  defaultValue: number[],
-): number[] {
+function readPropertyAsNumberArrayFromEnvOrConfig({
+  config,
+  propertyName,
+  defaultValue,
+}: {
+  config: UserIntegrationConfig;
+  propertyName: keyof UserIntegrationConfig;
+  defaultValue: number[];
+}): number[] {
   const envValue = readPropertyFromEnv(propertyName);
   const configValue = config[propertyName as string];
   return (
     parsePropertyAsNumberArray(propertyName, envValue) ||
     parsePropertyAsNumberArray(propertyName, configValue) ||
+    defaultValue
+  );
+}
+
+function readPropertyAsStringArrayFromEnvOrConfig({
+  config,
+  propertyName,
+  defaultValue,
+  validValues,
+}: {
+  config: UserIntegrationConfig;
+  propertyName: keyof UserIntegrationConfig;
+  validValues?: string[];
+  defaultValue: string[];
+}): string[] {
+  const envValue = readPropertyFromEnv(propertyName);
+  const configValue = config[propertyName as string];
+  return (
+    parsePropertyAsStringArray(propertyName, envValue, validValues) ||
+    parsePropertyAsStringArray(propertyName, configValue, validValues) ||
     defaultValue
   );
 }

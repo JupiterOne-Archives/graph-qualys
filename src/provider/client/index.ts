@@ -190,6 +190,10 @@ export type QualysAPIClientConfig = {
 };
 
 export type IterateHostDetectionsOptions = {
+  /**
+   * Filters provided to the listHostDetections API. This reduces the amount of
+   * data fetched from the Qualys API.
+   */
   filters?: vmpc.ListHostDetectionsFilters;
   pagination?: { limit: number };
   // TODO make this a required argument and update tests
