@@ -31,6 +31,12 @@ export type UserIntegrationConfig = {
    * data fetched to only severities a security team wants to ingest.
    */
   vmdrFindingSeverities?: string | string[];
+
+  /**
+   * The types of host detections to convert to Findings, used to limit
+   * collection to types a security team wants to ingest.
+   */
+  vmdrFindingTypes?: string | string[];
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {
@@ -64,6 +70,13 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
    * to `DEFAULT_VMDR_FINDING_SEVERITIES`.
    */
   vmdrFindingSeverityNumbers: number[];
+
+  /**
+   * The types of host detections to convert to Findings, used to limit
+   * collection to types a security team wants to ingest. Defaults to
+   * `DEFAULT_VMDR_FINDING_TYPES`.
+   */
+  vmdrFindingTypeValues: string[];
 };
 
 /**

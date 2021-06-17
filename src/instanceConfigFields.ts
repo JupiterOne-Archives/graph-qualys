@@ -92,19 +92,14 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
   // },
 
   /**
-   * Processes findings in response having the selected values, otherwise
-   * findings are skipped.
-   *
-   * Uncommenting this setting will have no effect without code changes; it's
-   * here for documenation.
-   *
-   * TODO: Skip detections having TYPE != selected values
+   * Processes host detections in response having the selected values, otherwise
+   * detections are skipped.
    */
-  // vmdrFindingTypes: {
-  //   type: 'string',
-  //   // options: ['Confirmed', 'Potential', 'Information'],
-  //   // defaultValue: ['Confirmed', 'Potential', 'Information'],
-  // },
+  vmdrFindingTypes: {
+    type: 'string',
+    // options: ['Info', 'Potential', 'Confirmed'],
+    // defaultValue: ['Potential', 'Confirmed'],
+  },
 
   /**
    * Host detections that have been ignored are excluded by default in the

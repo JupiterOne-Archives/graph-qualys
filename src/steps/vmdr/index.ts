@@ -187,6 +187,8 @@ export async function fetchScannedHostFindings({
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const apiClient = createQualysAPIClient(logger, instance.config);
 
+  const detectionTypes = instance.config.vmdrFindingTypeValues;
+
   const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
     []) as number[];
   const hostAssetTargetsMap = ((await jobState.getData(
@@ -202,6 +204,7 @@ export async function fetchScannedHostFindings({
 
   let totalHostsProcessed = 0;
   let totalDetectionsProcessed = 0;
+  let totalUnmatchedTypeDetections = 0;
   let totalPageErrors = 0;
 
   await apiClient.iterateHostDetections(
@@ -222,6 +225,11 @@ export async function fetchScannedHostFindings({
           // type of the value.
           if (typeof detection.QID !== 'number') {
             numBadQids++;
+            continue;
+          }
+
+          if (detection.TYPE && !detectionTypes.includes(detection.TYPE)) {
+            totalUnmatchedTypeDetections++;
             continue;
           }
 
@@ -289,6 +297,7 @@ export async function fetchScannedHostFindings({
         logger.info(
           {
             totalDetectionsProcessed,
+            totalUnmatchedTypeDetections,
             totalHostsProcessed,
             totalPageErrors,
           },

@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## Unreleased
+
+### Added
+
+- Configure host detection types with `Potential,Confirmed` in the
+  `vmdrFindingTypes` instance config field (`VMDR_FINDING_TYPES` in `.env`).
+
+### Changed
+
+- Only host detections with types `Potential,Confirmed` are ingested by default.
+  It is recommended to avoid ingesting `Info` detections until you're ready to
+  process them in a meaningful way.
 
 ### 5.6.0 - 2021-05-22
 

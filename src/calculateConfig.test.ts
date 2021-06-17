@@ -9,6 +9,7 @@ import {
   DEFAULT_FINDINGS_SINCE_DAYS,
   DEFAULT_SCANNED_SINCE_DAYS,
   DEFAULT_VMDR_FINDING_SEVERITIES,
+  DEFAULT_VMDR_FINDING_TYPES,
 } from './constants';
 import { QualysIntegrationConfig } from './types';
 
@@ -100,6 +101,82 @@ describe('vmdrFindingSeverityNumbers', () => {
     });
     const config = calculateConfig(context);
     expect(config.vmdrFindingSeverityNumbers).toEqual([1, 2]);
+  });
+});
+
+describe('vmdrFindingTypeNames', () => {
+  beforeEach(() => {
+    delete process.env.VMDR_FINDING_TYPES;
+  });
+
+  test('defaults when none provided', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig(),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingTypeValues).toEqual(DEFAULT_VMDR_FINDING_TYPES);
+  });
+
+  test('handles string value, empty', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingTypes: '  ',
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingTypeValues).toEqual(DEFAULT_VMDR_FINDING_TYPES);
+  });
+
+  test('handles string value, single entry', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingTypes: 'Confirmed',
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingTypeValues).toEqual(['Confirmed']);
+  });
+
+  test('handles string value, multiple entry', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingTypes: ' Potential,Confirmed ',
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingTypeValues).toEqual(['Potential', 'Confirmed']);
+  });
+
+  test('handles string[]', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingTypes: [' Potential', 'Confirmed '],
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingTypeValues).toEqual(['Potential', 'Confirmed']);
+  });
+
+  test('unknown types', () => {
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingTypes: ['Unknown', 'Confirmed '],
+      }),
+    });
+    expect(() => {
+      calculateConfig(context);
+    }).toThrow(/vmdrFindingTypes/);
+  });
+
+  test('VMDR_FINDING_TYPES environment variable', () => {
+    process.env.VMDR_FINDING_TYPES = 'Potential, Confirmed ';
+    const context = createMockExecutionContext<QualysIntegrationConfig>({
+      instanceConfig: createInstanceConfig({
+        vmdrFindingTypes: ['Something', 'Ignored '],
+      }),
+    });
+    const config = calculateConfig(context);
+    expect(config.vmdrFindingTypeValues).toEqual(['Potential', 'Confirmed']);
   });
 });
 
