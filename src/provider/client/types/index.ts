@@ -2,6 +2,8 @@ export * as assets from './assets';
 export * as vmpc from './vmpc';
 export * as was from './was';
 export * as qps from './qps';
+export * from './api20';
+export * from './portal';
 export * from './client';
 export * from './util';
 

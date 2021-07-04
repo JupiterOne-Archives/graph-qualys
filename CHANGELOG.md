@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- [#45](https://github.com/JupiterOne/integrations/issues/45) 400 Bad Request
+  verifying authentication does not provide details from the response body
+
 ## 5.7.0 - 2021-06-17
 
 ### Added

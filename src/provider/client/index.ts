@@ -1,5 +1,4 @@
 import * as crypto from 'crypto';
-import _ from 'lodash';
 import chunk from 'lodash/chunk';
 import fetch, { RequestInfo, RequestInit, Response } from 'node-fetch';
 import PQueue from 'p-queue';
@@ -9,6 +8,7 @@ import { v4 as uuid } from 'uuid';
 
 import {
   IntegrationError,
+  IntegrationProviderAPIError,
   IntegrationProviderAuthenticationError,
   IntegrationProviderAuthorizationError,
   IntegrationValidationError,
@@ -23,21 +23,21 @@ import {
   ClientEvents,
   ClientRequestEvent,
   ClientResponseEvent,
+  PortalInfo,
   qps,
   QWebHostId,
   RateLimitConfig,
   RateLimitState,
   ResourceIteratee,
   RetryConfig,
+  SimpleReturn,
   vmpc,
   was,
 } from './types';
-import { PortalInfo } from './types/portal';
-import { QualysV2ApiErrorResponse } from './types/vmpc/errorResponse';
 import {
+  extractServiceResponseFromResponseBody,
   isXMLResponse,
   parseXMLResponse,
-  processServiceResponseBody,
   toArray,
 } from './util';
 import { buildServiceRequestBody } from './was/util';
@@ -115,23 +115,12 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
   noRetryStatusCodes: [400, 401, 403, 404, 413],
   canRetry: async (response) => {
-    if (response.status === 409 && isXMLResponse(response)) {
-      try {
-        const errorResponse = await parseXMLResponse<QualysV2ApiErrorResponse>(
-          response,
-        );
-        if (errorResponse.SIMPLE_RETURN) {
-          return {
-            retryable: RETRYABLE_409_CODES.includes(
-              errorResponse.SIMPLE_RETURN.RESPONSE.CODE,
-            ),
-            reason: errorResponse.SIMPLE_RETURN.RESPONSE.TEXT,
-          };
-        }
-      } catch (err) {
+    if (response.status === 409) {
+      const errorDetails = await (response as QualysAPIResponse).errorDetails();
+      if (errorDetails) {
         return {
-          retryable: false,
-          reason: `Could not read 409 response body: ${err.message}`,
+          retryable: RETRYABLE_409_CODES.includes(errorDetails.code),
+          reason: errorDetails.text,
         };
       }
     }
@@ -200,6 +189,78 @@ export type IterateHostDetectionsOptions = {
   onRequestError?: (pageIds: number[], err: Error) => void;
 };
 
+/**
+ * An extension of a Response to simplify access to the body of SIMPLE_RETURN
+ * responses.
+ */
+type QualysAPIResponse = Response & {
+  /**
+   * Consume the body and return a Promise that resolves SIMPLE_RETURN content.
+   * The result is cached since the body is consumed, to allow multiple calls.
+   *
+   * @returns SimpleReturn or undefined when the body is unavailable or not XML
+   */
+  simpleReturn: () => Promise<SimpleReturn | undefined>;
+
+  /**
+   * Consume the body and return a Promise that resolves details of error
+   * responses. The result is cached since the body is consumed, to allow
+   * multiple calls.
+   *
+   * @returns QualysAPIErrorDetails or undefined when the response is not an
+   * error or the body is unavailable or not XML
+   */
+  errorDetails: () => Promise<QualysAPIErrorDetails | undefined>;
+};
+
+type QualysAPIErrorDetails = {
+  status: number;
+  code: number;
+  text: string;
+};
+
+function createQualysAPIResponse(response: Response): QualysAPIResponse {
+  const apiResponse = response as QualysAPIResponse;
+
+  let hasParsedResponse: boolean = false;
+  let simpleReturn: SimpleReturn | undefined;
+  let errorDetails: QualysAPIErrorDetails | undefined;
+
+  apiResponse.simpleReturn = async () => {
+    if (!hasParsedResponse && isXMLResponse(response) && !response.bodyUsed) {
+      simpleReturn = await parseXMLResponse<SimpleReturn>(response);
+      hasParsedResponse = true;
+    }
+    return simpleReturn;
+  };
+
+  // Note the Qualys API docs for VMPC state:
+  //
+  // > For an API request that had an error, you’ll find the error code and text
+  // > in the XML response.
+  //
+  // This may not be the case for other APIs, in which case this function may
+  // need to be extended or better, some refactoring could avoid reusing this
+  // client code across APIs.
+  //
+  apiResponse.errorDetails = async () => {
+    if (response.status >= 400 && !hasParsedResponse) {
+      const errorResponse = (await apiResponse.simpleReturn())?.SIMPLE_RETURN
+        ?.RESPONSE;
+      if (errorResponse) {
+        errorDetails = {
+          status: response.status,
+          code: errorResponse.CODE,
+          text: errorResponse.TEXT,
+        };
+      }
+    }
+    return errorDetails;
+  };
+
+  return apiResponse;
+}
+
 export class QualysAPIClient {
   private events: ClientEventEmitter;
 
@@ -240,9 +301,22 @@ export class QualysAPIClient {
     this.events.on(ClientEvents.RESPONSE, eventHandler, options);
   }
 
+  /**
+   * Uses the Activity Log endpoint to fetch a single record for the username
+   * provided to execute the integration to verify that authentication works.
+   *
+   * ```sh
+   * curl -u "username:password" -k \
+   *   -H "X-Requested-With:curl" \
+   *   "https://qualysapi.qualys.com/api/2.0/fo/activity_log/?action=list&username=username&truncation_limit=1"
+   * ```
+   *
+   * The response body contains CSV on 200, XML on some other error responses.
+   */
   public async verifyAuthentication(): Promise<void> {
     const endpoint = '/api/2.0/fo/activity_log/';
-    let response;
+
+    let response: QualysAPIResponse;
     try {
       response = await this.executeAuthenticatedAPIRequest(
         this.qualysUrl(endpoint, {
@@ -258,16 +332,14 @@ export class QualysAPIClient {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
         endpoint,
-        status: err.status,
-        statusText: err.statusText,
+        status: err.status || err.code,
+        statusText: err.statusText || err.message,
       });
     }
 
-    if (isXMLResponse(response)) {
-      const jsonFromXml = await parseXMLResponse<QualysV2ApiErrorResponse>(
-        response,
-      );
-      const { CODE, TEXT } = (jsonFromXml as any)?.SIMPLE_RETURN?.RESPONSE;
+    const simpleReturn = await response.simpleReturn();
+    if (simpleReturn?.SIMPLE_RETURN?.RESPONSE) {
+      const { CODE, TEXT } = simpleReturn.SIMPLE_RETURN?.RESPONSE;
       const isError = CODE && TEXT;
       if (isError) {
         throw new IntegrationValidationError(
@@ -782,10 +854,13 @@ export class QualysAPIClient {
     );
   }
 
+  /**
+   * @throws IntegrationProviderAPIError
+   */
   public async executeAuthenticatedAPIRequest(
     info: RequestInfo,
     init: RequestInit,
-  ): Promise<Response> {
+  ): Promise<QualysAPIResponse> {
     return this.executeAPIRequest(info, {
       timeout: 0,
       ...init,
@@ -806,12 +881,12 @@ export class QualysAPIClient {
    * `/qps/rest/:version/*`
    * @param init RequestInit argument for fetch
    *
-   * @throws `IntegrationProviderAuthorizationError` when Qualys license has
-   * expired, an error that should be reported to user, not operator
-   * @throws `IntegrationError` for unexpected response content-type or
-   * responseCode in 200 response body
    * @throws `TypeError` when request endpoint does not look like a QPS REST
    * value
+   * @throws `IntegrationError` for unexpected response content-type
+   * @throws `IntegrationProviderAPIError` when responseCode in 200 response body indicates an error
+   * @throws `IntegrationProviderAuthorizationError` when Qualys license has
+   * expired, an error that should be reported to user, not operator
    */
   private async executeQpsRestAPIRequest<
     T extends qps.ServiceResponseBody<any>
@@ -825,7 +900,10 @@ export class QualysAPIClient {
 
     const response = await this.executeAuthenticatedAPIRequest(endpoint, init);
     try {
-      const bodyT = await processServiceResponseBody<T>(response);
+      const bodyT = await extractServiceResponseFromResponseBody<T>(
+        endpoint,
+        response,
+      );
       return bodyT;
     } catch (err) {
       switch (err.code) {
@@ -862,14 +940,29 @@ export class QualysAPIClient {
     return shasum.digest('hex');
   }
 
+  /**
+   * Executes a request and returns a response.
+   *
+   * Builds an APIRequest to include details for retry and rate limit management
+   * and delegates execution to the `executeAPIRequest` utility function, which
+   * handles retrying based on response codes and rate limit headers.
+   *
+   * @throws `IntegrationProviderAPIError` when request cannot be completed within
+   * this.retryConfig.maxAttempts
+   * @throws `IntegrationProviderAPIError` when response status indicates a failure
+   */
   private async executeAPIRequest(
     info: RequestInfo,
     init: RequestInit,
-  ): Promise<Response> {
+  ): Promise<QualysAPIResponse> {
+    const endpoint = info as string;
     const apiResponse = await executeAPIRequest(this.events, {
-      url: info as string,
+      url: endpoint,
       hash: this.hashAPIRequest(init),
-      exec: () => fetch(info, init),
+      exec: async () => {
+        const response = await fetch(info, init);
+        return createQualysAPIResponse(response);
+      },
       retryConfig: this.retryConfig,
       rateLimitConfig: this.rateLimitConfig,
       rateLimitState: { ...this.rateLimitState },
@@ -879,36 +972,38 @@ export class QualysAPIClient {
     // TODO: Do not track on the instance, should be endpoint-specific state
     this.rateLimitState = apiResponse.rateLimitState;
 
+    const qualysResponse = apiResponse.response as QualysAPIResponse;
+    const status = apiResponse.status;
+    let statusText = apiResponse.statusText;
+
     if (!apiResponse.completed && apiResponse.request.retryable) {
-      const err = new Error(
-        `Could not complete request within ${apiResponse.request.totalAttempts} attempts!`,
-      );
-      Object.assign(err, {
-        statusText: apiResponse.statusText,
-        status: apiResponse.status,
-        code: apiResponse.status,
+      throw new IntegrationProviderAPIError({
+        message: `Could not complete request within ${apiResponse.request.totalAttempts} attempts!`,
+        endpoint,
+        status,
+        statusText,
       });
-      throw err;
     }
 
     if (apiResponse.status >= 400) {
-      let statusText = apiResponse.statusText;
       if (apiResponse.request.retryDecision) {
         statusText = `${statusText} ${apiResponse.request.retryDecision.reason}`;
       }
 
-      const err = new Error(
-        `API request error for ${info}: ${apiResponse.statusText}`,
-      );
-      Object.assign(err, {
+      const errorDetails = await qualysResponse.errorDetails();
+      if (errorDetails) {
+        statusText = `${statusText} (${JSON.stringify(errorDetails)})`;
+      }
+
+      throw new IntegrationProviderAPIError({
+        message: `API request error for ${info}: ${apiResponse.statusText}`,
+        endpoint,
+        status,
         statusText,
-        status: apiResponse.status,
-        code: apiResponse.status,
       });
-      throw err;
     }
 
-    return apiResponse.response;
+    return qualysResponse;
   }
 
   private qualysAuthorization(): string {

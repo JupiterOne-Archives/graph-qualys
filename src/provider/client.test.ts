@@ -2,7 +2,10 @@ import xmlParser from 'fast-xml-parser';
 import fs from 'fs';
 import path from 'path';
 
-import { IntegrationValidationError } from '@jupiterone/integration-sdk-core';
+import {
+  IntegrationProviderAuthenticationError,
+  IntegrationValidationError,
+} from '@jupiterone/integration-sdk-core';
 import { Recording } from '@jupiterone/integration-sdk-testing';
 import { Request } from '@pollyjs/core';
 
@@ -466,6 +469,30 @@ describe('verifyAuthentication', () => {
     const rejects = expect(createClient().verifyAuthentication()).rejects;
     await rejects.toBeInstanceOf(IntegrationValidationError);
     await rejects.toThrow(/authentication/);
+  });
+
+  test('bad request with details in xml body', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'verifyAuthenticationBadRequestXML',
+      options: { recordFailedRequests: true },
+    });
+
+    const xml = `<SIMPLE_RETURN>
+    <RESPONSE>
+    <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+    <CODE>1903</CODE>
+    <TEXT> The API request did not contain one or more parameters which are required. </TEXT>
+    </RESPONSE>
+  </SIMPLE_RETURN>`;
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/xml').status(400).send(xml);
+    });
+
+    const rejects = expect(createClient().verifyAuthentication()).rejects;
+    await rejects.toBeInstanceOf(IntegrationProviderAuthenticationError);
+    await rejects.toThrow(/1903.*?parameters/);
   });
 });
 

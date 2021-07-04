@@ -12,14 +12,16 @@ differences between the APIs as clearly as possible. For example, the
 Vulnerabilty Mangagement API types and functions should be found apart from the
 Web Application Scanning API types and functions.
 
-| Resource            | Endpoint                               | Rate Limit |
-| ------------------- | -------------------------------------- | ---------- |
-| Web Apps            | `/qps/rest/3.0/search/was/webapp`      | None       |
-| Web App Findings    | `/qps/rest/3.0/search/was/finding/`    | None       |
-| Host IDs            | `/api/2.0/fo/asset/host/`              | Yes        |
-| Host Asset Details  | `/qps/rest/2.0/search/am/hostasset`    | None       |
-| Host Detections     | `/api/2.0/fo/asset/host/vm/detection/` | Yes        |
-| Vuln Knowledge Base | `/api/2.0/fo/knowledge_base/vuln/`     | Yes        |
+| Resource                       | Endpoint                               | Rate Limit |
+| ------------------------------ | -------------------------------------- | ---------- |
+| Portal Details                 | `/qps/rest/portal/version`             |            |
+| Activity Log (auth validation) | `/api/2.0/fo/activity_log/`            |            |
+| Web Apps                       | `/qps/rest/3.0/search/was/webapp`      | None       |
+| Web App Findings               | `/qps/rest/3.0/search/was/finding/`    | None       |
+| Host IDs                       | `/api/2.0/fo/asset/host/`              | Yes        |
+| Host Asset Details             | `/qps/rest/2.0/search/am/hostasset`    | None       |
+| Host Detections                | `/api/2.0/fo/asset/host/vm/detection/` | Yes        |
+| Vuln Knowledge Base            | `/api/2.0/fo/knowledge_base/vuln/`     | Yes        |
 
 > API limits currently apply to the Qualys API for Vulnerability Management and
 > Policy Compliance, not APIs for Qualys apps like CA, WAS, WAF, MD, CM, Asset
@@ -29,7 +31,10 @@ Web App Scanner: `qps/rest/3.0`
 
 - no documented rate limits
 - there is a single `2.0` endpoint, which has a corresponding `3.0`, and we
-  don't use it anyway) Asset Manager: only `qps/rest/2.0`
+  don't use it anyway
+
+Asset Manager: only `qps/rest/2.0`
+
 - no documented rate limits
 
 [1]:

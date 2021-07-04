@@ -1,7 +1,10 @@
 import xmlParser from 'fast-xml-parser';
 import { Response } from 'node-fetch';
 
-import { IntegrationError } from '@jupiterone/integration-sdk-core';
+import {
+  IntegrationError,
+  IntegrationProviderAPIError,
+} from '@jupiterone/integration-sdk-core';
 
 import { PossibleArray, qps, was } from './types';
 
@@ -67,27 +70,47 @@ export function ensureXMLResponse(response: Response): void {
 }
 
 /**
+ * Validates the response Content-Type is XML and parses the body.
+ *
  * @throws IntegrationError when response Content-Type is not XML
+ * @throws IntegrationError when response.bodyUsed
+ *
+ * @returns the parsed XML as a JSON object
  */
 export async function parseXMLResponse<T>(response: Response): Promise<T> {
   ensureXMLResponse(response);
+
+  if (response.bodyUsed)
+    throw new IntegrationError({
+      message: 'Cannot parseXMLResponse, body has already been consumed',
+      code: 'UNEXPECTED_RESPONSE_BODY_CONSUMED',
+      fatal: false,
+    });
+
   const body = await response.text();
   return xmlParser.parse(body) as T;
 }
 
-export async function processServiceResponseBody<
+/**
+ * Validates the response Content-Type is XML and parses the body.
+ *
+ * @throws IntegrationError when response Content-Type is not XML
+ * @throws IntegrationProviderAPIError when the responseCode is not SUCCESS
+ *
+ * @returns the parsed XML as a JSON object
+ */
+export async function extractServiceResponseFromResponseBody<
   T extends qps.ServiceResponseBody<any>
->(response: Response): Promise<T> {
-  ensureXMLResponse(response);
-
-  const bodyXML = await response.text();
-  const bodyT = xmlParser.parse(bodyXML) as T;
-
+>(endpoint: string, response: Response): Promise<T> {
+  const bodyT = await parseXMLResponse<T>(response);
   const responseCode = bodyT.ServiceResponse?.responseCode;
   if (!responseCode || responseCode === 'SUCCESS') return bodyT;
 
-  throw new IntegrationError({
+  throw new IntegrationProviderAPIError({
     message: `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+    endpoint,
+    status: response.status,
+    statusText: response.statusText,
     code: responseCode,
     fatal: false,
   });
