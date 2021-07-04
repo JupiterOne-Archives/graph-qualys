@@ -227,9 +227,11 @@ function createQualysAPIResponse(response: Response): QualysAPIResponse {
   let errorDetails: QualysAPIErrorDetails | undefined;
 
   apiResponse.simpleReturn = async () => {
-    if (!hasParsedResponse && isXMLResponse(response) && !response.bodyUsed) {
-      simpleReturn = await parseXMLResponse<SimpleReturn>(response);
-      hasParsedResponse = true;
+    if (!hasParsedResponse) {
+      if (isXMLResponse(response)) {
+        simpleReturn = await parseXMLResponse<SimpleReturn>(response);
+        hasParsedResponse = true;
+      }
     }
     return simpleReturn;
   };

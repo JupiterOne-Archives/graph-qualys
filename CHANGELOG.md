@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 5.7.1 - 2021-07-04
+
 ### Fixed
 
 - [#45](https://github.com/JupiterOne/integrations/issues/45) 400 Bad Request
