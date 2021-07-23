@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- Throws `IntegrationProviderAuthorizationError` for case when status code `200`
+  is returned but `responseCode` is `UNAUTHORIZED`. This error is displayed to
+  user as it is a user configuration issue.
+
 ## 5.7.1 - 2021-07-04
 
 ### Fixed
