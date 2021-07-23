@@ -4,6 +4,7 @@ import { Response } from 'node-fetch';
 import {
   IntegrationError,
   IntegrationProviderAPIError,
+  IntegrationProviderAuthorizationError,
 } from '@jupiterone/integration-sdk-core';
 
 import { PossibleArray, qps, was } from './types';
@@ -106,12 +107,21 @@ export async function extractServiceResponseFromResponseBody<
   const responseCode = bodyT.ServiceResponse?.responseCode;
   if (!responseCode || responseCode === 'SUCCESS') return bodyT;
 
-  throw new IntegrationProviderAPIError({
-    message: `Unexpected responseCode in ServiceResponse: ${responseCode}`,
-    endpoint,
-    status: response.status,
-    statusText: response.statusText,
-    code: responseCode,
-    fatal: false,
-  });
+  // Qualys may return a 200 even though the request was unauthorized
+  if (responseCode === 'UNAUTHORIZED') {
+    throw new IntegrationProviderAuthorizationError({
+      endpoint,
+      status: responseCode,
+      statusText: `Unable to invoke API, recieved response code: ${responseCode}`,
+    });
+  } else {
+    throw new IntegrationProviderAPIError({
+      message: `Unexpected responseCode in ServiceResponse: ${responseCode}`,
+      endpoint,
+      status: response.status,
+      statusText: response.statusText,
+      code: responseCode,
+      fatal: false,
+    });
+  }
 }

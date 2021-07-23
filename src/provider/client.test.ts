@@ -4,6 +4,7 @@ import path from 'path';
 
 import {
   IntegrationProviderAuthenticationError,
+  IntegrationProviderAuthorizationError,
   IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 import { Recording } from '@jupiterone/integration-sdk-testing';
@@ -592,6 +593,37 @@ describe('iterateWebApps', () => {
 
     await expect(client.iterateWebApps(iteratee)).rejects.toThrow(
       /Content-Type/,
+    );
+    expect(iteratee).not.toHaveBeenCalled();
+  });
+
+  test('mocked, unauthorized response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebAppsUnauthorizedMocked',
+    });
+
+    const unauthorizedResponse = [
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+        <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+        <responseCode>UNAUTHORIZED</responseCode>
+      </ServiceResponse>
+      `,
+    ].reverse();
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/xml');
+
+      res.status(200).send(unauthorizedResponse.pop());
+    });
+
+    const iteratee = jest.fn();
+    const client = createClient();
+
+    await expect(client.iterateWebApps(iteratee)).rejects.toThrowError(
+      IntegrationProviderAuthorizationError,
     );
     expect(iteratee).not.toHaveBeenCalled();
   });
