@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 5.7.2 - 2021-07-23
+
 ### Changed
 
 - Throws `IntegrationProviderAuthorizationError` for case when status code `200`
