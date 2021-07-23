@@ -607,7 +607,7 @@ describe('iterateWebApps', () => {
       `
       <?xml version="1.0" encoding="UTF-8"?>
         <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/finding.xsd">
+          xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/webapp.xsd">
         <responseCode>UNAUTHORIZED</responseCode>
       </ServiceResponse>
       `,
