@@ -6,6 +6,12 @@
 
 ### Changed
 
+- Removed mapping of `ThreatIntel.findingId === Finding.id`. Users should
+  consider removing ThreatIntel findingId; it will not be used for mapping and
+  may cause confusion.
+
+### Changed
+
 - Assume `400` response with `Unrecognized parameter(s): username` when checking
   credentials does not mean credentials are invalid. This will allow the
   integration to continue ingestion even when `activity_log` endpoint isn't
