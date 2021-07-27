@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 
 import {
+  IntegrationProviderAPIError,
   IntegrationProviderAuthenticationError,
   IntegrationProviderAuthorizationError,
-  IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 import { Recording } from '@jupiterone/integration-sdk-testing';
 import { Request } from '@pollyjs/core';
@@ -460,7 +460,7 @@ describe('verifyAuthentication', () => {
     ).resolves.not.toThrowError();
   });
 
-  test('expired', async () => {
+  test('expired is IntegrationProviderAuthenticationError', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
       name: 'verifyAuthenticationExpired',
@@ -468,7 +468,31 @@ describe('verifyAuthentication', () => {
     });
 
     const rejects = expect(createClient().verifyAuthentication()).rejects;
-    await rejects.toBeInstanceOf(IntegrationValidationError);
+    await rejects.toBeInstanceOf(IntegrationProviderAuthenticationError);
+    await rejects.toThrow(/authentication/);
+  });
+
+  test('200 with unexpected code is IntegrationProviderAPIError', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'verifyAuthenticationUnexpected',
+      options: { recordFailedRequests: true },
+    });
+
+    const xml = `<SIMPLE_RETURN>
+    <RESPONSE>
+    <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+    <CODE>1234</CODE>
+    <TEXT> Anything unexpected </TEXT>
+    </RESPONSE>
+  </SIMPLE_RETURN>`;
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/xml').status(200).send(xml);
+    });
+
+    const rejects = expect(createClient().verifyAuthentication()).rejects;
+    await rejects.toBeInstanceOf(IntegrationProviderAPIError);
     await rejects.toThrow(/authentication/);
   });
 
@@ -494,6 +518,30 @@ describe('verifyAuthentication', () => {
     const rejects = expect(createClient().verifyAuthentication()).rejects;
     await rejects.toBeInstanceOf(IntegrationProviderAuthenticationError);
     await rejects.toThrow(/1903.*?parameters/);
+  });
+
+  test('unrecognized parameter username is assumed to be successful authentication', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'verifyAuthenticationUnrecognizedParameterUsername',
+      options: { recordFailedRequests: true },
+    });
+
+    const xml = `<SIMPLE_RETURN>
+    <RESPONSE>
+    <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+    <CODE>1901</CODE>
+    <TEXT>Unrecognized parameter(s): username</TEXT>
+    </RESPONSE>
+  </SIMPLE_RETURN>`;
+
+    recording.server.any().intercept((req, res) => {
+      res.setHeader('content-type', 'text/xml').status(400).send(xml);
+    });
+
+    await expect(
+      createClient().verifyAuthentication(),
+    ).resolves.not.toThrowError();
   });
 });
 

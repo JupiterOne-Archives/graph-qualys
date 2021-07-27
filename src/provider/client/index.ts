@@ -11,7 +11,6 @@ import {
   IntegrationProviderAPIError,
   IntegrationProviderAuthenticationError,
   IntegrationProviderAuthorizationError,
-  IntegrationValidationError,
 } from '@jupiterone/integration-sdk-core';
 
 import { UserIntegrationConfig } from '../../types';
@@ -106,6 +105,8 @@ const RETRYABLE_409_CODES = [
   CONCURRENCY_LIMIT_RESPONSE_ERROR_CODE,
   RATE_LIMIT_RESPONSE_ERROR_CODE,
 ];
+
+const ERROR_CODE_ACCOUNT_EXPIRED = 2001;
 
 const QPS_REST_ENDPOINT = new RegExp(
   '/qps/rest/([23]\\.0|portal)/.+',
@@ -318,7 +319,7 @@ export class QualysAPIClient {
   public async verifyAuthentication(): Promise<void> {
     const endpoint = '/api/2.0/fo/activity_log/';
 
-    let response: QualysAPIResponse;
+    let response: QualysAPIResponse | undefined = undefined;
     try {
       response = await this.executeAuthenticatedAPIRequest(
         this.qualysUrl(endpoint, {
@@ -331,22 +332,50 @@ export class QualysAPIClient {
         },
       );
     } catch (err) {
-      throw new IntegrationProviderAuthenticationError({
-        cause: err,
-        endpoint,
-        status: err.status || err.code,
-        statusText: err.statusText || err.message,
-      });
+      const status = err.status || err.code;
+      const statusText = err.statusText || err.message;
+
+      if (
+        status === 400 &&
+        /Unrecognized parameter\(s\): username/.test(statusText)
+      ) {
+        // "The API request contained one or more parameters which are not
+        // supported, or are not available to the browsing user." Since 401 is
+        // documented as "Bad Login/Password", we're going to assume we
+        // authenticated and this user is simply unable to view the
+        // activity_log.
+      } else {
+        throw new IntegrationProviderAuthenticationError({
+          cause: err,
+          endpoint,
+          status,
+          statusText,
+        });
+      }
     }
 
-    const simpleReturn = await response.simpleReturn();
-    if (simpleReturn?.SIMPLE_RETURN?.RESPONSE) {
+    const simpleReturn = await response?.simpleReturn();
+    if (response && simpleReturn?.SIMPLE_RETURN?.RESPONSE) {
       const { CODE, TEXT } = simpleReturn.SIMPLE_RETURN?.RESPONSE;
       const isError = CODE && TEXT;
       if (isError) {
-        throw new IntegrationValidationError(
-          `Unexpected responseCode in authentication verification: ${CODE}: ${TEXT}`,
-        );
+        const apiError = new IntegrationProviderAPIError({
+          endpoint,
+          status: response.status,
+          statusText: response.statusText,
+          code: String(CODE),
+          message: `Unexpected responseCode in authentication verification: ${CODE}: ${TEXT}`,
+        });
+        if (CODE === ERROR_CODE_ACCOUNT_EXPIRED) {
+          throw new IntegrationProviderAuthenticationError({
+            cause: apiError,
+            endpoint,
+            status: response.status,
+            statusText: response.statusText,
+          });
+        } else {
+          throw apiError;
+        }
       }
     }
   }
