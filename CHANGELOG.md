@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 5.7.3 - 2021-07-27
+
 ### Changed
 
 - Assume `400` response with `Unrecognized parameter(s): username` when checking
