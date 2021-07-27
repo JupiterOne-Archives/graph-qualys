@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Changed
+
+- Assume `400` response with `Unrecognized parameter(s): username` when checking
+  credentials does not mean credentials are invalid. This will allow the
+  integration to continue ingestion even when `activity_log` endpoint isn't
+  authorized for the current user.
+
+- Fix `verifyAuthentication` to throw `IntegrationProviderAuthenticationError`
+  when the account is expired instead of an `IntegrationValidationError` since
+  the account information is correct, only the account is expired.
+
+- Fix `verifyAuthentication` to throw `IntegrationProviderAPIError` on
+  unexpected responses instead of `IntegrationValidationError` so that operators
+  are notified.
+
 ## 5.7.2 - 2021-07-23
 
 ### Changed
