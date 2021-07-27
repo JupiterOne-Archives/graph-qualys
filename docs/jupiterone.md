@@ -121,7 +121,7 @@ There are two global mapping rules defined to map `ThreatIntel` to `Finding` and
 
 These global mappings are defined as follows:
 
-| Source Entity `_class` | Target Property | Relationship `_class` | Target Entity `_class` | Target Property |
+| Source Entity `_class` | Source Property | Relationship `_class` | Target Entity `_class` | Target Property |
 | ---------------------- | --------------- | --------------------- | ---------------------- | --------------- |
 | `ThreatIntel`          | `qid`           | **HAS**               | `Finding`              | `qid`           |
 | `ThreatIntel`          | `qid`           | **HAS**               | `Vulnerability`        | `qid`           |
