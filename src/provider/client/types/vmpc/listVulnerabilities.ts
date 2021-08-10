@@ -21,6 +21,10 @@ export type VulnList = {
 
 export type Vuln = {
   QID?: QWebHostId;
+  VULN_TYPE?: string;
+  SOLUTION?: string;
+  CATEGORY?: string;
+  DISCOVERY?: QualysDiscovery;
   SEVERITY_LEVEL?: QualyNumericSeverity;
   TITLE?: string;
   CVE_LIST?: CveList;
@@ -116,4 +120,8 @@ export type AuthTypeList = {
 
 export type VendorReferenceList = {
   VENDOR_REFERENCE?: Bugtraq;
+};
+
+export type QualysDiscovery = {
+  REMOTE?: number;
 };

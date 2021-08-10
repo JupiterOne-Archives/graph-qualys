@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Changed
+
+- Removed the creation of `_type: cve` entities and now only produce
+  `qualys_vuln` entities. This was decided in order to standardize the
+  `Vulnerability` entities created in this integration and avoid adding
+  Qualys-specific properties to `cve` entities. Qualys vulnerabilities that
+  reference CVE identifiers now have a `cveList` property on the `qualys_vuln`
+  entity to support searching by CVE ID.
+
+### Added
+
+- New properties added to resources:
+
+  | Entity        | Properties                                                                                   |
+  | ------------- | -------------------------------------------------------------------------------------------- |
+  | `qualys_vuln` | `cveList`, `cvssScore`, `cvssScoreV3`, `vulnType`, `solution`, `discoveryRemote`, `category` |
+
 ## 5.7.3 - 2021-07-27
 
 ### Changed
