@@ -387,6 +387,9 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     qualysHostId: host.qwebHostId,
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
+    qualysTrackingMethod: host.trackingMethod,
+    qualysNetworkId: host.networkGuid,
+
     scannedBy: 'qualys',
     lastScannedOn: parseTimePropertyValue(host.lastVulnScan),
 

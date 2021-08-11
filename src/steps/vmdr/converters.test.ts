@@ -59,6 +59,8 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
             qualysAssetId: { type: 'number' },
             qualysHostId: { type: 'number' },
             qualysCreatedOn: { type: 'number' },
+            qualysTrackingMethod: { type: 'string' },
+            qualysNetworkId: { type: 'string' },
 
             scannedBy: { type: 'string' },
             lastScannedOn: { type: 'number' },
@@ -157,6 +159,8 @@ describe('createEC2HostAssetTargetEntity', () => {
             imageId: { type: 'string' },
             privateDnsName: { type: 'string' },
             publicDnsName: { type: 'string' },
+            qualysTrackingMethod: { type: 'string' },
+            qualysNetworkId: { type: 'string' },
             'tag.Department': { type: 'string' },
           },
         },
