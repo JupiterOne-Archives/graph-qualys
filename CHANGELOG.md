@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 5.8.0 - 2021-07-27
+
 ### Changed
 
 - Removed the creation of `_type: cve` entities and now only produce
@@ -26,8 +28,6 @@
 - Removed mapping of `ThreatIntel.findingId === Finding.id`. Users should
   consider removing ThreatIntel findingId; it will not be used for mapping and
   may cause confusion.
-
-### Changed
 
 - Assume `400` response with `Unrecognized parameter(s): username` when checking
   credentials does not mean credentials are invalid. This will allow the
