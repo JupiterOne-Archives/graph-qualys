@@ -11,7 +11,7 @@ import { vmpc } from '../../provider/client';
 import toArray from '../../util/toArray';
 import { ENTITY_TYPE_HOST_FINDING } from '../vmdr/constants';
 import {
-  ENTITY_TYPE_CVE_VULNERABILITY,
+  // ENTITY_TYPE_CVE_VULNERABILITY,
   ENTITY_TYPE_QUALYS_VULNERABILITY,
 } from './constants';
 
@@ -76,36 +76,47 @@ export function createVulnerabilityTargetEntities(
 ): TargetEntityProperties[] {
   const properties: TargetEntityProperties[] = [];
 
-  for (const cve of toArray(vuln.CVE_LIST?.CVE)) {
-    if (cve.ID) {
-      properties.push({
-        _class: 'Vulnerability',
-        _type: ENTITY_TYPE_CVE_VULNERABILITY,
-        _key: cve.ID.toLowerCase(),
-        qid: vuln.QID,
-        id: cve.ID,
-        name: cve.ID,
-        displayName: cve.ID,
-        webLink: cve.URL,
-        cvssScore: vuln.CVSS?.BASE,
-        cvssScoreV3: vuln.CVSS_V3?.BASE,
-      });
-    }
-  }
+  // We opted to comment out the CVE target entity creation and purely use
+  // qualys_vuln entities. We may revisit this so I'm leaving it commented out
+  // in case we want to turn this back on.
 
-  if (properties.length === 0) {
-    properties.push({
-      _class: 'Vulnerability',
-      _type: ENTITY_TYPE_QUALYS_VULNERABILITY,
-      _key: `vuln-qid:${vuln.QID}`,
-      qid: vuln.QID,
-      id: String(vuln.QID!),
-      name: vuln.TITLE,
-      displayName: vuln.TITLE,
-      webLink: buildQualysGuardVulnWebLink(qualysHost, vuln.QID!),
-      severityLevel: vuln.SEVERITY_LEVEL, // raw value, not normalized as it is on `Finding.numericSeverity`
-    });
-  }
+  // for (const cve of toArray(vuln.CVE_LIST?.CVE)) {
+  //   if (cve.ID) {
+  //     properties.push({
+  //       _class: 'Vulnerability',
+  //       _type: ENTITY_TYPE_CVE_VULNERABILITY,
+  //       _key: cve.ID.toLowerCase(),
+  //       qid: vuln.QID,
+  //       id: cve.ID,
+  //       name: cve.ID,
+  //       displayName: cve.ID,
+  //       webLink: cve.URL,
+  //       cvssScore: vuln.CVSS?.BASE,
+  //       cvssScoreV3: vuln.CVSS_V3?.BASE,
+  //     });
+  //   }
+  // }
+
+  properties.push({
+    _class: 'Vulnerability',
+    _type: ENTITY_TYPE_QUALYS_VULNERABILITY,
+    _key: `vuln-qid:${vuln.QID}`,
+    qid: vuln.QID,
+    id: String(vuln.QID!),
+    name: vuln.TITLE,
+    displayName: vuln.TITLE,
+    webLink: buildQualysGuardVulnWebLink(qualysHost, vuln.QID!),
+    severityLevel: vuln.SEVERITY_LEVEL, // raw value, not normalized as it is on `Finding.numericSeverity`
+
+    cveList: toArray(vuln.CVE_LIST?.CVE).toString(),
+    cvssScore: vuln.CVSS?.BASE,
+    cvssScoreV3: vuln.CVSS_V3?.BASE,
+
+    vulnType: vuln.VULN_TYPE,
+    solution: vuln.SOLUTION,
+    discoveryRemote: vuln.DISCOVERY?.REMOTE,
+    category: vuln.CATEGORY,
+  });
 
   return properties;
 }
