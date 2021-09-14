@@ -269,6 +269,7 @@ describe('createHostFindingEntity', () => {
   ) as ListHostDetectionsResponse;
 
   test('properties transferred', () => {
+    //HERE
     const detectionHosts: DetectionHost[] = toArray(
       detectionsList.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
     );
@@ -293,6 +294,9 @@ describe('createHostFindingEntity', () => {
             properties: {
               id: {
                 const: 'finding-key',
+              },
+              hostId: {
+                type: 'number',
               },
               fqdn: {
                 const: 'some.host.domain',
