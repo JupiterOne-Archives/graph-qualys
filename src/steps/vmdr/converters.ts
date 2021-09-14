@@ -274,7 +274,7 @@ export function getDetectionHostTargets(
   return toStringArray([
     host.IP,
     host.ID,
-    hostAssetTargets?.fqdn, //HERE?
+    hostAssetTargets?.fqdn,
     hostAssetTargets?.ec2InstanceArn,
   ]);
 }
