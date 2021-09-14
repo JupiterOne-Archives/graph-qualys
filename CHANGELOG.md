@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- `Scan|Finding -> Host` will now map using `hostId` rather than `fqdn`
+
 ## [5.8.1] - 2021-07-27
 
 ### Changed
