@@ -269,7 +269,6 @@ describe('createHostFindingEntity', () => {
   ) as ListHostDetectionsResponse;
 
   test('properties transferred', () => {
-    //HERE
     const detectionHosts: DetectionHost[] = toArray(
       detectionsList.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
     );
