@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+## [5.8.2] - 2021-09-15
+
 ### Changed
 
-- `Scan -> Host` mapped relationship will now map using `qualysAssetId` rather
-  than `fqdn` for target filter.
+- `Service -> Host` mapped relationship will now map using `qualysAssetId`
+  rather than `fqdn` for target filter.
 
 ### Added
 
