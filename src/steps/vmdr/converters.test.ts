@@ -294,6 +294,9 @@ describe('createHostFindingEntity', () => {
               id: {
                 const: 'finding-key',
               },
+              hostId: {
+                type: 'number',
+              },
               fqdn: {
                 const: 'some.host.domain',
               },

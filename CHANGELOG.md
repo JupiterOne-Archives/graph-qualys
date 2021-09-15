@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Changed
+
+- `Scan -> Host` mapped relationship will now map using `qualysAssetId` rather
+  than `fqdn` for target filter.
+
+### Added
+
+- New properties added to resources:
+
+  | Entity                | Properties |
+  | --------------------- | ---------- |
+  | `qualys_host_finding` | `hostId`   |
+
 ## [5.8.1] - 2021-07-27
 
 ### Changed
