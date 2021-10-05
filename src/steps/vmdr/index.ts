@@ -207,6 +207,9 @@ export async function fetchScannedHostFindings({
   let totalUnmatchedTypeDetections = 0;
   let totalPageErrors = 0;
 
+  let totalEc2FindingsProcessed = 0;
+  const ec2ArnsEncountered = new Set();
+
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
@@ -260,6 +263,12 @@ export async function fetchScannedHostFindings({
             hostAssetTargetsMap[host.ID!],
           );
           entities.push(findingEntity);
+
+          // TEMP logging for missing finding -> Host (ec2) mappings
+          if (findingEntity.ec2InstanceArn) {
+            totalEc2FindingsProcessed++;
+            ec2ArnsEncountered.add(findingEntity.ec2InstanceArn);
+          }
 
           // relationships.push(
           //   createDirectRelationship({
@@ -320,6 +329,23 @@ export async function fetchScannedHostFindings({
       },
     },
   );
+
+  logger.info(
+    {
+      totalEc2FindingsProcessed,
+      uniqueArns: ec2ArnsEncountered.size,
+    },
+    'Findings containing ec2 arns...',
+  );
+
+  ec2ArnsEncountered.forEach((arn) => {
+    logger.info(
+      {
+        arn,
+      },
+      'Ec2 arn encountered...',
+    );
+  });
 
   await jobState.setData(
     DATA_HOST_VULNERABILITY_FINDING_KEYS,
