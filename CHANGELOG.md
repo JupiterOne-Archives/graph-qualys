@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.8.3] - 2021-10-05
+
 ### Added
 
 - Logs added to debug missing `qualys_host_finding` to ec2 `Host` mappings
