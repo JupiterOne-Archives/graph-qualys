@@ -310,7 +310,7 @@ export async function fetchScannedHostFindings({
             totalHostsProcessed,
             totalPageErrors,
           },
-          'Processing detections for hosts...',
+          'Processing detections for hostssss...',
         );
       }
     },
