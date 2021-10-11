@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Removed logging for EC2 Arns encountered used for temporary debugging
+
 ## [5.8.4] - 2021-10-05
 
 ### Added
