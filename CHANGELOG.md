@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.8.6] - 2021-10-13
+
 ## Changed
 
 - Changed host detection filters from `vm_scan_date_after` and
@@ -9,6 +11,7 @@
   respectively. This is the recommended filter by Qualys for automated systems
   pulling this data. More info on this can be found
   [here](https://success.qualys.com/support/s/article/000005866)
+- Commented out some tests temporarily
 
 ## [5.8.5] - 2021-10-11
 
