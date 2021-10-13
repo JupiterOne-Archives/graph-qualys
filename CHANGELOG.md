@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## Changed
+
+- Changed host detection filters from `vm_scan_date_after` and
+  `vm_scan_date_before` to `vm_processed_after` and `vm_processed_before`
+  respectively. This is the recommended filter by Qualys for automated systems
+  pulling this data. More info on this can be found
+  [here](https://success.qualys.com/support/s/article/000005866)
+
 ## [5.8.5] - 2021-10-11
 
 ### Changed
