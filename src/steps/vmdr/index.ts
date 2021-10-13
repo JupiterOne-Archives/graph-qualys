@@ -210,7 +210,6 @@ export async function fetchScannedHostFindings({
   let totalEc2FindingsProcessed = 0;
 
   await apiClient.iterateHostDetections(
-    //Here
     hostIds,
     async ({ host, detections }) => {
       let numBadQids = 0;
