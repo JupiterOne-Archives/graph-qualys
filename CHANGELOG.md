@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## Changed
+
+- Update to `@jupiterone/integration-sdk-*@7.0.0`
+
+## Added
+
+- Added log for summary of host detections processed
+
 ## [5.8.6] - 2021-10-13
 
 ## Changed

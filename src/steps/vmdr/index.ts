@@ -334,6 +334,17 @@ export async function fetchScannedHostFindings({
     'Findings containing ec2 arns...',
   );
 
+  logger.info(
+    {
+      totalDetectionsProcessed,
+      totalUnmatchedTypeDetections,
+      totalHostsEncountered: hostIds.length,
+      totalHostsProcessed,
+      totalPageErrors,
+    },
+    'Host and Detections processing summary',
+  );
+
   await jobState.setData(
     DATA_HOST_VULNERABILITY_FINDING_KEYS,
     vulnerabilityFindingKeysCollector.serialize(),

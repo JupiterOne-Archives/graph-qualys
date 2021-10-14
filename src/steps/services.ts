@@ -59,7 +59,7 @@ async function createWebApplicationScannerService(
           displayName: name,
           name: name,
           category: ['software', 'other'],
-          function: 'DAST',
+          function: ['DAST'],
           description:
             'Automated Web Application Security Assessment and Reporting',
           version: portalInfo?.['Portal-Version']?.['WAS-VERSION'],
@@ -98,7 +98,7 @@ async function createVulnerabilityManagementService(
           displayName: name,
           name: name,
           category: ['software', 'other'],
-          function: 'vulnerability-management',
+          function: ['vulnerability-management'],
           description:
             'Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.',
           version: portalInfo?.['Portal-Version']?.['VM-VERSION'],
