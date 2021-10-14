@@ -18,7 +18,7 @@
     "format": "prettier --write '**/*.{ts,js,json,css,md,yml}'",
     "type-check": "tsc",
     "test": "jest",
-    "test:ci": "yarn lint && yarn type-check && yarn test",
+    "test:ci": "yarn lint && yarn type-check && yarn test -u",
     "build": "tsc -p tsconfig.dist.json --declaration && cp README.md dist/README.md",
     "prepush": "yarn lint && yarn type-check && jest --changedSince main",
     "start:qualys": "yarn ts-node ./tools/qualys-server/start.ts"
