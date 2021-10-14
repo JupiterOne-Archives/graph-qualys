@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.8.7] - 2021-10-14
+
 ## Changed
 
 - Update to `@jupiterone/integration-sdk-*@7.0.0`
