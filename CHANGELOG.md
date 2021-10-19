@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.8.8] - 2021-10-19
+
 ### Changed
 
 - Specified the status filter for host detections as
