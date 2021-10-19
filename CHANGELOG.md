@@ -5,8 +5,8 @@
 ### Changed
 
 - Specified the status filter for host detections as
-  `New,Fixed,Active,Re-Opened` to ensure `Fixed` detections are ingested. If not
-  specified, `Fixed` detections are not returned.
+  `New,Fixed,Active,Re-Opened` to ensure `Fixed` detections are ingested because
+  by default they are not returned.
 
 ## [5.8.7] - 2021-10-14
 
