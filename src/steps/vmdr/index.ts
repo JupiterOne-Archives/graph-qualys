@@ -280,7 +280,7 @@ export async function fetchScannedHostFindings({
         // await jobState.addRelationships(relationships);
       }
 
-      totalHostsProcessed++;
+      totalHostsProcessed++; // This only counts the hosts that have detections
       totalDetectionsProcessed += detections.length;
 
       if (numBadQids > 0) {
@@ -316,6 +316,7 @@ export async function fetchScannedHostFindings({
         detection_updated_since: instance.config.minFindingsSinceISODate,
         detection_updated_before: instance.config.maxFindingsSinceISODate,
         severities: instance.config.vmdrFindingSeverityNumbers,
+        status: 'New,Fixed,Active,Re-Opened',
       },
       onRequestError(pageIds, err) {
         totalPageErrors++;

@@ -2,19 +2,25 @@
 
 ## Unreleased
 
+### Changed
+
+- Specified the status filter for host detections as
+  `New,Fixed,Active,Re-Opened` to ensure `Fixed` detections are ingested. If not
+  specified, `Fixed` detections are not returned.
+
 ## [5.8.7] - 2021-10-14
 
-## Changed
+### Changed
 
 - Update to `@jupiterone/integration-sdk-*@7.0.0`
 
-## Added
+### Added
 
 - Added log for summary of host detections processed
 
 ## [5.8.6] - 2021-10-13
 
-## Changed
+### Changed
 
 - Changed host detection filters from `vm_scan_date_after` and
   `vm_scan_date_before` to `vm_processed_after` and `vm_processed_before`
