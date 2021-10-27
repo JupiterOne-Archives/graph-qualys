@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- Web App Scan step is able to be enabled/disabled based on configuration. To
+  support this change, the Vulnerability step now runs in separate dependency
+  graph that runs after all other steps.
+
 ## [5.8.8] - 2021-10-19
 
 ### Changed

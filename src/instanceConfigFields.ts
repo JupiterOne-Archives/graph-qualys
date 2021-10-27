@@ -151,6 +151,10 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
     // defaultValue: DEFAULT_FINDINGS_SINCE_DAYS
   },
 
+  ingestWebAppScans: {
+    type: 'boolean',
+  },
+
   // TODO Add support for virtual fields
   // minFindingsSinceISODate: {
   //   type: 'string',

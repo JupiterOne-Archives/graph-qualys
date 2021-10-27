@@ -13,14 +13,8 @@ import {
   SerializedVulnerabilityFindingKeys,
   VulnerabilityFindingKeysCollector,
 } from '../utils';
-import {
-  DATA_HOST_VULNERABILITY_FINDING_KEYS,
-  STEP_FETCH_SCANNED_HOST_FINDINGS,
-} from '../vmdr/constants';
-import {
-  DATA_WEBAPP_VULNERABILITY_FINDING_KEYS,
-  STEP_FETCH_SCANNED_WEBAPP_FINDINGS,
-} from '../was/constants';
+import { DATA_HOST_VULNERABILITY_FINDING_KEYS } from '../vmdr/constants';
+import { DATA_WEBAPP_VULNERABILITY_FINDING_KEYS } from '../was/constants';
 import { STEP_FETCH_FINDING_VULNS, VulnRelationships } from './constants';
 import {
   createFindingVulnerabilityMappedRelationships,
@@ -193,10 +187,8 @@ export const vulnSteps: IntegrationStep<QualysIntegrationConfig>[] = [
       VulnRelationships.WEBAPP_FINDING_QUALYS_VULN,
       VulnRelationships.WEBAPP_FINDING_CVE_VULN,
     ],
-    dependsOn: [
-      STEP_FETCH_SCANNED_HOST_FINDINGS,
-      STEP_FETCH_SCANNED_WEBAPP_FINDINGS,
-    ],
+    dependsOn: [],
     executionHandler: fetchFindingVulnerabilities,
+    dependencyGraphId: 'last',
   },
 ];
