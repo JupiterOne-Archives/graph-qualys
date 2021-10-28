@@ -37,6 +37,8 @@ export type UserIntegrationConfig = {
    * collection to types a security team wants to ingest.
    */
   vmdrFindingTypes?: string | string[];
+
+  ingestWebAppScans: boolean;
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {

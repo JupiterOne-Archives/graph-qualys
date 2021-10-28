@@ -1,6 +1,6 @@
 {
   "name": "@jupiterone/graph-qualys",
-  "version": "5.8.8",
+  "version": "5.8.9",
   "description": "Qualys integration for JupiterOne",
   "license": "MPL-2.0",
   "main": "src/index.js",
@@ -21,7 +21,9 @@
     "test:ci": "yarn lint && yarn type-check && yarn test",
     "build": "tsc -p tsconfig.dist.json --declaration && cp README.md dist/README.md",
     "prepush": "yarn lint && yarn type-check && jest --changedSince main",
-    "start:qualys": "yarn ts-node ./tools/qualys-server/start.ts"
+    "start:qualys": "yarn ts-node ./tools/qualys-server/start.ts",
+    "link-dist": "yarn --cwd ./dist link",
+    "unlink-dist": "yarn --cwd ./dist unlink"
   },
   "dependencies": {
     "@lifeomic/attempt": "^3.0.0",
