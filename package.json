@@ -22,7 +22,8 @@
     "build": "tsc -p tsconfig.dist.json --declaration && cp README.md dist/README.md",
     "prepush": "yarn lint && yarn type-check && jest --changedSince main",
     "start:qualys": "yarn ts-node ./tools/qualys-server/start.ts",
-    "link-dist": "yarn --cwd ./dist link"
+    "link-dist": "yarn --cwd ./dist link",
+    "unlink-dist": "yarn --cwd ./dist unlink"
   },
   "dependencies": {
     "@lifeomic/attempt": "^3.0.0",

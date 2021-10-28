@@ -69,6 +69,7 @@ export function getStepStartStates(
   context: IntegrationExecutionContext<UserIntegrationConfig>,
 ): StepStartStates {
   const { config } = context.instance;
+  const ingestWebAppScans = !!config.ingestWebAppScans;
 
   return {
     [STEP_FETCH_ACCOUNT]: {
@@ -78,7 +79,7 @@ export function getStepStartStates(
       disabled: false,
     },
     [STEP_FETCH_SCANNED_WEBAPPS]: {
-      disabled: !config.ingestWebAppScans,
+      disabled: !ingestWebAppScans,
     },
     [STEP_FETCH_SCANNED_WEBAPP_FINDINGS]: {
       disabled: false,
