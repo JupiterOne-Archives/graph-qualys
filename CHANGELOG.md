@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.8.9] - 2021-10-28
+
 ### Changed
 
 - Web App Scan step is able to be enabled/disabled based on configuration. To
