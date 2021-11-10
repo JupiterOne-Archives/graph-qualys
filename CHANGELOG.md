@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- `Finding -> discovered_host` mapping now uses actual `qualysAssetId` for
+  target enitity rather than `qWebHostId` which caused mappings to not be
+  created properly.
+
 ## [5.8.9] - 2021-10-28
 
 ### Changed
