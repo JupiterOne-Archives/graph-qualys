@@ -69,6 +69,12 @@ export function calculateConfig({
     validValues: VALID_VMDR_FINDING_TYPES,
   });
 
+  const qidsReturnResultList = readPropertyAsNumberArrayFromEnvOrConfig({
+    config,
+    propertyName: 'qidsReturnResult',
+    defaultValue: [],
+  });
+
   return {
     ...config,
 
@@ -82,6 +88,7 @@ export function calculateConfig({
 
     vmdrFindingSeverityNumbers,
     vmdrFindingTypeValues,
+    qidsReturnResultList,
   };
 }
 

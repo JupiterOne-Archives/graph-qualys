@@ -13,7 +13,7 @@ import {
   IntegrationProviderAuthorizationError,
 } from '@jupiterone/integration-sdk-core';
 
-import { UserIntegrationConfig } from '../../types';
+import { CalculatedIntegrationConfig } from '../../types';
 import { withConcurrency } from './concurrency';
 import { ClientEventEmitter, executeAPIRequest } from './request';
 import {
@@ -152,7 +152,7 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
 };
 
 export type QualysAPIClientConfig = {
-  config: UserIntegrationConfig;
+  config: CalculatedIntegrationConfig;
 
   /**
    * Initializes the API client with a `RateLimitConfig`.
@@ -267,7 +267,7 @@ function createQualysAPIResponse(response: Response): QualysAPIResponse {
 export class QualysAPIClient {
   private events: ClientEventEmitter;
 
-  private config: UserIntegrationConfig;
+  private config: CalculatedIntegrationConfig;
   private retryConfig: RetryConfig;
   private rateLimitConfig: RateLimitConfig;
 
@@ -724,6 +724,65 @@ export class QualysAPIClient {
       });
 
     return assets[0];
+  }
+
+  public async iterateHostDetectionsWithResults(
+    hostIds: QWebHostId[],
+    qids: number[],
+    iteratee: ResourceIteratee<{
+      host: vmpc.DetectionHost;
+      detections: vmpc.HostDetection[];
+    }>,
+    options?: IterateHostDetectionsOptions,
+  ): Promise<void> {
+    const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
+
+    const filters: Record<string, string> = {};
+    if (options?.filters) {
+      for (const [k, v] of Object.entries(options.filters)) {
+        if (v && (!Array.isArray(v) || v.length > 0)) {
+          filters[k] = String(v);
+        }
+      }
+    }
+
+    const fetchDetections = async (
+      ids: QWebHostId[],
+      qids: number[],
+    ): Promise<vmpc.DetectionHost[]> => {
+      const params = new URLSearchParams({
+        ...filters,
+        action: 'list',
+        show_tags: '1',
+        show_igs: '1',
+        show_results: '1',
+        output_format: 'XML',
+        truncation_limit: String(qids.length),
+        ids: ids.map(String),
+        qids: qids.map(String),
+      });
+
+      const response = await this.executeAuthenticatedAPIRequest(
+        this.qualysUrl(endpoint),
+        { method: 'POST', body: params },
+      );
+
+      const jsonFromXml = await parseXMLResponse<
+        vmpc.ListHostDetectionsResponse
+      >(response);
+      return toArray(
+        jsonFromXml.HOST_LIST_VM_DETECTION_OUTPUT?.RESPONSE?.HOST_LIST?.HOST,
+      );
+    };
+
+    if (hostIds.length) {
+      for (const host of await fetchDetections(hostIds, qids)) {
+        await iteratee({
+          host,
+          detections: toArray(host.DETECTION_LIST?.DETECTION),
+        });
+      }
+    }
   }
 
   /**

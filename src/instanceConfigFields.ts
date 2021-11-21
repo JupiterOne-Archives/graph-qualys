@@ -155,6 +155,14 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
     type: 'boolean',
   },
 
+  enableDetectionResults: {
+    type: 'boolean',
+  },
+
+  qidsReturnResult: {
+    type: 'string',
+  },
+
   // TODO Add support for virtual fields
   // minFindingsSinceISODate: {
   //   type: 'string',

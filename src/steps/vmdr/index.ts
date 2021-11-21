@@ -185,9 +185,10 @@ export async function fetchScannedHostFindings({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
+  const { config } = instance;
   const apiClient = createQualysAPIClient(logger, instance.config);
 
-  const detectionTypes = instance.config.vmdrFindingTypeValues;
+  const detectionTypes = config.vmdrFindingTypeValues;
 
   const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
     []) as number[];
@@ -208,6 +209,67 @@ export async function fetchScannedHostFindings({
   let totalPageErrors = 0;
 
   let totalEc2FindingsProcessed = 0;
+
+  const findingWithResultsMap = new Map();
+
+  if (config.enableDetectionResults && hostIds.length) {
+    // Make detection call to get results for specified QIDs
+    await apiClient.iterateHostDetectionsWithResults(
+      hostIds,
+      config.qidsReturnResultList,
+      ({ host, detections }) => {
+        for (const detection of detections) {
+          if (detection.TYPE && !detectionTypes.includes(detection.TYPE)) {
+            continue;
+          }
+
+          /**
+           * A host may have many detections of the same vulnerability on
+           * different ports/protocols/ssl.
+           */
+          const findingKey = buildKey({
+            qid: detection.QID,
+            type: detection.TYPE,
+            port: detection.PORT,
+            protocol: detection.PROTOCOL,
+            ssl: detection.SSL,
+            hostId: host.ID,
+          });
+
+          if (findingWithResultsMap.has(findingKey)) continue;
+
+          vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
+            detection.QID!,
+            findingKey,
+          );
+
+          const findingEntity = createHostFindingEntity(
+            findingKey,
+            host,
+            detection,
+            hostAssetTargetsMap[host.ID!],
+          );
+
+          findingWithResultsMap.set(findingKey, findingEntity);
+        }
+      },
+      {
+        filters: {
+          detection_updated_since: config.minFindingsSinceISODate,
+          detection_updated_before: config.maxFindingsSinceISODate,
+          severities: config.vmdrFindingSeverityNumbers,
+          status: 'New,Fixed,Active,Re-Opened',
+        },
+        onRequestError(pageIds, err) {
+          totalPageErrors++;
+          logger.error(
+            { pageIds, err, errorCorrelationId, totalPageErrors },
+            'Error processing page of hosts',
+          );
+        },
+      },
+    );
+  }
 
   await apiClient.iterateHostDetections(
     hostIds,
@@ -250,21 +312,26 @@ export async function fetchScannedHostFindings({
 
           if (await jobState.hasKey(findingKey)) continue;
 
-          vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
-            detection.QID!,
-            findingKey,
-          );
+          if (findingWithResultsMap.has(findingKey)) {
+            // If we already have this finding, use the one that has the results we grabbed earlier
+            entities.push(findingWithResultsMap.get(findingKey));
+          } else {
+            vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
+              detection.QID!,
+              findingKey,
+            );
 
-          const findingEntity = createHostFindingEntity(
-            findingKey,
-            host,
-            detection,
-            hostAssetTargetsMap[host.ID!],
-          );
-          entities.push(findingEntity);
+            const findingEntity = createHostFindingEntity(
+              findingKey,
+              host,
+              detection,
+              hostAssetTargetsMap[host.ID!],
+            );
+            entities.push(findingEntity);
 
-          if (findingEntity.ec2InstanceArn) {
-            totalEc2FindingsProcessed++;
+            if (findingEntity.ec2InstanceArn) {
+              totalEc2FindingsProcessed++;
+            }
           }
 
           // relationships.push(
@@ -313,9 +380,9 @@ export async function fetchScannedHostFindings({
     },
     {
       filters: {
-        detection_updated_since: instance.config.minFindingsSinceISODate,
-        detection_updated_before: instance.config.maxFindingsSinceISODate,
-        severities: instance.config.vmdrFindingSeverityNumbers,
+        detection_updated_since: config.minFindingsSinceISODate,
+        detection_updated_before: config.maxFindingsSinceISODate,
+        severities: config.vmdrFindingSeverityNumbers,
         status: 'New,Fixed,Active,Re-Opened',
       },
       onRequestError(pageIds, err) {

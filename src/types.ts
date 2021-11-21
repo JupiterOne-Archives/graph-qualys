@@ -39,6 +39,10 @@ export type UserIntegrationConfig = {
   vmdrFindingTypes?: string | string[];
 
   ingestWebAppScans: boolean;
+
+  enableDetectionResults: boolean;
+
+  qidsReturnResult: string | string[];
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {
@@ -79,6 +83,11 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
    * `DEFAULT_VMDR_FINDING_TYPES`.
    */
   vmdrFindingTypeValues: string[];
+
+  /**
+   *
+   */
+  qidsReturnResultList: number[];
 };
 
 /**
