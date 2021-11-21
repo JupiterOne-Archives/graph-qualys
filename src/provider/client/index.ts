@@ -775,13 +775,11 @@ export class QualysAPIClient {
       );
     };
 
-    if (hostIds.length) {
-      for (const host of await fetchDetections(hostIds, qids)) {
-        await iteratee({
-          host,
-          detections: toArray(host.DETECTION_LIST?.DETECTION),
-        });
-      }
+    for (const host of await fetchDetections(hostIds, qids)) {
+      await iteratee({
+        host,
+        detections: toArray(host.DETECTION_LIST?.DETECTION),
+      });
     }
   }
 

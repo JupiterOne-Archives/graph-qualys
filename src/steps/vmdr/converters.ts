@@ -246,6 +246,8 @@ export function createHostFindingEntity(
         // TODO: These are required but not sure what values to use
         production: true,
         public: true,
+
+        detectionResult: detection.RESULTS?.substring(0, 300), // Only send up up to 300 bytes
       },
     },
   });
