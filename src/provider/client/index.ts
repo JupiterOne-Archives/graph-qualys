@@ -13,7 +13,7 @@ import {
   IntegrationProviderAuthorizationError,
 } from '@jupiterone/integration-sdk-core';
 
-import { CalculatedIntegrationConfig } from '../../types';
+import { UserIntegrationConfig } from '../../types';
 import { withConcurrency } from './concurrency';
 import { ClientEventEmitter, executeAPIRequest } from './request';
 import {
@@ -152,7 +152,7 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
 };
 
 export type QualysAPIClientConfig = {
-  config: CalculatedIntegrationConfig;
+  config: UserIntegrationConfig;
 
   /**
    * Initializes the API client with a `RateLimitConfig`.
@@ -267,7 +267,7 @@ function createQualysAPIResponse(response: Response): QualysAPIResponse {
 export class QualysAPIClient {
   private events: ClientEventEmitter;
 
-  private config: CalculatedIntegrationConfig;
+  private config: UserIntegrationConfig;
   private retryConfig: RetryConfig;
   private rateLimitConfig: RateLimitConfig;
 

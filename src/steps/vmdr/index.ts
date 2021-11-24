@@ -212,11 +212,11 @@ export async function fetchScannedHostFindings({
 
   const findingWithResultsMap = new Map();
 
-  if (config.enableDetectionResults && hostIds.length) {
+  if (config.vmdrFindingResultQidNumbers.length && hostIds.length) {
     // Make detection call to get results for specified QIDs
     await apiClient.iterateHostDetectionsWithResults(
       hostIds,
-      config.qidsReturnResultList,
+      config.vmdrFindingResultQidNumbers,
       ({ host, detections }) => {
         for (const detection of detections) {
           if (detection.TYPE && !detectionTypes.includes(detection.TYPE)) {
