@@ -1,6 +1,7 @@
 import {
   DEFAULT_FINDINGS_SINCE_DAYS,
   DEFAULT_SCANNED_SINCE_DAYS,
+  DEFAULT_VMDR_FINDING_RESULT_QIDS,
 } from '../src/constants';
 import { QualysIntegrationConfig } from '../src/types';
 
@@ -11,4 +12,5 @@ export const config = {
   qualysUsername: process.env.QUALYS_USERNAME || 'upter3aw',
   minScannedSinceDays: DEFAULT_SCANNED_SINCE_DAYS,
   minFindingsSinceDays: DEFAULT_FINDINGS_SINCE_DAYS,
+  vmdrFindingResultQidNumbers: DEFAULT_VMDR_FINDING_RESULT_QIDS,
 } as QualysIntegrationConfig;

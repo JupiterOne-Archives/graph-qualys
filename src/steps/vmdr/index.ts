@@ -9,8 +9,14 @@ import {
 
 import { createQualysAPIClient } from '../../provider';
 import { QWebHostId } from '../../provider/client';
-import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
-import { QualysIntegrationConfig } from '../../types';
+import {
+  HostDetection,
+  ListScannedHostIdsFilters,
+} from '../../provider/client/types/vmpc';
+import {
+  CalculatedIntegrationConfig,
+  QualysIntegrationConfig,
+} from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 import { VulnerabilityFindingKeysCollector } from '../utils';
@@ -186,10 +192,8 @@ export async function fetchScannedHostFindings({
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
   const { config } = instance;
-  const apiClient = createQualysAPIClient(logger, instance.config);
 
   const detectionTypes = config.vmdrFindingTypeValues;
-
   const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
     []) as number[];
   const hostAssetTargetsMap = ((await jobState.getData(
@@ -210,67 +214,7 @@ export async function fetchScannedHostFindings({
 
   let totalEc2FindingsProcessed = 0;
 
-  const findingWithResultsMap = new Map();
-
-  if (config.vmdrFindingResultQidNumbers.length && hostIds.length) {
-    // Make detection call to get results for specified QIDs
-    await apiClient.iterateHostDetectionsWithResults(
-      hostIds,
-      config.vmdrFindingResultQidNumbers,
-      ({ host, detections }) => {
-        for (const detection of detections) {
-          if (detection.TYPE && !detectionTypes.includes(detection.TYPE)) {
-            continue;
-          }
-
-          /**
-           * A host may have many detections of the same vulnerability on
-           * different ports/protocols/ssl.
-           */
-          const findingKey = buildKey({
-            qid: detection.QID,
-            type: detection.TYPE,
-            port: detection.PORT,
-            protocol: detection.PROTOCOL,
-            ssl: detection.SSL,
-            hostId: host.ID,
-          });
-
-          if (findingWithResultsMap.has(findingKey)) continue;
-
-          vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
-            detection.QID!,
-            findingKey,
-          );
-
-          const findingEntity = createHostFindingEntity(
-            findingKey,
-            host,
-            detection,
-            hostAssetTargetsMap[host.ID!],
-          );
-
-          findingWithResultsMap.set(findingKey, findingEntity);
-        }
-      },
-      {
-        filters: {
-          detection_updated_since: config.minFindingsSinceISODate,
-          detection_updated_before: config.maxFindingsSinceISODate,
-          severities: config.vmdrFindingSeverityNumbers,
-          status: 'New,Fixed,Active,Re-Opened',
-        },
-        onRequestError(pageIds, err) {
-          totalPageErrors++;
-          logger.error(
-            { pageIds, err, errorCorrelationId, totalPageErrors },
-            'Error processing page of hosts',
-          );
-        },
-      },
-    );
-  }
-
+  const apiClient = createQualysAPIClient(logger, config);
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
@@ -312,26 +256,27 @@ export async function fetchScannedHostFindings({
 
           if (await jobState.hasKey(findingKey)) continue;
 
-          if (findingWithResultsMap.has(findingKey)) {
-            // If we already have this finding, use the one that has the results we grabbed earlier
-            entities.push(findingWithResultsMap.get(findingKey));
-          } else {
-            vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
-              detection.QID!,
-              findingKey,
-            );
+          vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
+            detection.QID!,
+            findingKey,
+          );
 
-            const findingEntity = createHostFindingEntity(
-              findingKey,
-              host,
+          const findingEntity = createHostFindingEntity({
+            key: findingKey,
+            host,
+            detection,
+            detectionResults: shouldIncludeResultsForVulnerability(
+              config,
               detection,
-              hostAssetTargetsMap[host.ID!],
-            );
-            entities.push(findingEntity);
+            )
+              ? detection.RESULTS?.substring(0, 300)
+              : undefined,
+            hostAssetTargets: hostAssetTargetsMap[host.ID!],
+          });
+          entities.push(findingEntity);
 
-            if (findingEntity.ec2InstanceArn) {
-              totalEc2FindingsProcessed++;
-            }
+          if (findingEntity.ec2InstanceArn) {
+            totalEc2FindingsProcessed++;
           }
 
           // relationships.push(
@@ -379,6 +324,7 @@ export async function fetchScannedHostFindings({
       }
     },
     {
+      includeResults: !!config.vmdrFindingResultQidNumbers.length,
       filters: {
         detection_updated_since: config.minFindingsSinceISODate,
         detection_updated_before: config.maxFindingsSinceISODate,
@@ -397,14 +343,8 @@ export async function fetchScannedHostFindings({
 
   logger.info(
     {
-      totalEc2FindingsProcessed,
-    },
-    'Findings containing ec2 arns...',
-  );
-
-  logger.info(
-    {
       totalDetectionsProcessed,
+      totalEc2FindingsProcessed,
       totalUnmatchedTypeDetections,
       totalHostsEncountered: hostIds.length,
       totalHostsProcessed,
@@ -428,6 +368,17 @@ export async function fetchScannedHostFindings({
         : ''
     }`,
   });
+}
+
+function shouldIncludeResultsForVulnerability(
+  config: CalculatedIntegrationConfig,
+  detection: HostDetection,
+): boolean {
+  return !!(
+    detection.QID &&
+    config.vmdrFindingResultQidNumbers.includes(detection.QID) &&
+    detection.RESULTS
+  );
 }
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [

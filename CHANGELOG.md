@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Added first 300 bytes of detection results as `Finding.details` when the
+  detection represents a vulnerability in the set of `vmdrFindingResultQids`
+  provided in the configuration. This is optional and it will come at a
+  significant processing cost due to the number of additional bytes transferred
+  for all host detections.
+
 ## [5.8.9] - 2021-10-28
 
 ### Changed

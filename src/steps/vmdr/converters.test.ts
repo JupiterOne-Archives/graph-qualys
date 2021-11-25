@@ -281,12 +281,13 @@ describe('createHostFindingEntity', () => {
           ec2InstanceArn: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
         };
         expect(
-          createHostFindingEntity(
-            'finding-key',
-            detectionHost,
-            hostDetection,
-            hostTargets,
-          ),
+          createHostFindingEntity({
+            key: 'finding-key',
+            host: detectionHost,
+            detection: hostDetection,
+            detectionResults: undefined,
+            hostAssetTargets: hostTargets,
+          }),
         ).toMatchGraphObjectSchema({
           _class: 'Finding',
           schema: {
