@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Changed
+
+- Removed `discovered_host.qualysHostId`. The value is now stored in
+  `discovered_host.qualysAssetId`.
+
+### Fixed
+
+- Fixed a failure to properly map `Service - SCANS -> Host` relationships. The
+  mapping target entity value for `discovered_host.qualysAssetId` needs to match
+  the `Finding.hostId` so that `Service - SCANS -> Host` and
+  `Finding <- HAS - Host` relationships connect to the same `Host` entities. See
+  `src/provider/client/types/index.ts` for details on the distinctions between
+  Qualys host IDs.
+
 ## [5.8.9] - 2021-10-28
 
 ### Changed

@@ -1,3 +1,4 @@
+import { AssetHostId } from '../';
 import { QWebHostId } from './index';
 import { ServiceResponseBody } from './qps';
 import { ISODateString, PossibleArray } from './util';
@@ -12,7 +13,7 @@ export type Data = {
 };
 
 export type HostAsset = {
-  id?: number;
+  id?: AssetHostId;
   name?: string;
   created?: ISODateString;
   modified?: ISODateString;

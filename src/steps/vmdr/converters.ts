@@ -385,8 +385,8 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     os,
     platform,
 
-    qualysAssetId: host.id, // Used as target filter for Service|Finding -> Host
-    qualysHostId: host.qwebHostId,
+    qualysAssetId: host.qwebHostId, // Used as target filter for Service|Finding -> Host
+
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
     scannedBy: 'qualys',

@@ -57,7 +57,6 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
           properties: {
             _type: { const: 'discovered_host' },
             qualysAssetId: { type: 'number' },
-            qualysHostId: { type: 'number' },
             qualysCreatedOn: { type: 'number' },
 
             scannedBy: { type: 'string' },
@@ -81,7 +80,6 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
           'os',
           'platform',
           'qualysAssetId',
-          'qualysHostId',
           'qualysCreatedOn',
           'scannedBy',
           'lastScannedOn',
