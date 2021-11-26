@@ -10,6 +10,10 @@
   support this change, the Vulnerability step now runs in separate dependency
   graph that runs after all other steps.
 
+- Fixed discrepency in how `discovered_host._key` is generated to match the
+  value produced by the `Finding <- HAS - discovered_host` relationship
+  processing.
+
 ## [5.8.8] - 2021-10-19
 
 ### Changed

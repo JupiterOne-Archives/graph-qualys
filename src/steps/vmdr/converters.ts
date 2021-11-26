@@ -397,8 +397,19 @@ export function getHostAssetDetails(host: assets.HostAsset) {
   };
 }
 
+/**
+ * Generates a _key value for a host asset.
+ *
+ * This does not consider the POD the integration is ingesting data from, which
+ * may become important if a customer ingests data from two Qualys subscriptions
+ * that are not in the same POD. The ID documentation tells us the values can be
+ * the same for two different hosts from two PODS because the values are no
+ * globally unique.
+ *
+ * @see https://success.qualys.com/discussions/s/article/000006216
+ */
 function generateHostAssetKey(host: assets.HostAsset): string {
-  return `qualys-host:${host.qwebHostId!}`;
+  return `Host:${host.qwebHostId!}`;
 }
 
 function getHostAssetIPAddresses(host: assets.HostAsset) {
