@@ -409,7 +409,7 @@ export function getHostAssetDetails(host: assets.HostAsset) {
  * @see https://success.qualys.com/discussions/s/article/000006216
  */
 function generateHostAssetKey(host: assets.HostAsset): string {
-  return `Host:${host.qwebHostId!}`;
+  return `Host:${host.id!}`; // Use the qualysAssetId in the key to be consistent with streamed mappings
 }
 
 function getHostAssetIPAddresses(host: assets.HostAsset) {
