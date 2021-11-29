@@ -1,3 +1,5 @@
+import { AssetHostId } from '../../provider/client';
+
 /**
  * Detection target values (`Finding.targets`) pulled from a host asset that
  * serve as additional information for building Finding entities during host
@@ -12,7 +14,7 @@
 export type HostAssetTargets = {
   fqdn?: string;
   ec2InstanceArn?: string;
-  qualysAssetId?: number;
+  qualysAssetId?: AssetHostId;
 };
 
 /**
