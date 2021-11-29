@@ -4,8 +4,12 @@
 
 ### Changed
 
-- Removed `discovered_host.qualysHostId`. The value is now stored in
-  `discovered_host.qualysAssetId`.
+- `Finding -> discovered_host` mapping now uses actual `qualysAssetId` for
+  target enitity rather than `qWebHostId` which caused mappings to not be
+  created properly.
+
+- Changed `qualysHostId` property name on `discovered_host` target entity to
+  `qualysQWebHostId` to more accurately represent which value is being used.
 
 ### Fixed
 
