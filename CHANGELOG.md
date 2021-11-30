@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.10.0] - 2021-11-30
+
 ### Changed
 
 - `Finding -> discovered_host` mapping now uses actual `qualysAssetId` for
