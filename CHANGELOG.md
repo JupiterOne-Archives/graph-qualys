@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Changed
+
+- `Finding -> discovered_host` mapping now uses actual `qualysAssetId` for
+  target enitity rather than `qWebHostId` which caused mappings to not be
+  created properly.
+
+- Changed `qualysHostId` property name on `discovered_host` target entity to
+  `qualysQWebHostId` to more accurately represent which value is being used.
+
+### Fixed
+
+- Fixed a failure to properly map `Service - SCANS -> Host` relationships. The
+  mapping target entity value for `discovered_host.qualysAssetId` needs to match
+  the `Finding.hostId` so that `Service - SCANS -> Host` and
+  `Finding <- HAS - Host` relationships connect to the same `Host` entities. See
+  `src/provider/client/types/index.ts` for details on the distinctions between
+  Qualys host IDs.
+
 ## [5.8.9] - 2021-10-28
 
 ### Changed

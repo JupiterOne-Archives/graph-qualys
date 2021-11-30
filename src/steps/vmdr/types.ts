@@ -1,3 +1,5 @@
+import { AssetHostId } from '../../provider/client';
+
 /**
  * Detection target values (`Finding.targets`) pulled from a host asset that
  * serve as additional information for building Finding entities during host
@@ -9,7 +11,11 @@
  * `jobState` except as mapped relationship `targetEntity` properties, and are
  * therefore not available for lookup later.
  */
-export type HostAssetTargets = { fqdn?: string; ec2InstanceArn?: string };
+export type HostAssetTargets = {
+  fqdn?: string;
+  ec2InstanceArn?: string;
+  qualysAssetId?: AssetHostId;
+};
 
 /**
  * Maps a QWeb Host ID to `HostAssetTargets`.

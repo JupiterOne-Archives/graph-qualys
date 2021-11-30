@@ -203,7 +203,7 @@ export function createHostFindingEntity(
         id: key,
         ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
         fqdn: hostAssetTargets?.fqdn,
-        hostId: host.ID, // Used to map to Host.qualysAssetId (streamed mapping)
+        hostId: hostAssetTargets?.qualysAssetId, // Used to map to Host.qualysAssetId (streamed mapping)
 
         displayName: findingDisplayName,
         name: findingDisplayName,
@@ -275,6 +275,7 @@ export function getDetectionHostTargets(
     host.IP,
     host.ID,
     hostAssetTargets?.fqdn,
+    hostAssetTargets?.qualysAssetId,
     hostAssetTargets?.ec2InstanceArn,
   ]);
 }
@@ -289,6 +290,7 @@ export function getDetectionHostTargets(
 export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
   return {
     fqdn: getHostAssetFqdn(host),
+    qualysAssetId: host.id,
     ec2InstanceArn: getEC2HostAssetArn(host),
   };
 }
@@ -386,7 +388,8 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     platform,
 
     qualysAssetId: host.id, // Used as target filter for Service|Finding -> Host
-    qualysHostId: host.qwebHostId,
+    qualysQWebHostId: host.qwebHostId,
+
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
     scannedBy: 'qualys',
