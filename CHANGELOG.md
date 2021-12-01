@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Changed the `qualysAssetId` values to use `qWebHostId` once again to verify
+  streamed mappings are working properly. Temporarily removing
+  `qualysQWebHostId` until streamed mappings rule is updated to point to that
+  property.
+
 ## [5.9.0] - 2021-11-30
 
 ### Changed

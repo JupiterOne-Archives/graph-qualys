@@ -203,7 +203,7 @@ export function createHostFindingEntity(
         id: key,
         ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
         fqdn: hostAssetTargets?.fqdn,
-        hostId: hostAssetTargets?.qualysAssetId, // Used to map to Host.qualysAssetId (streamed mapping)
+        hostId: host.ID, // (QWebHostId) Used to map to Host.qualysAssetId (streamed mapping)
 
         displayName: findingDisplayName,
         name: findingDisplayName,
@@ -275,7 +275,6 @@ export function getDetectionHostTargets(
     host.IP,
     host.ID,
     hostAssetTargets?.fqdn,
-    hostAssetTargets?.qualysAssetId,
     hostAssetTargets?.ec2InstanceArn,
   ]);
 }
@@ -290,7 +289,6 @@ export function getDetectionHostTargets(
 export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
   return {
     fqdn: getHostAssetFqdn(host),
-    qualysAssetId: host.id,
     ec2InstanceArn: getEC2HostAssetArn(host),
   };
 }
@@ -387,8 +385,13 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     os,
     platform,
 
-    qualysAssetId: host.id, // Used as target filter for Service|Finding -> Host
-    qualysQWebHostId: host.qwebHostId,
+    // TODO: Once mappings are working:
+    // 1. Change streamed mapping to use qualysQWebHostId
+    // 2. Change qualysAssetId to reference host.id
+    // 3. Uncomment line to add qualysQWebHostId property
+
+    qualysAssetId: host.qwebHostId, // Used as target filter for Service|Finding -> Host
+    // qualysQWebHostId: host.qwebHostId,
 
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
@@ -412,7 +415,7 @@ export function getHostAssetDetails(host: assets.HostAsset) {
  * @see https://success.qualys.com/discussions/s/article/000006216
  */
 function generateHostAssetKey(host: assets.HostAsset): string {
-  return `Host:${host.id!}`; // Use the qualysAssetId in the key to be consistent with streamed mappings
+  return `Host:${host.qwebHostId!}`; // Finding -> discovered host streamed mapping is expecting QWebHostId
 }
 
 function getHostAssetIPAddresses(host: assets.HostAsset) {
