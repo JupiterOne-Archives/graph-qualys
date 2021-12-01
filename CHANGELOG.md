@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.9.1] - 2021-12-01
+
 ### Changed
 
 - Changed the `qualysAssetId` values to use `qWebHostId` once again to verify
