@@ -181,12 +181,19 @@ export function markInvalidTags(
  * @param hostAssetTargets detection target information by host, collected from
  * the host asset API, which is not available in the detection data itself
  */
-export function createHostFindingEntity(
-  key: string,
-  host: vmpc.DetectionHost,
-  detection: vmpc.HostDetection,
-  hostAssetTargets: HostAssetTargets | undefined,
-): Entity {
+export function createHostFindingEntity({
+  key,
+  host,
+  detection,
+  detectionResults,
+  hostAssetTargets,
+}: {
+  key: string;
+  host: vmpc.DetectionHost;
+  detection: vmpc.HostDetection;
+  detectionResults: string | undefined;
+  hostAssetTargets: HostAssetTargets | undefined;
+}): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
   return createIntegrationEntity({
@@ -209,6 +216,9 @@ export function createHostFindingEntity(
         name: findingDisplayName,
         qid: detection.QID!,
         type: detection.TYPE,
+
+        // Limit storage to 300 bytes. Detection results can be many megabytes.
+        details: detectionResults?.substring(0, 300),
 
         severity: convertNumericSeverityToString(detection.SEVERITY),
         numericSeverity: normalizeNumericSeverity(detection.SEVERITY),

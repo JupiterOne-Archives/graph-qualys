@@ -186,6 +186,14 @@ export type IterateHostDetectionsOptions = {
    */
   filters?: vmpc.ListHostDetectionsFilters;
   pagination?: { limit: number };
+
+  /**
+   * Include detection results data when listing host detections. This is
+   * expensive due to the increased number of bytes transferred and processed in
+   * the XML payload.
+   */
+  includeResults?: boolean;
+
   // TODO make this a required argument and update tests
   onRequestError?: (pageIds: number[], err: Error) => void;
 };
@@ -744,6 +752,7 @@ export class QualysAPIClient {
    *
    * @param hostIds the set of QWEB host IDs to fetch detections
    * @param iteratee receives each host and its detections
+   * @param options configure detection fetch parameters
    */
   public async iterateHostDetections(
     hostIds: QWebHostId[],
@@ -773,7 +782,7 @@ export class QualysAPIClient {
         action: 'list',
         show_tags: '1',
         show_igs: '1',
-        show_results: '0',
+        show_results: !!options?.includeResults ? '1' : '0',
         output_format: 'XML',
         truncation_limit: String(ids.length),
         ids: ids.map(String),

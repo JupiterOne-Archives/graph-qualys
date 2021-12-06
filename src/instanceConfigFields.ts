@@ -92,13 +92,29 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
   // },
 
   /**
-   * Processes host detections in response having the selected values, otherwise
+   * Processes host detections in responses having the selected values, otherwise
    * detections are skipped.
    */
   vmdrFindingTypes: {
     type: 'string',
     // options: ['Info', 'Potential', 'Confirmed'],
     // defaultValue: ['Potential', 'Confirmed'],
+  },
+
+  /**
+   * Enables fetching of detection results data and transfers a limited number
+   * of bytes into Finding entities. Some users would like to see some amount of
+   * this information to help triage Findings.
+   *
+   * This is optional and it will come at a significant processing cost due to
+   * the number of additional bytes transferred for all host detections.
+   */
+  vmdrFindingResultQids: {
+    // TODO: Add support for `number[]`. Will come in as a `string[]` when
+    // executing in JupiterOne and a `string` in local execution (from `.env`
+    // file). See https://github.com/JupiterOne/sdk/issues/462
+    type: 'string',
+    // defaultValue: []
   },
 
   /**
