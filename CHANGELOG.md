@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.9.2] - 2021-12-06
+
 ### Added
 
 - Added first 300 bytes of detection results as `Finding.details` when the
