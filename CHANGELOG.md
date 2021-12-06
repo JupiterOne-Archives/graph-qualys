@@ -10,6 +10,35 @@
   significant processing cost due to the number of additional bytes transferred
   for all host detections.
 
+## [5.9.1] - 2021-12-01
+
+### Changed
+
+- Changed the `qualysAssetId` values to use `qWebHostId` once again to verify
+  streamed mappings are working properly. Temporarily removing
+  `qualysQWebHostId` until streamed mappings rule is updated to point to that
+  property.
+
+## [5.9.0] - 2021-11-30
+
+### Changed
+
+- `Finding -> discovered_host` mapping now uses actual `qualysAssetId` for
+  target enitity rather than `qWebHostId` which caused mappings to not be
+  created properly.
+
+- Changed `qualysHostId` property name on `discovered_host` target entity to
+  `qualysQWebHostId` to more accurately represent which value is being used.
+
+### Fixed
+
+- Fixed a failure to properly map `Service - SCANS -> Host` relationships. The
+  mapping target entity value for `discovered_host.qualysAssetId` needs to match
+  the `Finding.hostId` so that `Service - SCANS -> Host` and
+  `Finding <- HAS - Host` relationships connect to the same `Host` entities. See
+  `src/provider/client/types/index.ts` for details on the distinctions between
+  Qualys host IDs.
+
 ## [5.8.9] - 2021-10-28
 
 ### Changed
@@ -17,6 +46,10 @@
 - Web App Scan step is able to be enabled/disabled based on configuration. To
   support this change, the Vulnerability step now runs in separate dependency
   graph that runs after all other steps.
+
+- Fixed discrepency in how `discovered_host._key` is generated to match the
+  value produced by the `Finding <- HAS - discovered_host` relationship
+  processing.
 
 ## [5.8.8] - 2021-10-19
 

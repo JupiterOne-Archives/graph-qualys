@@ -210,7 +210,7 @@ export function createHostFindingEntity({
         id: key,
         ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
         fqdn: hostAssetTargets?.fqdn,
-        hostId: host.ID, // Used to map to Host.qualysAssetId (streamed mapping)
+        hostId: host.ID, // (QWebHostId) Used to map to Host.qualysAssetId (streamed mapping)
 
         displayName: findingDisplayName,
         name: findingDisplayName,
@@ -395,8 +395,14 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     os,
     platform,
 
-    qualysAssetId: host.id, // Used as target filter for Service|Finding -> Host
-    qualysHostId: host.qwebHostId,
+    // TODO: Once mappings are working:
+    // 1. Change streamed mapping to use qualysQWebHostId
+    // 2. Change qualysAssetId to reference host.id
+    // 3. Uncomment line to add qualysQWebHostId property
+
+    qualysAssetId: host.qwebHostId, // Used as target filter for Service|Finding -> Host
+    // qualysQWebHostId: host.qwebHostId,
+
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
     scannedBy: 'qualys',
@@ -407,8 +413,19 @@ export function getHostAssetDetails(host: assets.HostAsset) {
   };
 }
 
+/**
+ * Generates a _key value for a host asset.
+ *
+ * This does not consider the POD the integration is ingesting data from, which
+ * may become important if a customer ingests data from two Qualys subscriptions
+ * that are not in the same POD. The ID documentation tells us the values can be
+ * the same for two different hosts from two PODS because the values are no
+ * globally unique.
+ *
+ * @see https://success.qualys.com/discussions/s/article/000006216
+ */
 function generateHostAssetKey(host: assets.HostAsset): string {
-  return `qualys-host:${host.qwebHostId!}`;
+  return `Host:${host.qwebHostId!}`; // Finding -> discovered host streamed mapping is expecting QWebHostId
 }
 
 function getHostAssetIPAddresses(host: assets.HostAsset) {
