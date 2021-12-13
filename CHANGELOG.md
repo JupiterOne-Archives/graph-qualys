@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Changed `qualysAssetId` to use `Asset ID` and added the `qualysQWebHostId`
+  property to the `dicovered_host` that the `Service|Scanner` maps to. This will
+  be used as the filter in the `persister` to work through the streamed
+  mappings.
+
 ## [5.9.2] - 2021-12-06
 
 ### Added
