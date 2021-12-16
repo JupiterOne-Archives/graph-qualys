@@ -59,7 +59,7 @@ export function createServiceScansDiscoveredHostAssetRelationship(
        * - `CREATE_OR_UPDATE` the Host before or after this mapped relationship
        *   is processed
        */
-      targetFilterKeys: [['_class', 'qualysAssetId']],
+      targetFilterKeys: [['_class', 'qualysQwebHostId']],
       targetEntity: createDiscoveredHostAssetTargetEntity(host),
     },
   });
