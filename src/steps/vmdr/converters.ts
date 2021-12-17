@@ -55,11 +55,11 @@ export function createServiceScansDiscoveredHostAssetRelationship(
        * to the Host entity. The `targetFilterKeys` are designed to coordinate
        * with the integration's mapping rule that will:
        *
-       * - Map Finding to Host using `qualysAssetID`
+       * - Map Finding to Host using `qualysQwebHostId`
        * - `CREATE_OR_UPDATE` the Host before or after this mapped relationship
        *   is processed
        */
-      targetFilterKeys: [['_class', 'qualysAssetId']],
+      targetFilterKeys: [['_class', 'qualysQwebHostId']],
       targetEntity: createDiscoveredHostAssetTargetEntity(host),
     },
   });
@@ -395,13 +395,8 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     os,
     platform,
 
-    // TODO: Once mappings are working:
-    // 1. Change streamed mapping to use qualysQWebHostId
-    // 2. Change qualysAssetId to reference host.id
-    // 3. Uncomment line to add qualysQWebHostId property
-
-    qualysAssetId: host.qwebHostId, // Used as target filter for Service|Finding -> Host
-    // qualysQWebHostId: host.qwebHostId,
+    qualysAssetId: host.id,
+    qualysQwebHostId: host.qwebHostId, // Used as target filter for Service|Finding -> Host
 
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
