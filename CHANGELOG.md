@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.9.3] - 2021-12-17
+
 ### Changed
 
 - Changed `qualysAssetId` to use `Asset ID` and added the `qualysQWebHostId`
