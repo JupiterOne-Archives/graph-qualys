@@ -55,7 +55,7 @@ export function createServiceScansDiscoveredHostAssetRelationship(
        * to the Host entity. The `targetFilterKeys` are designed to coordinate
        * with the integration's mapping rule that will:
        *
-       * - Map Finding to Host using `qualysAssetID`
+       * - Map Finding to Host using `qualysQwebHostId`
        * - `CREATE_OR_UPDATE` the Host before or after this mapped relationship
        *   is processed
        */
