@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.9.4] - 2022-02-14
+
 ### Added
 
 - Set 1 min timeout for validate Auth call which may be hanging in some
