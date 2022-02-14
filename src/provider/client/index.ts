@@ -337,6 +337,7 @@ export class QualysAPIClient {
         }),
         {
           method: 'GET',
+          timeout: 60000, // Setting timeout for this call to 1min. This is a lightweight call
         },
       );
     } catch (err) {

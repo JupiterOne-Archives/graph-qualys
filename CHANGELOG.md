@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [5.9.4] - 2022-02-14
+
+### Added
+
+- Set 1 min timeout for validate Auth call which may be hanging in some
+  instances
+- Added log statements around execution of `verifyAuthentication` function
+
 ## [5.9.3] - 2021-12-17
 
 ### Changed
