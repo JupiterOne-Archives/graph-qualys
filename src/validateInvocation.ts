@@ -60,7 +60,9 @@ export async function validateInvocation(
   validateApiUrl(calculatedConfig.qualysApiUrl);
 
   const client = createQualysAPIClient(logger, calculatedConfig);
+  logger.info('Verifying Authentication');
   await client.verifyAuthentication();
+  logger.info('Authentication Verified');
 
   instance.config = calculatedConfig;
 }
