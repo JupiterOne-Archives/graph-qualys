@@ -53,7 +53,9 @@ export async function executeAPIRequest<T>(
         requestAttempt.retryable = true;
 
         if (requestAttempt.retryAttempts >= retryConfig.maxAttempts) {
-          // If there are no more attempts left for timeout then just throw here
+          // If there are no more attempts left for timeout then just add
+          // better err message and throw
+          err.statusText = `TIMEOUT: Could not complete request within ${requestAttempt.totalAttempts} attempts!`;
           throw err;
         }
       } else {
