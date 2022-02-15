@@ -353,6 +353,10 @@ export class QualysAPIClient {
         // documented as "Bad Login/Password", we're going to assume we
         // authenticated and this user is simply unable to view the
         // activity_log.
+      } else if (err.type === 'request-timeout') {
+        // In some instances there may be a large amount of data and the timeout will
+        // occur on this call. We did not recieve a "Bad Login/Password" which is the main
+        // issue we are looking for here, so we should allow the integration to continue.
       } else {
         throw new IntegrationProviderAuthenticationError({
           cause: err,
