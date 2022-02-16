@@ -353,7 +353,7 @@ export class QualysAPIClient {
         // documented as "Bad Login/Password", we're going to assume we
         // authenticated and this user is simply unable to view the
         // activity_log.
-      } else if (err.type === 'request-timeout') {
+      } else if (status === 'request-timeout') {
         // In some instances there may be a large amount of data and the timeout will
         // occur on this call. We did not recieve a "Bad Login/Password" which is the main
         // issue we are looking for here, so we should allow the integration to continue.
@@ -787,7 +787,7 @@ export class QualysAPIClient {
         action: 'list',
         show_tags: '1',
         show_igs: '1',
-        show_results: !!options?.includeResults ? '1' : '0',
+        show_results: options?.includeResults ? '1' : '0',
         output_format: 'XML',
         truncation_limit: String(ids.length),
         ids: ids.map(String),
