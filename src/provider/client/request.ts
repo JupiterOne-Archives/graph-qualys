@@ -47,7 +47,6 @@ export async function executeAPIRequest<T>(
       apiResponse = await attemptAPIRequest(events, requestAttempt);
       requestAttempt = apiResponse.request;
     } catch (err) {
-      err.code = err.code ?? err.type;
       if (err.type === 'request-timeout') {
         requestAttempt.retryAttempts += 1;
         requestAttempt.totalAttempts += 1;
@@ -56,6 +55,7 @@ export async function executeAPIRequest<T>(
         if (requestAttempt.retryAttempts >= retryConfig.maxAttempts) {
           // If there are no more attempts left for timeout then just add
           // better err message and throw
+          err.code = err.code ?? err.type;
           err.statusText = `Could not complete request within ${requestAttempt.totalAttempts} attempts!`;
           throw err;
         }
