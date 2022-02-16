@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+## [5.9.5] - 2022-02-16
+
 ### Changed
 
-- Socket timeout will now throw the specific error and
-  verifyAuthentication will allow timeouts to continue to execute.
+- Socket timeout will now throw the specific error and verifyAuthentication will
+  allow timeouts to continue to execute.
 
 ## [5.9.4] - 2022-02-14
 
