@@ -209,6 +209,7 @@ export function createHostFindingEntity({
 
         id: key,
         ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
+        awsAccountId: hostAssetTargets?.awsAccountId,
         fqdn: hostAssetTargets?.fqdn,
         hostId: host.ID, // (QWebHostId) Used to map to Host.qualysAssetId (streamed mapping)
 
@@ -300,6 +301,7 @@ export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
   return {
     fqdn: getHostAssetFqdn(host),
     ec2InstanceArn: getEC2HostAssetArn(host),
+    awsAccountId: getEC2HostAccountId(host),
   };
 }
 
@@ -330,13 +332,22 @@ export function getHostAssetTags(hostAsset: assets.HostAsset): string[] {
   return uniq(tags);
 }
 
+function getEC2HostAssetSource(hostAsset: assets.HostAsset) {
+  return hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+}
+
 export function getEC2HostAssetArn(
   hostAsset: assets.HostAsset,
 ): string | undefined {
-  const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+  const ec2 = getEC2HostAssetSource(hostAsset);
   if (ec2?.region && ec2.accountId && ec2.instanceId) {
     return `arn:aws:ec2:${ec2.region}:${ec2.accountId}:instance/${ec2.instanceId}`;
   }
+}
+
+export function getEC2HostAccountId(hostAsset: assets.HostAsset) {
+  const ec2 = getEC2HostAssetSource(hostAsset);
+  return ec2?.accountId === undefined ? undefined : ec2.accountId.toString();
 }
 
 export function getEC2HostAssetTags(

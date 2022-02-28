@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed
+
+- New properties added to resources:
+
+  | Entity                | Properties     |
+  | --------------------- | -------------- |
+  | `qualys_host_finding` | `awsAccountId` |
+
 ## [5.9.5] - 2022-02-16
 
 ### Changed

@@ -15,6 +15,7 @@ import {
   createDiscoveredHostAssetTargetEntity,
   createEC2HostAssetTargetEntity,
   createHostFindingEntity,
+  getEC2HostAccountId,
   getEC2HostAssetArn,
   getEC2HostAssetTags,
   getHostAssetDetails,
@@ -278,6 +279,7 @@ describe('createHostFindingEntity', () => {
         const hostTargets: HostAssetTargets = {
           fqdn: 'some.host.domain',
           ec2InstanceArn: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
+          awsAccountId: '1234',
         };
         expect(
           createHostFindingEntity({
@@ -302,6 +304,9 @@ describe('createHostFindingEntity', () => {
               },
               ec2InstanceArn: {
                 const: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
+              },
+              awsAccountId: {
+                const: '1234',
               },
             },
             required: ['id'],
@@ -702,5 +707,60 @@ describe('getHostAssetTargets', () => {
     ).toMatchObject({
       fqdn: 'bobby',
     });
+  });
+});
+
+describe('#getEC2HostAccountId', () => {
+  test('should return undefined if `Ec2AssetSourceSimple` property not found on host asset', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          // This property is intentionally missing
+          // Ec2AssetSourceSimple: {},
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual(undefined);
+  });
+
+  test('should return undefined if EC2 `accountId` property not found on `Ec2AssetSourceSimple`', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {},
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual(undefined);
+  });
+
+  test('should return `accountId` as type `string` if EC2 `accountId` property found on `Ec2AssetSourceSimple` and `accountId` is type `number`', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {
+            accountId: 1234,
+          },
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual('1234');
+  });
+
+  test('should return `accountId` as type `string` if EC2 `accountId` property found on `Ec2AssetSourceSimple` and `accountId` is type `string`', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {
+            accountId: ('1234' as unknown) as number,
+          },
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual('1234');
   });
 });
