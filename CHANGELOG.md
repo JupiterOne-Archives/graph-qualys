@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.10.0] - 2022-02-28
+
 ### Changed
 
 - New properties added to resources:
