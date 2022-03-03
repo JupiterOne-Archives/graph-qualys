@@ -8,7 +8,7 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { vmpc } from '../../provider/client';
-import toArray from '../../util/toArray';
+import { CveList } from '../../provider/client/types/vmpc/listVulnerabilities';
 import { ENTITY_TYPE_HOST_FINDING } from '../vmdr/constants';
 import {
   // ENTITY_TYPE_CVE_VULNERABILITY,
@@ -108,7 +108,7 @@ export function createVulnerabilityTargetEntities(
     webLink: buildQualysGuardVulnWebLink(qualysHost, vuln.QID!),
     severityLevel: vuln.SEVERITY_LEVEL, // raw value, not normalized as it is on `Finding.numericSeverity`
 
-    cveList: toArray(vuln.CVE_LIST?.CVE).toString(),
+    cveIds: cveListToCveIds(vuln.CVE_LIST),
     cvssScore: vuln.CVSS?.BASE,
     cvssScoreV3: vuln.CVSS_V3?.BASE,
 
@@ -119,6 +119,29 @@ export function createVulnerabilityTargetEntities(
   });
 
   return properties;
+}
+
+export function cveListToCveIds(cveList: CveList | undefined | null): string[] {
+  // check that cveList and cveList.CVE are both defined
+  if (!cveList || !cveList.CVE) {
+    return [];
+  }
+  // case where CVE is an array
+  if (Array.isArray(cveList.CVE)) {
+    const cveIds: string[] = [];
+    for (const cve of cveList.CVE) {
+      if (typeof cve.ID === 'string') {
+        cveIds.push(cve.ID);
+      }
+    }
+    return cveIds;
+  }
+  // case where CVE is a single bugtraq object
+  if (typeof cveList.CVE.ID === 'string') {
+    return [cveList.CVE.ID];
+  }
+
+  return [];
 }
 
 function buildQualysGuardVulnWebLink(qualysHost: string, qid: number): string {
