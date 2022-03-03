@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [5.10.1] - 2022-03-03
+
+### Changed
+
+- `cveList` property changed to `cveIds` and a bug causing `CVEList` to
+  serialize to `[Object object]` has been fixed using the new function
+  `cveListToCveIds`
+
 ## [5.10.0] - 2022-02-28
 
 ### Changed
