@@ -401,6 +401,7 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     name: 'Fetch Scanned Host Details',
     entities: [],
     relationships: [
+      // TODO: Update to use mappedRelationship metadata
       VmdrRelationships.SERVICE_DISCOVERED_HOST,
       VmdrRelationships.SERVICE_EC2_HOST,
       VmdrRelationships.SERVICE_GCP_HOST,
