@@ -45,6 +45,12 @@ export const MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST = generateRelationshipType(
   ENTITY_TYPE_EC2_HOST,
 );
 
+export const MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST = generateRelationshipType(
+  RelationshipClass.SCANS,
+  ENTITY_TYPE_SERVICE_VMDR,
+  ENTITY_TYPE_GCP_HOST,
+);
+
 export const VmdrEntities: Record<string, StepEntityMetadata> = {
   HOST_FINDING: {
     _type: ENTITY_TYPE_HOST_FINDING,
