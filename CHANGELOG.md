@@ -6,6 +6,21 @@
 
 ### Changed
 
+- New properties added to resources:
+
+  | Entity                | Properties                            |
+  | --------------------- | ------------------------------------- |
+  | `qualys_host_finding` | `gcpProjectId`, `gcpInstanceSelfLink` |
+
+- Ingest GCP data from Host Detection to support new relationships:
+
+  | Source Entity                  | Relationship | Target Entity             |
+  | ------------------------------ | ------------ | ------------------------- |
+  | `qualys_vulnerability_manager` | `SCANS`      | `google_compute_instance` |
+  | `qualys_host_finding`          | `HAS`        | `google_compute_instance` |
+
+### Changed
+
 - `cveList` property changed to `cveIds` and a bug causing `CVEList` to
   serialize to `[Object object]` has been fixed using the new function
   `cveListToCveIds`

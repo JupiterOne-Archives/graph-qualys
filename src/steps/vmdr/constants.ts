@@ -94,4 +94,14 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
       enabled: false,
     },
   },
+  SERVICE_GCP_HOST: {
+    _type: MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST,
+    _class: RelationshipClass.SCANS,
+    sourceType: ENTITY_TYPE_SERVICE_VMDR,
+    targetType: ENTITY_TYPE_GCP_HOST,
+    partial: true,
+    indexMetadata: {
+      enabled: false,
+    },
+  },
 };

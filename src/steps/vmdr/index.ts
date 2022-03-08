@@ -403,6 +403,7 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     relationships: [
       VmdrRelationships.SERVICE_DISCOVERED_HOST,
       VmdrRelationships.SERVICE_EC2_HOST,
+      VmdrRelationships.SERVICE_GCP_HOST,
     ],
     dependsOn: [STEP_FETCH_SERVICES, STEP_FETCH_SCANNED_HOST_IDS],
     executionHandler: fetchScannedHostDetails,
