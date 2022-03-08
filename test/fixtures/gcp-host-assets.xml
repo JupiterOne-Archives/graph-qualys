@@ -4,7 +4,7 @@
   <count>2</count>
   <data>
     <HostAsset>
-      <id>13569298</id>
+      <id>13569200</id>
       <name>gcp-1-qualys</name>
       <created>2019-12-02T09:32:45Z</created>
       <modified>2020-01-02T07:03:03Z</modified>
@@ -12,11 +12,11 @@
       <tags>
         <list>
           <TagSimple>
-            <id>106777848</id>
+            <id>106777800</id>
             <name>Cloud Agent</name>
           </TagSimple>
           <TagSimple>
-            <id>107007013</id>
+            <id>107007099</id>
             <name>gcp</name>
           </TagSimple>
         </list>
@@ -24,29 +24,29 @@
       <sourceInfo>
         <list>
           <GcpAssetSourceSimple>
-            <assetId>13569298</assetId>
+            <assetId>135692200</assetId>
             <type>GCP</type>
             <firstDiscovered>2019-12-02T09:32:46Z</firstDiscovered>
             <lastUpdated>2019-12-02T09:32:46Z</lastUpdated>
-            <instanceId>2152878541443265280</instanceId>
+            <instanceId>215287854144326580</instanceId>
             <hostname>gcp-1-qualys-aw8.c.qvsa-dev.internal</hostname>
             <machineType>n1-standard-1</machineType>
-            <imageId>projects/centoscloud/global/images/centos-6-v20191014</imageId>
+            <imageId>projects/centoscloud/global/images/centos-6-v20014</imageId>
             <zone>us-central1-a</zone>
-            <projectIdNo>1035365309337</projectIdNo>
+            <projectIdNo>1035365309111</projectIdNo>
             <state>RUNNING</state>
             <projectId>test_account</projectId>
             <network>default</network>
             <macAddress>42:01:0a:f0:00:a4</macAddress>
-            <publicIpAddress>34.67.172.38</publicIpAddress>
-            <privateIpAddress>10.240.0.164</privateIpAddress>
+            <publicIpAddress>34.67.112.38</publicIpAddress>
+            <privateIpAddress>10.222.0.164</privateIpAddress>
           </GcpAssetSourceSimple>
           <AssetSource />
         </list>
       </sourceInfo>
-      <qwebHostId>12864</qwebHostId>
+      <qwebHostId>12862</qwebHostId>
       <os>Linux</os>
-      <address>10.97.15.117</address>
+      <address>10.97.12.122</address>
       <trackingMethod>INSTANCE_ID</trackingMethod>
       <openPort>
         <list />
@@ -72,13 +72,13 @@
             <interfaceId>eni-09f901fe</interfaceId>
             <interfaceName>Primary network interface</interfaceName>
             <type>PRIVATE</type>
-            <address>10.97.15.117</address>
+            <address>10.97.15.112</address>
           </HostAssetInterface>
         </list>
       </networkInterface>
     </HostAsset>
     <HostAsset>
-      <id>13569299</id>
+      <id>13569293</id>
       <name>gcp-2-qualys</name>
       <created>2019-12-02T09:32:45Z</created>
       <modified>2020-01-02T07:03:03Z</modified>
@@ -86,11 +86,11 @@
       <tags>
         <list>
           <TagSimple>
-            <id>106777849</id>
+            <id>106777839</id>
             <name>Cloud Agent</name>
           </TagSimple>
           <TagSimple>
-            <id>107007014</id>
+            <id>107007000</id>
             <name>gcp</name>
           </TagSimple>
         </list>
@@ -98,29 +98,29 @@
       <sourceInfo>
         <list>
           <GcpAssetSourceSimple>
-            <assetId>13569298</assetId>
+            <assetId>13569200</assetId>
             <type>GCP</type>
             <firstDiscovered>2019-12-02T09:32:46Z</firstDiscovered>
             <lastUpdated>2019-12-02T09:32:46Z</lastUpdated>
-            <instanceId>2152878541443265282</instanceId>
-            <hostname>gcp-1-quays-aw8.c.qvsa-dev.internal</hostname>
+            <instanceId>2152878541443265333</instanceId>
+            <hostname>gcp-1-qualys-aw8.c.qvsa-dev.internal</hostname>
             <machineType>n1-standard-1</machineType>
-            <imageId>projects/centoscloud/global/images/centos-6-v20191014</imageId>
+            <imageId>projects/centoscloud/global/images/centos-6-v201913334</imageId>
             <zone>us-central1-a</zone>
-            <projectIdNo>1035365309337</projectIdNo>
+            <projectIdNo>1035365309339</projectIdNo>
             <state>RUNNING</state>
             <projectId>test_account</projectId>
             <network>default</network>
-            <macAddress>42:01:0a:f0:00:a4</macAddress>
-            <publicIpAddress>34.67.172.38</publicIpAddress>
-            <privateIpAddress>10.240.0.164</privateIpAddress>
+            <macAddress>42:01:0a:f0:99:a3</macAddress>
+            <publicIpAddress>34.67.172.222</publicIpAddress>
+            <privateIpAddress>10.240.3.333</privateIpAddress>
           </GcpAssetSourceSimple>
           <AssetSource />
         </list>
       </sourceInfo>
-      <qwebHostId>12864</qwebHostId>
+      <qwebHostId>12833</qwebHostId>
       <os>Linux</os>
-      <address>10.97.15.117</address>
+      <address>10.12.12.117</address>
       <trackingMethod>INSTANCE_ID</trackingMethod>
       <openPort>
         <list />
@@ -143,7 +143,7 @@
       <networkInterface>
         <list>
           <HostAssetInterface>
-            <interfaceId>eni-09f901fe</interfaceId>
+            <interfaceId>eni-09f901fj</interfaceId>
             <interfaceName>Primary network interface</interfaceName>
             <type>PRIVATE</type>
             <address>10.97.15.117</address>

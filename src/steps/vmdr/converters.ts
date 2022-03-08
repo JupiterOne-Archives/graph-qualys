@@ -200,7 +200,7 @@ export function createGCPHostAssetTargetEntity(hostAsset: assets.HostAsset) {
     allTags = hostEntity.tags as string[];
   }
 
-  assignTags(hostEntity, getEC2HostAssetTags(hostAsset));
+  assignTags(hostEntity, getGCPHostAssetTags(hostAsset));
   if (Array.isArray(hostEntity.tags)) {
     allTags = [...allTags, ...(hostEntity.tags as string[])];
   }
