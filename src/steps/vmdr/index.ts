@@ -34,7 +34,9 @@ import {
   createHostFindingEntity,
   createServiceScansDiscoveredHostAssetRelationship,
   createServiceScansEC2HostAssetRelationship,
+  createServiceScansGCPHostAssetRelationship,
   getEC2HostAssetArn,
+  getGCPHostProjectId,
   getHostAssetTargets,
 } from './converters';
 import { HostAssetTargetsMap } from './types';
@@ -134,6 +136,10 @@ export async function fetchScannedHostDetails({
       if (getEC2HostAssetArn(host)) {
         await jobState.addRelationship(
           createServiceScansEC2HostAssetRelationship(vdmrServiceEntity, host),
+        );
+      } else if (getGCPHostProjectId(host)) {
+        await jobState.addRelationship(
+          createServiceScansGCPHostAssetRelationship(vdmrServiceEntity, host),
         );
       } else {
         await jobState.addRelationship(

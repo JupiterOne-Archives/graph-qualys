@@ -26,6 +26,7 @@ export const ENTITY_TYPE_HOST_FINDING = 'qualys_host_finding';
 
 export const ENTITY_TYPE_DISCOVERED_HOST = 'discovered_host';
 export const ENTITY_TYPE_EC2_HOST = 'aws_instance';
+export const ENTITY_TYPE_GCP_HOST = 'google_compute_instance';
 
 export const RELATIONSHIP_TYPE_SERVICE_HOST_FINDING = generateRelationshipType(
   RelationshipClass.IDENTIFIED,

@@ -24,6 +24,7 @@ import {
 import {
   ENTITY_TYPE_DISCOVERED_HOST,
   ENTITY_TYPE_EC2_HOST,
+  ENTITY_TYPE_GCP_HOST,
   ENTITY_TYPE_HOST_FINDING,
   MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
@@ -100,6 +101,42 @@ export function createServiceScansEC2HostAssetRelationship(
   });
 }
 
+/**
+ * TODO update these docs for GCP
+ * Creates a mapped relationship between a Service and EC2 Host.
+ *
+ * The `targetEntity` is defined in a way to allow the mapper to relate to
+ * existing EC2 Host entities and, when they don't already exist, allows the AWS
+ * integration to adopt the placeholder entity.
+ *
+ * @see createServiceScansDiscoveredHostAssetRelationship
+ *
+ * @param serviceEntity the Service that provides scanning of the host
+ * @param host a HostAsset that is scanned by the Service
+ */
+export function createServiceScansGCPHostAssetRelationship(
+  serviceEntity: Entity,
+  host: assets.HostAsset,
+): Relationship {
+  return createMappedRelationship({
+    // Ensure unique key based on host identity, not EC2 ARN.
+    _key: generateRelationshipKey(
+      RelationshipClass.SCANS,
+      serviceEntity,
+      generateHostAssetKey(host),
+    ),
+    _class: RelationshipClass.SCANS,
+    // TODO require _type https://github.com/JupiterOne/sdk/issues/347
+    _type: MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
+    _mapping: {
+      sourceEntityKey: serviceEntity._key,
+      relationshipDirection: RelationshipDirection.FORWARD,
+      targetFilterKeys: [['_type', '_key']],
+      targetEntity: createGCPHostAssetTargetEntity(host),
+    },
+  });
+}
+
 export function createDiscoveredHostAssetTargetEntity(
   hostAsset: assets.HostAsset,
 ) {
@@ -125,6 +162,34 @@ export function createEC2HostAssetTargetEntity(hostAsset: assets.HostAsset) {
     ...getHostAssetDetails(hostAsset),
     ...getHostAssetIPAddresses(hostAsset),
     ...getEC2HostAssetDetails(hostAsset),
+  };
+
+  // Bug: https://github.com/JupiterOne/sdk/issues/460
+  let allTags: string[] = [];
+
+  assignTags(hostEntity, getHostAssetTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = hostEntity.tags as string[];
+  }
+
+  assignTags(hostEntity, getEC2HostAssetTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = [...allTags, ...(hostEntity.tags as string[])];
+  }
+
+  hostEntity.tags = uniq(allTags);
+
+  return markInvalidTags(hostEntity);
+}
+
+export function createGCPHostAssetTargetEntity(hostAsset: assets.HostAsset) {
+  const hostEntity: TargetEntityProperties = {
+    _class: ['Host'],
+    _type: ENTITY_TYPE_GCP_HOST,
+    _key: getGCPHostAssetSelfLink(hostAsset),
+    ...getHostAssetDetails(hostAsset),
+    ...getHostAssetIPAddresses(hostAsset),
+    ...getGCPHostAssetDetails(hostAsset),
   };
 
   // Bug: https://github.com/JupiterOne/sdk/issues/460
@@ -210,6 +275,8 @@ export function createHostFindingEntity({
         id: key,
         ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
         awsAccountId: hostAssetTargets?.awsAccountId,
+        gcpInstanceSelfLink: hostAssetTargets?.gcpInstanceSelfLink,
+        gcpProjectId: hostAssetTargets?.gcpProjectId,
         fqdn: hostAssetTargets?.fqdn,
         hostId: host.ID, // (QWebHostId) Used to map to Host.qualysAssetId (streamed mapping)
 
@@ -287,6 +354,7 @@ export function getDetectionHostTargets(
     host.ID,
     hostAssetTargets?.fqdn,
     hostAssetTargets?.ec2InstanceArn,
+    hostAssetTargets?.gcpInstanceSelfLink,
   ]);
 }
 
@@ -302,6 +370,8 @@ export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
     fqdn: getHostAssetFqdn(host),
     ec2InstanceArn: getEC2HostAssetArn(host),
     awsAccountId: getEC2HostAccountId(host),
+    gcpInstanceSelfLink: getGCPHostAssetSelfLink(host),
+    gcpProjectId: getGCPHostProjectId(host),
   };
 }
 
@@ -385,6 +455,49 @@ export function getEC2HostAssetDetails(
     privateIpAddress: ec2.privateIpAddress,
     publicDnsName: ec2.publicDnsName,
     publicIpAddress: ec2.publicIpAddress,
+  };
+}
+
+function getGCPHostAssetSource(hostAsset: assets.HostAsset) {
+  return hostAsset.sourceInfo?.list?.GcpAssetSourceSimple;
+}
+
+export function getGCPHostAssetSelfLink(
+  hostAsset: assets.HostAsset,
+): string | undefined {
+  const gcp = getGCPHostAssetSource(hostAsset);
+  if (gcp?.projectId && gcp?.zone && hostAsset?.name) {
+    return `https://www.googleapis.com/compute/v1/projects/${gcp.projectId}/zones/${gcp.zone}/instances/${hostAsset?.name}`;
+  }
+}
+
+export function getGCPHostProjectId(hostAsset: assets.HostAsset) {
+  const gcp = getGCPHostAssetSource(hostAsset);
+  return gcp?.projectId;
+}
+
+export function getGCPHostAssetTags(
+  hostAsset: assets.HostAsset,
+): { key: string; value: string }[] | undefined {
+  const gcp = hostAsset.sourceInfo?.list?.GcpAssetSourceSimple;
+  const tags = toArray(gcp?.gcpInstanceTags?.tags?.list?.GCPTags);
+  return tags
+    .filter((e) => typeof e.key === 'string' && typeof e.value !== 'object')
+    .map((e) => ({ key: e.key, value: String(e.value) }));
+}
+
+export function getGCPHostAssetDetails(
+  hostAsset: assets.HostAsset,
+): object | undefined {
+  const gcp = hostAsset.sourceInfo?.list?.GcpAssetSourceSimple;
+  if (!gcp) return undefined;
+
+  return {
+    id: gcp.instanceId?.toString(),
+    instanceName: hostAsset.name,
+    qualysFirstDiscoveredOn: parseTimePropertyValue(gcp.firstDiscovered),
+    qualysLastUpdatedOn: parseTimePropertyValue(gcp.lastUpdated),
+    ...gcp,
   };
 }
 
