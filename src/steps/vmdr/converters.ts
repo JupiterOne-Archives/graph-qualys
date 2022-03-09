@@ -223,6 +223,7 @@ export function createHostFindingEntity({
 
         severity: convertNumericSeverityToString(detection.SEVERITY),
         numericSeverity: normalizeNumericSeverity(detection.SEVERITY),
+        qualysSeverity: detection.SEVERITY,
 
         numTimesFound: detection.TIMES_FOUND,
         isDisabled: detection.IS_DISABLED,
