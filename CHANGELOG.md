@@ -2,14 +2,16 @@
 
 ## Unreleased
 
+## [5.11.0] - 2022-03-09
+
+### Added
+
 - New properties added to resources:
 
   | Entity                   | Properties       |
   | ------------------------ | ---------------- |
   | `qualys_host_finding`    | `qualysSeverity` |
   | `qualys_web_app_finding` | `qualysSeverity` |
-
-## [5.10.1] - 2022-03-03
 
 ### Changed
 
@@ -25,6 +27,8 @@
   | ------------------------------ | ------------ | ------------------------- |
   | `qualys_vulnerability_manager` | `SCANS`      | `google_compute_instance` |
   | `qualys_host_finding`          | `HAS`        | `google_compute_instance` |
+
+## [5.10.1] - 2022-03-03
 
 ### Changed
 
