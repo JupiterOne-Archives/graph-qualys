@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- New properties added to resources:
+
+  | Entity                   | Properties       |
+  | ------------------------ | ---------------- |
+  | `qualys_host_finding`    | `qualysSeverity` |
+  | `qualys_web_app_finding` | `qualysSeverity` |
+
 ## [5.10.1] - 2022-03-03
 
 ### Changed
