@@ -448,17 +448,17 @@ describe('verifyAuthentication', () => {
     expect(requestCount).toBe(1);
   });
 
-  // test('accessible', async () => {
-  //   recording = setupQualysRecording({
-  //     directory: __dirname,
-  //     name: 'verifyAuthentication',
-  //     options: { recordFailedRequests: true },
-  //   });
+  test('accessible', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'verifyAuthentication',
+      options: { recordFailedRequests: true },
+    });
 
-  //   await expect(
-  //     createClient().verifyAuthentication(),
-  //   ).resolves.not.toThrowError();
-  // });
+    await expect(
+      createClient().verifyAuthentication(),
+    ).resolves.not.toThrowError();
+  });
 
   // test('expired is IntegrationProviderAuthenticationError', async () => {
   //   recording = setupQualysRecording({
@@ -1556,20 +1556,20 @@ describe('executeAPIRequest', () => {
       </RESPONSE>
     </SIMPLE_RETURN>`;
 
-  // const rateLimitXMLBody = `
-  //   <SIMPLE_RETURN>
-  //     <RESPONSE>
-  //     <DATETIME>2017-04-12T14:52:39Z </DATETIME>
-  //     <CODE>1965</CODE>
-  //     <TEXT> This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.</TEXT>
-  //     <ITEM_LIST>
-  //     <ITEM>
-  //     <KEY>SECONDS_TO_WAIT</KEY>
-  //     <VALUE>68928</VALUE>
-  //     </ITEM>
-  //     </ITEM_LIST>
-  //     </RESPONSE>
-  //   </SIMPLE_RETURN>`;
+  const rateLimitXMLBody = `
+    <SIMPLE_RETURN>
+      <RESPONSE>
+      <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+      <CODE>1965</CODE>
+      <TEXT> This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.</TEXT>
+      <ITEM_LIST>
+      <ITEM>
+      <KEY>SECONDS_TO_WAIT</KEY>
+      <VALUE>68928</VALUE>
+      </ITEM>
+      </ITEM_LIST>
+      </RESPONSE>
+    </SIMPLE_RETURN>`;
 
   const incompleteRegistrationXMLBody = `
     <SIMPLE_RETURN>
@@ -1601,38 +1601,38 @@ describe('executeAPIRequest', () => {
       </RESPONSE>
     </SIMPLE_RETURN>`;
 
-  // test('waits towait-sec on 409 rate limit response', async () => {
-  //   recording = setupQualysRecording({
-  //     directory: __dirname,
-  //     name: 'executeAPIRequest409rateLimit',
-  //     options: { recordFailedRequests: true },
-  //   });
+  test('waits towait-sec on 409 rate limit response', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'executeAPIRequest409rateLimit',
+      options: { recordFailedRequests: true },
+    });
 
-  //   const requestTimes: number[] = [];
-  //   recording.server.any().on('request', (_req, _event) => {
-  //     requestTimes.push(Date.now());
-  //   });
+    const requestTimes: number[] = [];
+    recording.server.any().on('request', (_req, _event) => {
+      requestTimes.push(Date.now());
+    });
 
-  //   const toWaitSec = 1;
-  //   recording.server
-  //     .any()
-  //     .times(1)
-  //     .intercept((_req, res) => {
-  //       res
-  //         .status(409)
-  //         .setHeaders({
-  //           'x-ratelimit-limit': String(300),
-  //           'x-ratelimit-remaining': String(0),
-  //           'x-ratelimit-towait-sec': String(toWaitSec),
-  //         })
-  //         .send(rateLimitXMLBody);
-  //     });
+    const toWaitSec = 1;
+    recording.server
+      .any()
+      .times(1)
+      .intercept((_req, res) => {
+        res
+          .status(409)
+          .setHeaders({
+            'x-ratelimit-limit': String(300),
+            'x-ratelimit-remaining': String(0),
+            'x-ratelimit-towait-sec': String(toWaitSec),
+          })
+          .send(rateLimitXMLBody);
+      });
 
-  //   await createClient().verifyAuthentication();
+    await createClient().verifyAuthentication();
 
-  //   expect(requestTimes.length).toBe(2);
-  //   expect(requestTimes[1] - requestTimes[0]).toBeGreaterThan(toWaitSec * 1000);
-  // });
+    expect(requestTimes.length).toBe(2);
+    expect(requestTimes[1] - requestTimes[0]).toBeGreaterThan(toWaitSec * 1000);
+  });
 
   test('waits on 409 concurrency limit response', async () => {
     recording = setupQualysRecording({
