@@ -1,7 +1,9 @@
 import {
   generateRelationshipType,
   RelationshipClass,
+  RelationshipDirection,
   StepEntityMetadata,
+  StepMappedRelationshipMetadata,
   StepRelationshipMetadata,
 } from '@jupiterone/integration-sdk-core';
 
@@ -74,10 +76,17 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
       enabled: false,
     },
   },
+};
+
+export const VmdrMappedRelationships: Record<
+  string,
+  StepMappedRelationshipMetadata
+> = {
   SERVICE_DISCOVERED_HOST: {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
     _class: RelationshipClass.SCANS,
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
+    direction: RelationshipDirection.FORWARD,
     targetType: ENTITY_TYPE_DISCOVERED_HOST,
     partial: true,
     indexMetadata: {
@@ -88,6 +97,7 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
     _class: RelationshipClass.SCANS,
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
+    direction: RelationshipDirection.FORWARD,
     targetType: ENTITY_TYPE_EC2_HOST,
     partial: true,
     indexMetadata: {
@@ -98,6 +108,7 @@ export const VmdrRelationships: Record<string, StepRelationshipMetadata> = {
     _type: MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST,
     _class: RelationshipClass.SCANS,
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
+    direction: RelationshipDirection.FORWARD,
     targetType: ENTITY_TYPE_GCP_HOST,
     partial: true,
     indexMetadata: {

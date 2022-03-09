@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 
 import {
   Entity,
+  IntegrationInfoEventName,
   IntegrationStep,
   IntegrationStepExecutionContext,
 } from '@jupiterone/integration-sdk-core';
@@ -28,7 +29,7 @@ import {
   STEP_FETCH_SCANNED_HOST_FINDINGS,
   STEP_FETCH_SCANNED_HOST_IDS,
   VmdrEntities,
-  VmdrRelationships,
+  VmdrMappedRelationships,
 } from './constants';
 import {
   createHostFindingEntity,
@@ -97,8 +98,8 @@ export async function fetchScannedHostIds({
     'Finished fetching scanned host IDs',
   );
 
-  loggerFetch.publishEvent({
-    name: 'stats',
+  loggerFetch.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Found ${hostIds.length} hosts with filters: ${JSON.stringify(
       filters,
     )}`,
@@ -174,8 +175,8 @@ export async function fetchScannedHostDetails({
 
   await jobState.setData(DATA_HOST_ASSET_TARGETS, hostAssetTargetsMap);
 
-  logger.publishEvent({
-    name: 'stats',
+  logger.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Processed details for ${totalHostsProcessed} of ${
       hostIds.length
     } hosts${
@@ -364,8 +365,8 @@ export async function fetchScannedHostFindings({
     vulnerabilityFindingKeysCollector.serialize(),
   );
 
-  logger.publishEvent({
-    name: 'stats',
+  logger.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Processed detections for ${totalHostsProcessed} of ${
       hostIds.length
     } hosts${
@@ -400,12 +401,12 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     id: STEP_FETCH_SCANNED_HOST_DETAILS,
     name: 'Fetch Scanned Host Details',
     entities: [],
-    relationships: [
-      // TODO: Update to use mappedRelationship metadata
-      VmdrRelationships.SERVICE_DISCOVERED_HOST,
-      VmdrRelationships.SERVICE_EC2_HOST,
-      VmdrRelationships.SERVICE_GCP_HOST,
+    mappedRelationships: [
+      VmdrMappedRelationships.SERVICE_DISCOVERED_HOST,
+      VmdrMappedRelationships.SERVICE_EC2_HOST,
+      VmdrMappedRelationships.SERVICE_GCP_HOST,
     ],
+    relationships: [],
     dependsOn: [STEP_FETCH_SERVICES, STEP_FETCH_SCANNED_HOST_IDS],
     executionHandler: fetchScannedHostDetails,
   },
