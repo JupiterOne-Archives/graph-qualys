@@ -34,9 +34,9 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@jupiterone/integration-sdk-core": "^7.0.0",
-    "@jupiterone/integration-sdk-dev-tools": "^7.0.0",
-    "@jupiterone/integration-sdk-testing": "^7.0.0",
+    "@jupiterone/integration-sdk-core": "^8.6.0",
+    "@jupiterone/integration-sdk-dev-tools": "^8.6.0",
+    "@jupiterone/integration-sdk-testing": "^8.6.0",
     "@prettier/plugin-xml": "^0.12.0",
     "@types/express": "^4.17.9",
     "@types/express-xml-bodyparser": "^0.3.2",
@@ -54,6 +54,6 @@
     "ts-node": "^9.1.1"
   },
   "peerDependencies": {
-    "@jupiterone/integration-sdk-core": "^7.0.0"
+    "@jupiterone/integration-sdk-core": "^8.6.0"
   }
 }

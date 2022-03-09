@@ -55,7 +55,7 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
       expect(
         createDiscoveredHostAssetTargetEntity(host),
       ).toMatchGraphObjectSchema({
-        _class: 'Host',
+        _class: ['Host'],
         schema: {
           properties: {
             _type: { const: 'discovered_host' },
@@ -77,7 +77,7 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
     expect(
       createDiscoveredHostAssetTargetEntity(hosts[0]),
     ).toMatchGraphObjectSchema({
-      _class: 'Host',
+      _class: ['Host'],
       schema: {
         required: [
           'hostname',
@@ -140,7 +140,7 @@ describe('createEC2HostAssetTargetEntity', () => {
     for (const host of hosts) {
       const arn = getEC2HostAssetArn(host);
       expect(createEC2HostAssetTargetEntity(host)).toMatchGraphObjectSchema({
-        _class: 'Host',
+        _class: ['Host'],
         schema: {
           properties: {
             _key: { const: arn },
@@ -168,7 +168,7 @@ describe('createEC2HostAssetTargetEntity', () => {
 
   test('required properties', () => {
     expect(createEC2HostAssetTargetEntity(hosts[0])).toMatchGraphObjectSchema({
-      _class: 'Host',
+      _class: ['Host'],
       schema: {
         required: [
           'qualysFirstDiscoveredOn',
@@ -277,7 +277,7 @@ describe('createGCPHostAssetTargetEntity', () => {
     for (const host of hosts) {
       const selfLink = getGCPHostAssetSelfLink(host);
       expect(createGCPHostAssetTargetEntity(host)).toMatchGraphObjectSchema({
-        _class: 'Host',
+        _class: ['Host'],
         schema: {
           properties: {
             _key: { const: selfLink },
@@ -303,7 +303,7 @@ describe('createGCPHostAssetTargetEntity', () => {
 
   test('required properties', () => {
     expect(createGCPHostAssetTargetEntity(hosts[0])).toMatchGraphObjectSchema({
-      _class: 'Host',
+      _class: ['Host'],
       schema: {
         required: [
           'qualysFirstDiscoveredOn',
@@ -366,7 +366,7 @@ describe('createHostFindingEntity', () => {
             hostAssetTargets: hostTargets,
           }),
         ).toMatchGraphObjectSchema({
-          _class: 'Finding',
+          _class: ['Finding'],
           schema: {
             properties: {
               id: {
