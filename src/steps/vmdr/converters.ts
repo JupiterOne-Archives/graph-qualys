@@ -498,6 +498,7 @@ export function getGCPHostAssetDetails(
     qualysFirstDiscoveredOn: parseTimePropertyValue(gcp.firstDiscovered),
     qualysLastUpdatedOn: parseTimePropertyValue(gcp.lastUpdated),
     ...gcp,
+    gcpInstanceTags: undefined, // Exclude this as it gets properly added to the entity later
   };
 }
 
