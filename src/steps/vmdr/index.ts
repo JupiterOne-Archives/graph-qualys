@@ -34,7 +34,9 @@ import {
   createHostFindingEntity,
   createServiceScansDiscoveredHostAssetRelationship,
   createServiceScansEC2HostAssetRelationship,
+  createServiceScansGCPHostAssetRelationship,
   getEC2HostAssetArn,
+  getGCPHostProjectId,
   getHostAssetTargets,
 } from './converters';
 import { HostAssetTargetsMap } from './types';
@@ -134,6 +136,10 @@ export async function fetchScannedHostDetails({
       if (getEC2HostAssetArn(host)) {
         await jobState.addRelationship(
           createServiceScansEC2HostAssetRelationship(vdmrServiceEntity, host),
+        );
+      } else if (getGCPHostProjectId(host)) {
+        await jobState.addRelationship(
+          createServiceScansGCPHostAssetRelationship(vdmrServiceEntity, host),
         );
       } else {
         await jobState.addRelationship(
@@ -395,8 +401,10 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     name: 'Fetch Scanned Host Details',
     entities: [],
     relationships: [
+      // TODO: Update to use mappedRelationship metadata
       VmdrRelationships.SERVICE_DISCOVERED_HOST,
       VmdrRelationships.SERVICE_EC2_HOST,
+      VmdrRelationships.SERVICE_GCP_HOST,
     ],
     dependsOn: [STEP_FETCH_SERVICES, STEP_FETCH_SCANNED_HOST_IDS],
     executionHandler: fetchScannedHostDetails,

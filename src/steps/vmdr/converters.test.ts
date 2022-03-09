@@ -14,10 +14,12 @@ import { toArray } from '../../provider/client/util';
 import {
   createDiscoveredHostAssetTargetEntity,
   createEC2HostAssetTargetEntity,
+  createGCPHostAssetTargetEntity,
   createHostFindingEntity,
   getEC2HostAccountId,
   getEC2HostAssetArn,
   getEC2HostAssetTags,
+  getGCPHostAssetSelfLink,
   getHostAssetDetails,
   getHostAssetFqdn,
   getHostAssetTags,
@@ -245,6 +247,80 @@ describe('createEC2HostAssetTargetEntity', () => {
     ).toMatchObject({
       tags: ['Cloud Agent'],
       'tag.Number': 1234,
+    });
+  });
+});
+
+describe('createGCPHostAssetTargetEntity', () => {
+  let hosts: HostAsset[];
+
+  beforeEach(() => {
+    const hostAssetsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'gcp-host-assets.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const hostList = xmlParser.parse(hostAssetsXml) as ListHostAssetsResponse;
+    hosts = toArray(hostList.ServiceResponse?.data?.HostAsset);
+  });
+
+  test('properties transferred', () => {
+    for (const host of hosts) {
+      const selfLink = getGCPHostAssetSelfLink(host);
+      expect(createGCPHostAssetTargetEntity(host)).toMatchGraphObjectSchema({
+        _class: 'Host',
+        schema: {
+          properties: {
+            _key: { const: selfLink },
+            _type: { const: 'google_compute_instance' },
+            projectId: { type: 'string' },
+            state: { type: 'string' },
+            instanceId: { type: 'number' },
+            qualysFirstDiscoveredOn: { type: 'number' },
+            qualysLastUpdatedOn: { type: 'number' },
+            zone: { type: 'string' },
+            hostname: { type: 'string' },
+            machineType: { type: 'string' },
+            imageId: { type: 'string' },
+            network: { type: 'string' },
+            macAddress: { type: 'string' },
+            publicIpAddress: { type: 'string' },
+            privateIpAddress: { type: 'string' },
+          },
+        },
+      });
+    }
+  });
+
+  test('required properties', () => {
+    expect(createGCPHostAssetTargetEntity(hosts[0])).toMatchGraphObjectSchema({
+      _class: 'Host',
+      schema: {
+        required: [
+          'qualysFirstDiscoveredOn',
+          'qualysLastUpdatedOn',
+          'projectId',
+          'state',
+          'instanceId',
+          'zone',
+          'hostname',
+          'machineType',
+          'network',
+          'macAddress',
+          'imageId',
+          'privateIpAddress',
+          'publicIpAddress',
+        ],
+      },
     });
   });
 });

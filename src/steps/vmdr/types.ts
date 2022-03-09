@@ -13,6 +13,8 @@ export type HostAssetTargets = {
   fqdn?: string;
   ec2InstanceArn?: string;
   awsAccountId?: string;
+  gcpInstanceSelfLink?: string;
+  gcpProjectId?: string;
 };
 
 /**

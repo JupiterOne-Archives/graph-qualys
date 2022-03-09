@@ -139,6 +139,7 @@ The following relationships are created:
 | `qualys_host_finding`          | **IS**                | `qualys_vuln`                  |
 | `qualys_vulnerability_manager` | **SCANS**             | `aws_instance`                 |
 | `qualys_vulnerability_manager` | **SCANS**             | `discovered_host`              |
+| `qualys_vulnerability_manager` | **SCANS**             | `google_compute_instance`      |
 | `qualys_web_app_finding`       | **IS**                | `cve`                          |
 | `qualys_web_app_finding`       | **IS**                | `qualys_vuln`                  |
 | `qualys_web_app_scanner`       | **IDENTIFIED**        | `qualys_web_app_finding`       |
