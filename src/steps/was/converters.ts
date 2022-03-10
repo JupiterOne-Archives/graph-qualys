@@ -24,7 +24,7 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
       assign: {
         _type: ENTITY_TYPE_WEBAPP_FINDING,
         _key: finding.uniqueId,
-        _class: 'Finding',
+        _class: ['Finding'],
 
         id: String(finding.id),
         name: finding.name!,

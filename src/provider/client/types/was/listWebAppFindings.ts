@@ -25,7 +25,7 @@ export type WebAppFindingsData = {
 
 export type WebAppFinding = {
   id?: number;
-  uniqueId?: string;
+  uniqueId: string;
   qid?: number;
   name?: string;
   type?: 'VULNERABILITY' | 'SENSITIVE_CONTENT' | 'INFORMATION_GATHERED';

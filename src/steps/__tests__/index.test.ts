@@ -12,7 +12,7 @@ import { fetchServices } from '../services';
 import {
   fetchScannedHostDetails,
   fetchScannedHostFindings,
-  // fetchScannedHostIds,
+  fetchScannedHostIds,
 } from '../vmdr';
 import { fetchFindingVulnerabilities } from '../vulns';
 import { fetchScannedWebAppFindings, fetchScannedWebApps } from '../was';
@@ -29,7 +29,6 @@ test('steps', async () => {
   recording = setupQualysRecording({
     directory: __dirname,
     name: 'steps',
-    options: { recordFailedRequests: true },
   });
 
   const nowTimestamp = 1599865230000; // '2020-09-11T23:00:30Z';
@@ -45,7 +44,7 @@ test('steps', async () => {
   await fetchServices(context);
   await fetchScannedWebApps(context);
   await fetchScannedWebAppFindings(context);
-  // await fetchScannedHostIds(context);
+  await fetchScannedHostIds(context);
   await fetchScannedHostDetails(context);
   await fetchScannedHostFindings(context);
   await fetchFindingVulnerabilities(context);

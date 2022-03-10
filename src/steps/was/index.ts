@@ -4,6 +4,7 @@ import {
   createDirectRelationship,
   createMappedRelationship,
   Entity,
+  IntegrationInfoEventName,
   IntegrationStep,
   IntegrationStepExecutionContext,
   RelationshipClass,
@@ -74,8 +75,8 @@ export async function fetchScannedWebApps({
     'Scanned web app IDs collected',
   );
 
-  logger.publishEvent({
-    name: 'stats',
+  logger.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Found ${
       scannedWebAppIds.length
     } web applications with filters: ${JSON.stringify(filters)}`,
@@ -154,8 +155,8 @@ export async function fetchScannedWebAppFindings({
     'Processed web application findings',
   );
 
-  logger.publishEvent({
-    name: 'stats',
+  logger.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Processed ${numWebAppFindingsProcessed} web application findings${
       numPageErrors > 0
         ? `, encountered ${numPageErrors} errors (errorId="${errorCorrelationId}")`

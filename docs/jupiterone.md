@@ -131,19 +131,26 @@ The following entities are created:
 
 The following relationships are created:
 
-| Source Entity `_type`          | Relationship `_class` | Target Entity `_type`          |
-| ------------------------------ | --------------------- | ------------------------------ |
-| `qualys_account`               | **HAS**               | `qualys_vulnerability_manager` |
-| `qualys_account`               | **HAS**               | `qualys_web_app_scanner`       |
-| `qualys_host_finding`          | **IS**                | `cve`                          |
-| `qualys_host_finding`          | **IS**                | `qualys_vuln`                  |
-| `qualys_vulnerability_manager` | **SCANS**             | `aws_instance`                 |
-| `qualys_vulnerability_manager` | **SCANS**             | `discovered_host`              |
-| `qualys_vulnerability_manager` | **SCANS**             | `google_compute_instance`      |
-| `qualys_web_app_finding`       | **IS**                | `cve`                          |
-| `qualys_web_app_finding`       | **IS**                | `qualys_vuln`                  |
-| `qualys_web_app_scanner`       | **IDENTIFIED**        | `qualys_web_app_finding`       |
-| `qualys_web_app_scanner`       | **SCANS**             | `web_app`                      |
+| Source Entity `_type`    | Relationship `_class` | Target Entity `_type`          |
+| ------------------------ | --------------------- | ------------------------------ |
+| `qualys_account`         | **HAS**               | `qualys_vulnerability_manager` |
+| `qualys_account`         | **HAS**               | `qualys_web_app_scanner`       |
+| `qualys_host_finding`    | **IS**                | `cve`                          |
+| `qualys_host_finding`    | **IS**                | `qualys_vuln`                  |
+| `qualys_web_app_finding` | **IS**                | `cve`                          |
+| `qualys_web_app_finding` | **IS**                | `qualys_vuln`                  |
+| `qualys_web_app_scanner` | **IDENTIFIED**        | `qualys_web_app_finding`       |
+| `qualys_web_app_scanner` | **SCANS**             | `web_app`                      |
+
+### Mapped Relationships
+
+The following mapped relationships are created:
+
+| Source Entity `_type`          | Relationship `_class` | Target Entity `_type`       | Direction |
+| ------------------------------ | --------------------- | --------------------------- | --------- |
+| `qualys_vulnerability_manager` | **SCANS**             | `*aws_instance*`            | FORWARD   |
+| `qualys_vulnerability_manager` | **SCANS**             | `*discovered_host*`         | FORWARD   |
+| `qualys_vulnerability_manager` | **SCANS**             | `*google_compute_instance*` | FORWARD   |
 
 <!--
 ********************************************************************************
