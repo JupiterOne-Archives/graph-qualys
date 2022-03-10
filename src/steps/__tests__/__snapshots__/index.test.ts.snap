@@ -64,7 +64,9 @@ Object {
       "createdOn": undefined,
       "description": "Automated Web Application Security Assessment and Reporting",
       "displayName": "Qualys Web Application Scanner",
-      "function": "DAST",
+      "function": Array [
+        "DAST",
+      ],
       "name": "Qualys Web Application Scanner",
       "updatedOn": undefined,
       "version": "6.13.1.0",
@@ -83,7 +85,9 @@ Object {
       "createdOn": undefined,
       "description": "Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.",
       "displayName": "Qualys Vulnerability Manager",
-      "function": "vulnerability-management",
+      "function": Array [
+        "vulnerability-management",
+      ],
       "name": "Qualys Vulnerability Manager",
       "updatedOn": undefined,
       "version": "1.0.3",
@@ -183,7 +187,9 @@ Object {
       "createdOn": undefined,
       "description": "Automated Web Application Security Assessment and Reporting",
       "displayName": "Qualys Web Application Scanner",
-      "function": "DAST",
+      "function": Array [
+        "DAST",
+      ],
       "name": "Qualys Web Application Scanner",
       "updatedOn": undefined,
       "version": "6.13.1.0",
@@ -202,7 +208,9 @@ Object {
       "createdOn": undefined,
       "description": "Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.",
       "displayName": "Qualys Vulnerability Manager",
-      "function": "vulnerability-management",
+      "function": Array [
+        "vulnerability-management",
+      ],
       "name": "Qualys Vulnerability Manager",
       "updatedOn": undefined,
       "version": "1.0.3",

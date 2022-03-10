@@ -2,7 +2,8 @@
 <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd">
   <responseCode>SUCCESS</responseCode>
   <count>1</count>
-  <data><HostAsset>
+  <data>
+    <HostAsset>
       <id>709837</id>
       <name>my-ec2-target</name>
       <created>2017-07-27T18:14:28Z</created>

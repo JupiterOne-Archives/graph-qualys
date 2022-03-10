@@ -27,6 +27,13 @@ export type UserIntegrationConfig = {
   minFindingsSinceDays: string | number;
 
   /**
+   * The Qualys vulnerability IDs of detections that should be ingested with
+   * results data, used to limit collection of the results property, which can
+   * contain an incredible amount of data.
+   */
+  vmdrFindingResultQids: string | string[];
+
+  /**
    * The severities to use when searching for host detections, used to limit
    * data fetched to only severities a security team wants to ingest.
    */
@@ -37,6 +44,8 @@ export type UserIntegrationConfig = {
    * collection to types a security team wants to ingest.
    */
   vmdrFindingTypes?: string | string[];
+
+  ingestWebAppScans: boolean;
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {
@@ -77,6 +86,13 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
    * `DEFAULT_VMDR_FINDING_TYPES`.
    */
   vmdrFindingTypeValues: string[];
+
+  /**
+   * The Qualys vulnerability IDs of detections that should be ingested with
+   * results data, used to limit collection of the results property, which can
+   * contain an incredible amount of data.
+   */
+  vmdrFindingResultQidNumbers: number[];
 };
 
 /**

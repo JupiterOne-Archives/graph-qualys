@@ -3,14 +3,21 @@ import { v4 as uuid } from 'uuid';
 
 import {
   Entity,
+  IntegrationInfoEventName,
   IntegrationStep,
   IntegrationStepExecutionContext,
 } from '@jupiterone/integration-sdk-core';
 
 import { createQualysAPIClient } from '../../provider';
 import { QWebHostId } from '../../provider/client';
-import { ListScannedHostIdsFilters } from '../../provider/client/types/vmpc';
-import { QualysIntegrationConfig } from '../../types';
+import {
+  HostDetection,
+  ListScannedHostIdsFilters,
+} from '../../provider/client/types/vmpc';
+import {
+  CalculatedIntegrationConfig,
+  QualysIntegrationConfig,
+} from '../../types';
 import { buildKey } from '../../util';
 import { DATA_VMDR_SERVICE_ENTITY, STEP_FETCH_SERVICES } from '../services';
 import { VulnerabilityFindingKeysCollector } from '../utils';
@@ -22,13 +29,15 @@ import {
   STEP_FETCH_SCANNED_HOST_FINDINGS,
   STEP_FETCH_SCANNED_HOST_IDS,
   VmdrEntities,
-  VmdrRelationships,
+  VmdrMappedRelationships,
 } from './constants';
 import {
   createHostFindingEntity,
   createServiceScansDiscoveredHostAssetRelationship,
   createServiceScansEC2HostAssetRelationship,
+  createServiceScansGCPHostAssetRelationship,
   getEC2HostAssetArn,
+  getGCPHostProjectId,
   getHostAssetTargets,
 } from './converters';
 import { HostAssetTargetsMap } from './types';
@@ -52,8 +61,8 @@ export async function fetchScannedHostIds({
   const apiClient = createQualysAPIClient(logger, instance.config);
 
   const filters: ListScannedHostIdsFilters = {
-    vm_scan_date_after: instance.config.minScannedSinceISODate,
-    vm_scan_date_before: instance.config.maxScannedSinceISODate,
+    vm_processed_after: instance.config.minScannedSinceISODate,
+    vm_processed_before: instance.config.maxScannedSinceISODate,
   };
 
   const loggerFetch = logger.child({ filters });
@@ -89,8 +98,8 @@ export async function fetchScannedHostIds({
     'Finished fetching scanned host IDs',
   );
 
-  loggerFetch.publishEvent({
-    name: 'stats',
+  loggerFetch.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Found ${hostIds.length} hosts with filters: ${JSON.stringify(
       filters,
     )}`,
@@ -129,6 +138,10 @@ export async function fetchScannedHostDetails({
         await jobState.addRelationship(
           createServiceScansEC2HostAssetRelationship(vdmrServiceEntity, host),
         );
+      } else if (getGCPHostProjectId(host)) {
+        await jobState.addRelationship(
+          createServiceScansGCPHostAssetRelationship(vdmrServiceEntity, host),
+        );
       } else {
         await jobState.addRelationship(
           createServiceScansDiscoveredHostAssetRelationship(
@@ -162,8 +175,8 @@ export async function fetchScannedHostDetails({
 
   await jobState.setData(DATA_HOST_ASSET_TARGETS, hostAssetTargetsMap);
 
-  logger.publishEvent({
-    name: 'stats',
+  logger.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Processed details for ${totalHostsProcessed} of ${
       hostIds.length
     } hosts${
@@ -185,10 +198,9 @@ export async function fetchScannedHostFindings({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<QualysIntegrationConfig>) {
-  const apiClient = createQualysAPIClient(logger, instance.config);
+  const { config } = instance;
 
-  const detectionTypes = instance.config.vmdrFindingTypeValues;
-
+  const detectionTypes = config.vmdrFindingTypeValues;
   const hostIds = ((await jobState.getData(DATA_SCANNED_HOST_IDS)) ||
     []) as number[];
   const hostAssetTargetsMap = ((await jobState.getData(
@@ -207,6 +219,9 @@ export async function fetchScannedHostFindings({
   let totalUnmatchedTypeDetections = 0;
   let totalPageErrors = 0;
 
+  let totalEc2FindingsProcessed = 0;
+
+  const apiClient = createQualysAPIClient(logger, config);
   await apiClient.iterateHostDetections(
     hostIds,
     async ({ host, detections }) => {
@@ -253,13 +268,23 @@ export async function fetchScannedHostFindings({
             findingKey,
           );
 
-          const findingEntity = createHostFindingEntity(
-            findingKey,
+          const findingEntity = createHostFindingEntity({
+            key: findingKey,
             host,
             detection,
-            hostAssetTargetsMap[host.ID!],
-          );
+            detectionResults: shouldIncludeResultsForVulnerability(
+              config,
+              detection,
+            )
+              ? detection.RESULTS?.substring(0, 300)
+              : undefined,
+            hostAssetTargets: hostAssetTargetsMap[host.ID!],
+          });
           entities.push(findingEntity);
+
+          if (findingEntity.ec2InstanceArn) {
+            totalEc2FindingsProcessed++;
+          }
 
           // relationships.push(
           //   createDirectRelationship({
@@ -274,7 +299,7 @@ export async function fetchScannedHostFindings({
         // await jobState.addRelationships(relationships);
       }
 
-      totalHostsProcessed++;
+      totalHostsProcessed++; // This only counts the hosts that have detections
       totalDetectionsProcessed += detections.length;
 
       if (numBadQids > 0) {
@@ -306,10 +331,12 @@ export async function fetchScannedHostFindings({
       }
     },
     {
+      includeResults: !!config.vmdrFindingResultQidNumbers.length,
       filters: {
-        detection_updated_since: instance.config.minFindingsSinceISODate,
-        detection_updated_before: instance.config.maxFindingsSinceISODate,
-        severities: instance.config.vmdrFindingSeverityNumbers,
+        detection_updated_since: config.minFindingsSinceISODate,
+        detection_updated_before: config.maxFindingsSinceISODate,
+        severities: config.vmdrFindingSeverityNumbers,
+        status: 'New,Fixed,Active,Re-Opened',
       },
       onRequestError(pageIds, err) {
         totalPageErrors++;
@@ -321,13 +348,25 @@ export async function fetchScannedHostFindings({
     },
   );
 
+  logger.info(
+    {
+      totalDetectionsProcessed,
+      totalEc2FindingsProcessed,
+      totalUnmatchedTypeDetections,
+      totalHostsEncountered: hostIds.length,
+      totalHostsProcessed,
+      totalPageErrors,
+    },
+    'Host and Detections processing summary',
+  );
+
   await jobState.setData(
     DATA_HOST_VULNERABILITY_FINDING_KEYS,
     vulnerabilityFindingKeysCollector.serialize(),
   );
 
-  logger.publishEvent({
-    name: 'stats',
+  logger.publishInfoEvent({
+    name: IntegrationInfoEventName.Stats,
     description: `Processed detections for ${totalHostsProcessed} of ${
       hostIds.length
     } hosts${
@@ -336,6 +375,17 @@ export async function fetchScannedHostFindings({
         : ''
     }`,
   });
+}
+
+function shouldIncludeResultsForVulnerability(
+  config: CalculatedIntegrationConfig,
+  detection: HostDetection,
+): boolean {
+  return !!(
+    detection.QID &&
+    config.vmdrFindingResultQidNumbers.includes(detection.QID) &&
+    detection.RESULTS
+  );
 }
 
 export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
@@ -351,10 +401,12 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
     id: STEP_FETCH_SCANNED_HOST_DETAILS,
     name: 'Fetch Scanned Host Details',
     entities: [],
-    relationships: [
-      VmdrRelationships.SERVICE_DISCOVERED_HOST,
-      VmdrRelationships.SERVICE_EC2_HOST,
+    mappedRelationships: [
+      VmdrMappedRelationships.SERVICE_DISCOVERED_HOST,
+      VmdrMappedRelationships.SERVICE_EC2_HOST,
+      VmdrMappedRelationships.SERVICE_GCP_HOST,
     ],
+    relationships: [],
     dependsOn: [STEP_FETCH_SERVICES, STEP_FETCH_SCANNED_HOST_IDS],
     executionHandler: fetchScannedHostDetails,
   },

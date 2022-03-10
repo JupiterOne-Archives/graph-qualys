@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/2.0/am/hostasset.xsd">
+  <responseCode>SUCCESS</responseCode>
+  <count>2</count>
+  <data>
+    <HostAsset>
+      <id>13569200</id>
+      <name>gcp-1-qualys</name>
+      <created>2019-12-02T09:32:45Z</created>
+      <modified>2020-01-02T07:03:03Z</modified>
+      <type>HOST</type>
+      <tags>
+        <list>
+          <TagSimple>
+            <id>106777800</id>
+            <name>Cloud Agent</name>
+          </TagSimple>
+          <TagSimple>
+            <id>107007099</id>
+            <name>gcp</name>
+          </TagSimple>
+        </list>
+      </tags>
+      <sourceInfo>
+        <list>
+          <GcpAssetSourceSimple>
+            <assetId>135692200</assetId>
+            <type>GCP</type>
+            <firstDiscovered>2019-12-02T09:32:46Z</firstDiscovered>
+            <lastUpdated>2019-12-02T09:32:46Z</lastUpdated>
+            <instanceId>215287854144326580</instanceId>
+            <hostname>gcp-1-qualys-aw8.c.qvsa-dev.internal</hostname>
+            <machineType>n1-standard-1</machineType>
+            <imageId>projects/centoscloud/global/images/centos-6-v20014</imageId>
+            <zone>us-central1-a</zone>
+            <projectIdNo>1035365309111</projectIdNo>
+            <state>RUNNING</state>
+            <projectId>test_account</projectId>
+            <network>default</network>
+            <macAddress>42:01:0a:f0:00:a4</macAddress>
+            <publicIpAddress>34.67.112.38</publicIpAddress>
+            <privateIpAddress>34.67.112.38</privateIpAddress>
+          </GcpAssetSourceSimple>
+          <AssetSource />
+        </list>
+      </sourceInfo>
+      <qwebHostId>12862</qwebHostId>
+      <os>Linux</os>
+      <address>10.97.12.122</address>
+      <trackingMethod>INSTANCE_ID</trackingMethod>
+      <openPort>
+        <list />
+      </openPort>
+      <software>
+        <list />
+      </software>
+      <vuln>
+        <list />
+      </vuln>
+      <processor>
+        <list />
+      </processor>
+      <volume>
+        <list />
+      </volume>
+      <account>
+        <list />
+      </account>
+      <networkInterface>
+        <list>
+          <HostAssetInterface>
+            <interfaceId>eni-09f901fe</interfaceId>
+            <interfaceName>Primary network interface</interfaceName>
+            <type>PRIVATE</type>
+            <address>10.97.15.112</address>
+          </HostAssetInterface>
+        </list>
+      </networkInterface>
+    </HostAsset>
+    <HostAsset>
+      <id>13569293</id>
+      <name>gcp-2-qualys</name>
+      <created>2019-12-02T09:32:45Z</created>
+      <modified>2020-01-02T07:03:03Z</modified>
+      <type>HOST</type>
+      <tags>
+        <list>
+          <TagSimple>
+            <id>106777839</id>
+            <name>Cloud Agent</name>
+          </TagSimple>
+          <TagSimple>
+            <id>107007000</id>
+            <name>gcp</name>
+          </TagSimple>
+        </list>
+      </tags>
+      <sourceInfo>
+        <list>
+          <GcpAssetSourceSimple>
+            <assetId>13569200</assetId>
+            <type>GCP</type>
+            <firstDiscovered>2019-12-02T09:32:46Z</firstDiscovered>
+            <lastUpdated>2019-12-02T09:32:46Z</lastUpdated>
+            <instanceId>2152878541443265333</instanceId>
+            <hostname>gcp-1-qualys-aw8.c.qvsa-dev.internal</hostname>
+            <machineType>n1-standard-1</machineType>
+            <imageId>projects/centoscloud/global/images/centos-6-v201913334</imageId>
+            <zone>us-central1-a</zone>
+            <projectIdNo>1035365309339</projectIdNo>
+            <state>RUNNING</state>
+            <projectId>test_account</projectId>
+            <network>default</network>
+            <macAddress>42:01:0a:f0:99:a3</macAddress>
+            <publicIpAddress>34.67.172.222</publicIpAddress>
+            <privateIpAddress>34.67.172.222</privateIpAddress>
+          </GcpAssetSourceSimple>
+          <AssetSource />
+        </list>
+      </sourceInfo>
+      <qwebHostId>12833</qwebHostId>
+      <os>Linux</os>
+      <address>10.12.12.117</address>
+      <trackingMethod>INSTANCE_ID</trackingMethod>
+      <openPort>
+        <list />
+      </openPort>
+      <software>
+        <list />
+      </software>
+      <vuln>
+        <list />
+      </vuln>
+      <processor>
+        <list />
+      </processor>
+      <volume>
+        <list />
+      </volume>
+      <account>
+        <list />
+      </account>
+      <networkInterface>
+        <list>
+          <HostAssetInterface>
+            <interfaceId>eni-09f901fj</interfaceId>
+            <interfaceName>Primary network interface</interfaceName>
+            <type>PRIVATE</type>
+            <address>10.97.15.117</address>
+          </HostAssetInterface>
+        </list>
+      </networkInterface>
+    </HostAsset>
+  </data>
+</ServiceResponse>

@@ -1,5 +1,5 @@
 import { QualyNumericSeverity } from '../../../../types';
-import { QWebHostId } from '../index';
+import { QGHostId, QWebHostId } from '../index';
 import { ISODateString, PossibleArray } from '../util';
 
 // https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf
@@ -7,7 +7,8 @@ import { ISODateString, PossibleArray } from '../util';
 export type ListHostDetectionsFilterInputParameter =
   | 'detection_updated_since'
   | 'detection_updated_before'
-  | 'severities';
+  | 'severities'
+  | 'status';
 
 export type ListHostDetectionsFilters = Partial<
   Record<
@@ -48,7 +49,7 @@ export type DetectionHost = {
   LAST_VM_SCANNED_DURATION?: number;
   DETECTION_LIST?: HostDetectionList;
   NETBIOS?: string;
-  QG_HOSTID?: string;
+  QG_HOSTID?: QGHostId;
   LAST_VM_AUTH_SCANNED_DATE?: ISODateString;
   LAST_PC_SCANNED_DATE?: ISODateString;
 };

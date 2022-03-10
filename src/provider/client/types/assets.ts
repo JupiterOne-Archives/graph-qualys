@@ -1,3 +1,4 @@
+import { AssetHostId } from '../';
 import { QWebHostId } from './index';
 import { ServiceResponseBody } from './qps';
 import { ISODateString, PossibleArray } from './util';
@@ -12,7 +13,7 @@ export type Data = {
 };
 
 export type HostAsset = {
-  id?: number;
+  id?: AssetHostId;
   name?: string;
   created?: ISODateString;
   modified?: ISODateString;
@@ -173,6 +174,7 @@ export type SourceInfo = {
 
 export type SourceInfoList = {
   Ec2AssetSourceSimple?: Ec2AssetSourceSimple;
+  GcpAssetSourceSimple?: GcpAssetSourceSimple;
   AssetSource?: string;
 };
 
@@ -215,6 +217,40 @@ export type EC2Tags = {
 };
 
 export type EC2Tag = { key: string; value: string | number | boolean };
+
+export type GcpAssetSourceSimple = {
+  type?: string;
+  assetId?: number;
+  firstDiscovered?: ISODateString;
+  lastUpdated?: ISODateString;
+  instanceId?: number;
+  hostname?: string;
+  machineType: string;
+  imageId: string;
+  zone?: string;
+  projectIdNo?: number;
+  projectId?: string;
+  state?: string;
+  network?: string;
+  macAddress?: string;
+  publicIpAddress?: string;
+  privateIpAddress?: string;
+  gcpInstanceTags?: GCPInstanceTags;
+};
+
+export type GCPInstanceTags = {
+  tags?: GCPInstanceTagsList;
+};
+
+export type GCPInstanceTagsList = {
+  list?: GCPTags;
+};
+
+export type GCPTags = {
+  GCPTags?: PossibleArray<GCPTag>;
+};
+
+export type GCPTag = { key: string; value: string | number | boolean };
 
 export type HostAssetTags = {
   list?: TagsList;

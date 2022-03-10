@@ -186,6 +186,14 @@ export type IterateHostDetectionsOptions = {
    */
   filters?: vmpc.ListHostDetectionsFilters;
   pagination?: { limit: number };
+
+  /**
+   * Include detection results data when listing host detections. This is
+   * expensive due to the increased number of bytes transferred and processed in
+   * the XML payload.
+   */
+  includeResults?: boolean;
+
   // TODO make this a required argument and update tests
   onRequestError?: (pageIds: number[], err: Error) => void;
 };
@@ -329,6 +337,7 @@ export class QualysAPIClient {
         }),
         {
           method: 'GET',
+          timeout: 60000, // Setting timeout for this call to 1min. This is a lightweight call
         },
       );
     } catch (err) {
@@ -344,6 +353,10 @@ export class QualysAPIClient {
         // documented as "Bad Login/Password", we're going to assume we
         // authenticated and this user is simply unable to view the
         // activity_log.
+      } else if (status === 'request-timeout') {
+        // In some instances there may be a large amount of data and the timeout will
+        // occur on this call. We did not recieve a "Bad Login/Password" which is the main
+        // issue we are looking for here, so we should allow the integration to continue.
       } else {
         throw new IntegrationProviderAuthenticationError({
           cause: err,
@@ -744,6 +757,7 @@ export class QualysAPIClient {
    *
    * @param hostIds the set of QWEB host IDs to fetch detections
    * @param iteratee receives each host and its detections
+   * @param options configure detection fetch parameters
    */
   public async iterateHostDetections(
     hostIds: QWebHostId[],
@@ -773,7 +787,7 @@ export class QualysAPIClient {
         action: 'list',
         show_tags: '1',
         show_igs: '1',
-        show_results: '0',
+        show_results: options?.includeResults ? '1' : '0',
         output_format: 'XML',
         truncation_limit: String(ids.length),
         ids: ids.map(String),

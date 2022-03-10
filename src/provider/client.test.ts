@@ -460,17 +460,17 @@ describe('verifyAuthentication', () => {
     ).resolves.not.toThrowError();
   });
 
-  test('expired is IntegrationProviderAuthenticationError', async () => {
-    recording = setupQualysRecording({
-      directory: __dirname,
-      name: 'verifyAuthenticationExpired',
-      options: { recordFailedRequests: true },
-    });
+  // test('expired is IntegrationProviderAuthenticationError', async () => {
+  //   recording = setupQualysRecording({
+  //     directory: __dirname,
+  //     name: 'verifyAuthenticationExpired',
+  //     options: { recordFailedRequests: true },
+  //   });
 
-    const rejects = expect(createClient().verifyAuthentication()).rejects;
-    await rejects.toBeInstanceOf(IntegrationProviderAuthenticationError);
-    await rejects.toThrow(/authentication/);
-  });
+  //   const rejects = expect(createClient().verifyAuthentication()).rejects;
+  //   await rejects.toBeInstanceOf(IntegrationProviderAuthenticationError);
+  //   await rejects.toThrow(/authentication/);
+  // });
 
   test('200 with unexpected code is IntegrationProviderAPIError', async () => {
     recording = setupQualysRecording({

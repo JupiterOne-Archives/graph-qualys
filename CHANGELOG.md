@@ -2,6 +2,166 @@
 
 ## Unreleased
 
+## [5.11.0] - 2022-03-09
+
+### Added
+
+- New properties added to resources:
+
+  | Entity                   | Properties       |
+  | ------------------------ | ---------------- |
+  | `qualys_host_finding`    | `qualysSeverity` |
+  | `qualys_web_app_finding` | `qualysSeverity` |
+
+### Changed
+
+- New properties added to resources:
+
+  | Entity                | Properties                            |
+  | --------------------- | ------------------------------------- |
+  | `qualys_host_finding` | `gcpProjectId`, `gcpInstanceSelfLink` |
+
+- Ingest GCP data from Host Detection to support new relationships:
+
+  | Source Entity                  | Relationship | Target Entity             |
+  | ------------------------------ | ------------ | ------------------------- |
+  | `qualys_vulnerability_manager` | `SCANS`      | `google_compute_instance` |
+  | `qualys_host_finding`          | `HAS`        | `google_compute_instance` |
+
+## [5.10.1] - 2022-03-03
+
+### Changed
+
+- `cveList` property changed to `cveIds` and a bug causing `CVEList` to
+  serialize to `[Object object]` has been fixed using the new function
+  `cveListToCveIds`
+
+## [5.10.0] - 2022-02-28
+
+### Changed
+
+- New properties added to resources:
+
+  | Entity                | Properties     |
+  | --------------------- | -------------- |
+  | `qualys_host_finding` | `awsAccountId` |
+
+## [5.9.5] - 2022-02-16
+
+### Changed
+
+- Socket timeout will now throw the specific error and verifyAuthentication will
+  allow timeouts to continue to execute.
+
+## [5.9.4] - 2022-02-14
+
+### Added
+
+- Set 1 min timeout for validate Auth call which may be hanging in some
+  instances
+- Added log statements around execution of `verifyAuthentication` function
+
+## [5.9.3] - 2021-12-17
+
+### Changed
+
+- Changed `qualysAssetId` to use `Asset ID` and added the `qualysQWebHostId`
+  property to the `dicovered_host` that the `Service|Scanner` maps to. This will
+  be used as the filter in the `persister` to work through the streamed
+  mappings.
+
+## [5.9.2] - 2021-12-06
+
+### Added
+
+- Added first 300 bytes of detection results as `Finding.details` when the
+  detection represents a vulnerability in the set of `vmdrFindingResultQids`
+  provided in the configuration. This is optional and it will come at a
+  significant processing cost due to the number of additional bytes transferred
+  for all host detections.
+
+## [5.9.1] - 2021-12-01
+
+### Changed
+
+- Changed the `qualysAssetId` values to use `qWebHostId` once again to verify
+  streamed mappings are working properly. Temporarily removing
+  `qualysQWebHostId` until streamed mappings rule is updated to point to that
+  property.
+
+## [5.9.0] - 2021-11-30
+
+### Changed
+
+- `Finding -> discovered_host` mapping now uses actual `qualysAssetId` for
+  target enitity rather than `qWebHostId` which caused mappings to not be
+  created properly.
+
+- Changed `qualysHostId` property name on `discovered_host` target entity to
+  `qualysQWebHostId` to more accurately represent which value is being used.
+
+### Fixed
+
+- Fixed a failure to properly map `Service - SCANS -> Host` relationships. The
+  mapping target entity value for `discovered_host.qualysAssetId` needs to match
+  the `Finding.hostId` so that `Service - SCANS -> Host` and
+  `Finding <- HAS - Host` relationships connect to the same `Host` entities. See
+  `src/provider/client/types/index.ts` for details on the distinctions between
+  Qualys host IDs.
+
+## [5.8.9] - 2021-10-28
+
+### Changed
+
+- Web App Scan step is able to be enabled/disabled based on configuration. To
+  support this change, the Vulnerability step now runs in separate dependency
+  graph that runs after all other steps.
+
+- Fixed discrepency in how `discovered_host._key` is generated to match the
+  value produced by the `Finding <- HAS - discovered_host` relationship
+  processing.
+
+## [5.8.8] - 2021-10-19
+
+### Changed
+
+- Specified the status filter for host detections as
+  `New,Fixed,Active,Re-Opened` to ensure `Fixed` detections are ingested because
+  by default they are not returned.
+
+## [5.8.7] - 2021-10-14
+
+### Changed
+
+- Update to `@jupiterone/integration-sdk-*@7.0.0`
+
+### Added
+
+- Added log for summary of host detections processed
+
+## [5.8.6] - 2021-10-13
+
+### Changed
+
+- Changed host detection filters from `vm_scan_date_after` and
+  `vm_scan_date_before` to `vm_processed_after` and `vm_processed_before`
+  respectively. This is the recommended filter by Qualys for automated systems
+  pulling this data. More info on this can be found
+  [here](https://success.qualys.com/support/s/article/000005866)
+- Commented out some tests temporarily
+
+## [5.8.5] - 2021-10-11
+
+### Changed
+
+- Removed logging for EC2 Arns encountered used for temporary debugging
+
+## [5.8.4] - 2021-10-05
+
+### Added
+
+- Logs added to debug missing `qualys_host_finding` to ec2 `Host` mappings
+
 ## [5.8.2] - 2021-09-15
 
 ### Changed

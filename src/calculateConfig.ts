@@ -10,6 +10,7 @@ import {
   DEFAULT_SCANNED_SINCE_DAYS,
   DEFAULT_VMDR_FINDING_SEVERITIES,
   DEFAULT_VMDR_FINDING_TYPES,
+  DEFAULT_VMDR_FINDING_RESULT_QIDS,
   VALID_VMDR_FINDING_TYPES,
 } from './constants';
 import { CalculatedIntegrationConfig, UserIntegrationConfig } from './types';
@@ -69,6 +70,12 @@ export function calculateConfig({
     validValues: VALID_VMDR_FINDING_TYPES,
   });
 
+  const vmdrFindingResultQidNumbers = readPropertyAsNumberArrayFromEnvOrConfig({
+    config,
+    propertyName: 'vmdrFindingResultQids',
+    defaultValue: DEFAULT_VMDR_FINDING_RESULT_QIDS,
+  });
+
   return {
     ...config,
 
@@ -82,6 +89,7 @@ export function calculateConfig({
 
     vmdrFindingSeverityNumbers,
     vmdrFindingTypeValues,
+    vmdrFindingResultQidNumbers,
   };
 }
 

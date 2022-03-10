@@ -24,9 +24,11 @@ import {
 import {
   ENTITY_TYPE_DISCOVERED_HOST,
   ENTITY_TYPE_EC2_HOST,
+  ENTITY_TYPE_GCP_HOST,
   ENTITY_TYPE_HOST_FINDING,
   MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
+  MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST,
 } from './constants';
 import { HostAssetTargets } from './types';
 
@@ -55,11 +57,11 @@ export function createServiceScansDiscoveredHostAssetRelationship(
        * to the Host entity. The `targetFilterKeys` are designed to coordinate
        * with the integration's mapping rule that will:
        *
-       * - Map Finding to Host using `qualysAssetID`
+       * - Map Finding to Host using `qualysQwebHostId`
        * - `CREATE_OR_UPDATE` the Host before or after this mapped relationship
        *   is processed
        */
-      targetFilterKeys: [['_class', 'qualysAssetId']],
+      targetFilterKeys: [['_class', 'qualysQwebHostId']],
       targetEntity: createDiscoveredHostAssetTargetEntity(host),
     },
   });
@@ -96,6 +98,41 @@ export function createServiceScansEC2HostAssetRelationship(
       relationshipDirection: RelationshipDirection.FORWARD,
       targetFilterKeys: [['_type', '_key']],
       targetEntity: createEC2HostAssetTargetEntity(host),
+    },
+  });
+}
+
+/**
+ * Creates a mapped relationship between a Service and GCP Host.
+ *
+ * The `targetEntity` is defined in a way to allow the mapper to relate to
+ * existing GCP Host entities and, when they don't already exist, allows the GCP
+ * integration to adopt the placeholder entity.
+ *
+ * @see createServiceScansDiscoveredHostAssetRelationship
+ *
+ * @param serviceEntity the Service that provides scanning of the host
+ * @param host a HostAsset that is scanned by the Service
+ */
+export function createServiceScansGCPHostAssetRelationship(
+  serviceEntity: Entity,
+  host: assets.HostAsset,
+): Relationship {
+  return createMappedRelationship({
+    // Ensure unique key based on host identity, not GCP selfLink.
+    _key: generateRelationshipKey(
+      RelationshipClass.SCANS,
+      serviceEntity,
+      generateHostAssetKey(host),
+    ),
+    _class: RelationshipClass.SCANS,
+    // TODO require _type https://github.com/JupiterOne/sdk/issues/347
+    _type: MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST,
+    _mapping: {
+      sourceEntityKey: serviceEntity._key,
+      relationshipDirection: RelationshipDirection.FORWARD,
+      targetFilterKeys: [['_type', '_key']],
+      targetEntity: createGCPHostAssetTargetEntity(host),
     },
   });
 }
@@ -145,6 +182,34 @@ export function createEC2HostAssetTargetEntity(hostAsset: assets.HostAsset) {
   return markInvalidTags(hostEntity);
 }
 
+export function createGCPHostAssetTargetEntity(hostAsset: assets.HostAsset) {
+  const hostEntity: TargetEntityProperties = {
+    _class: ['Host'],
+    _type: ENTITY_TYPE_GCP_HOST,
+    _key: getGCPHostAssetSelfLink(hostAsset),
+    ...getHostAssetDetails(hostAsset),
+    ...getHostAssetIPAddresses(hostAsset),
+    ...getGCPHostAssetDetails(hostAsset),
+  };
+
+  // Bug: https://github.com/JupiterOne/sdk/issues/460
+  let allTags: string[] = [];
+
+  assignTags(hostEntity, getHostAssetTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = hostEntity.tags as string[];
+  }
+
+  assignTags(hostEntity, getGCPHostAssetTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = [...allTags, ...(hostEntity.tags as string[])];
+  }
+
+  hostEntity.tags = uniq(allTags);
+
+  return markInvalidTags(hostEntity);
+}
+
 export function isTagsValid(properties: TargetEntityProperties): boolean {
   if (!properties.tags) return true;
   if (typeof properties.tags === 'string') return true;
@@ -181,12 +246,19 @@ export function markInvalidTags(
  * @param hostAssetTargets detection target information by host, collected from
  * the host asset API, which is not available in the detection data itself
  */
-export function createHostFindingEntity(
-  key: string,
-  host: vmpc.DetectionHost,
-  detection: vmpc.HostDetection,
-  hostAssetTargets: HostAssetTargets | undefined,
-): Entity {
+export function createHostFindingEntity({
+  key,
+  host,
+  detection,
+  detectionResults,
+  hostAssetTargets,
+}: {
+  key: string;
+  host: vmpc.DetectionHost;
+  detection: vmpc.HostDetection;
+  detectionResults: string | undefined;
+  hostAssetTargets: HostAssetTargets | undefined;
+}): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
   return createIntegrationEntity({
@@ -202,16 +274,23 @@ export function createHostFindingEntity(
 
         id: key,
         ec2InstanceArn: hostAssetTargets?.ec2InstanceArn,
+        awsAccountId: hostAssetTargets?.awsAccountId,
+        gcpInstanceSelfLink: hostAssetTargets?.gcpInstanceSelfLink,
+        gcpProjectId: hostAssetTargets?.gcpProjectId,
         fqdn: hostAssetTargets?.fqdn,
-        hostId: host.ID, // Used to map to Host.qualysAssetId (streamed mapping)
+        hostId: host.ID, // (QWebHostId) Used to map to Host.qualysAssetId (streamed mapping)
 
         displayName: findingDisplayName,
         name: findingDisplayName,
         qid: detection.QID!,
         type: detection.TYPE,
 
+        // Limit storage to 300 bytes. Detection results can be many megabytes.
+        details: detectionResults?.substring(0, 300),
+
         severity: convertNumericSeverityToString(detection.SEVERITY),
         numericSeverity: normalizeNumericSeverity(detection.SEVERITY),
+        qualysSeverity: detection.SEVERITY,
 
         numTimesFound: detection.TIMES_FOUND,
         isDisabled: detection.IS_DISABLED,
@@ -276,6 +355,7 @@ export function getDetectionHostTargets(
     host.ID,
     hostAssetTargets?.fqdn,
     hostAssetTargets?.ec2InstanceArn,
+    hostAssetTargets?.gcpInstanceSelfLink,
   ]);
 }
 
@@ -290,6 +370,9 @@ export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
   return {
     fqdn: getHostAssetFqdn(host),
     ec2InstanceArn: getEC2HostAssetArn(host),
+    awsAccountId: getEC2HostAccountId(host),
+    gcpInstanceSelfLink: getGCPHostAssetSelfLink(host),
+    gcpProjectId: getGCPHostProjectId(host),
   };
 }
 
@@ -320,13 +403,22 @@ export function getHostAssetTags(hostAsset: assets.HostAsset): string[] {
   return uniq(tags);
 }
 
+function getEC2HostAssetSource(hostAsset: assets.HostAsset) {
+  return hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+}
+
 export function getEC2HostAssetArn(
   hostAsset: assets.HostAsset,
 ): string | undefined {
-  const ec2 = hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
+  const ec2 = getEC2HostAssetSource(hostAsset);
   if (ec2?.region && ec2.accountId && ec2.instanceId) {
     return `arn:aws:ec2:${ec2.region}:${ec2.accountId}:instance/${ec2.instanceId}`;
   }
+}
+
+export function getEC2HostAccountId(hostAsset: assets.HostAsset) {
+  const ec2 = getEC2HostAssetSource(hostAsset);
+  return ec2?.accountId === undefined ? undefined : ec2.accountId.toString();
 }
 
 export function getEC2HostAssetTags(
@@ -367,6 +459,50 @@ export function getEC2HostAssetDetails(
   };
 }
 
+function getGCPHostAssetSource(hostAsset: assets.HostAsset) {
+  return hostAsset.sourceInfo?.list?.GcpAssetSourceSimple;
+}
+
+export function getGCPHostAssetSelfLink(
+  hostAsset: assets.HostAsset,
+): string | undefined {
+  const gcp = getGCPHostAssetSource(hostAsset);
+  if (gcp?.projectId && gcp?.zone && hostAsset?.name) {
+    return `https://www.googleapis.com/compute/v1/projects/${gcp.projectId}/zones/${gcp.zone}/instances/${hostAsset?.name}`;
+  }
+}
+
+export function getGCPHostProjectId(hostAsset: assets.HostAsset) {
+  const gcp = getGCPHostAssetSource(hostAsset);
+  return gcp?.projectId;
+}
+
+export function getGCPHostAssetTags(
+  hostAsset: assets.HostAsset,
+): { key: string; value: string }[] | undefined {
+  const gcp = hostAsset.sourceInfo?.list?.GcpAssetSourceSimple;
+  const tags = toArray(gcp?.gcpInstanceTags?.tags?.list?.GCPTags);
+  return tags
+    .filter((e) => typeof e.key === 'string' && typeof e.value !== 'object')
+    .map((e) => ({ key: e.key, value: String(e.value) }));
+}
+
+export function getGCPHostAssetDetails(
+  hostAsset: assets.HostAsset,
+): object | undefined {
+  const gcp = hostAsset.sourceInfo?.list?.GcpAssetSourceSimple;
+  if (!gcp) return undefined;
+
+  return {
+    id: gcp.instanceId?.toString(),
+    instanceName: hostAsset.name,
+    qualysFirstDiscoveredOn: parseTimePropertyValue(gcp.firstDiscovered),
+    qualysLastUpdatedOn: parseTimePropertyValue(gcp.lastUpdated),
+    ...gcp,
+    gcpInstanceTags: undefined, // Exclude this as it gets properly added to the entity later
+  };
+}
+
 /**
  * Answers properties to assign to `Host` entities representing a `HostAsset`.
  *
@@ -385,8 +521,9 @@ export function getHostAssetDetails(host: assets.HostAsset) {
     os,
     platform,
 
-    qualysAssetId: host.id, // Used as target filter for Service|Finding -> Host
-    qualysHostId: host.qwebHostId,
+    qualysAssetId: host.id,
+    qualysQwebHostId: host.qwebHostId, // Used as target filter for Service|Finding -> Host
+
     qualysCreatedOn: parseTimePropertyValue(host.created),
 
     scannedBy: 'qualys',
@@ -397,8 +534,19 @@ export function getHostAssetDetails(host: assets.HostAsset) {
   };
 }
 
+/**
+ * Generates a _key value for a host asset.
+ *
+ * This does not consider the POD the integration is ingesting data from, which
+ * may become important if a customer ingests data from two Qualys subscriptions
+ * that are not in the same POD. The ID documentation tells us the values can be
+ * the same for two different hosts from two PODS because the values are no
+ * globally unique.
+ *
+ * @see https://success.qualys.com/discussions/s/article/000006216
+ */
 function generateHostAssetKey(host: assets.HostAsset): string {
-  return `qualys-host:${host.qwebHostId!}`;
+  return `Host:${host.qwebHostId!}`; // Finding -> discovered host streamed mapping is expecting QWebHostId
 }
 
 function getHostAssetIPAddresses(host: assets.HostAsset) {

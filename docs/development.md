@@ -33,6 +33,12 @@ yarn start
 
 This project also provides a [mock Qualys server](#mock-qualys-server).
 
+## GCP Cloud Agent
+
+GCP Cloud Agent can be used to ingest detections from GCP Hosts. The
+instructions on this page can be followed to connect Qualys with a GCP Project:
+[Deploy Cloud Agent Fromt GCP](https://success.qualys.com/discussions/s/article/000005839)
+
 ## Mock Qualys Server
 
 The mock Qualys server was created to facilitate performance and load testing.

@@ -1,10 +1,23 @@
 import {
   IntegrationExecutionContext,
   IntegrationValidationError,
+  StepStartStates,
 } from '@jupiterone/integration-sdk-core';
 
 import { calculateConfig } from './calculateConfig';
 import { createQualysAPIClient } from './provider';
+import { STEP_FETCH_ACCOUNT } from './steps/account';
+import { STEP_FETCH_SERVICES } from './steps/services';
+import {
+  STEP_FETCH_SCANNED_HOST_DETAILS,
+  STEP_FETCH_SCANNED_HOST_FINDINGS,
+  STEP_FETCH_SCANNED_HOST_IDS,
+} from './steps/vmdr/constants';
+import { STEP_FETCH_FINDING_VULNS } from './steps/vulns/constants';
+import {
+  STEP_FETCH_SCANNED_WEBAPPS,
+  STEP_FETCH_SCANNED_WEBAPP_FINDINGS,
+} from './steps/was/constants';
 import { UserIntegrationConfig } from './types';
 import { validateApiUrl } from './validateApiUrl';
 
@@ -14,7 +27,7 @@ const REQUIRED_PROPERTIES = [
   'qualysApiUrl',
 ];
 
-export default async function validateInvocation(
+export async function validateInvocation(
   context: IntegrationExecutionContext<UserIntegrationConfig>,
 ): Promise<void> {
   const { logger, instance } = context;
@@ -47,7 +60,43 @@ export default async function validateInvocation(
   validateApiUrl(calculatedConfig.qualysApiUrl);
 
   const client = createQualysAPIClient(logger, calculatedConfig);
+  logger.info('Verifying Authentication');
   await client.verifyAuthentication();
+  logger.info('Authentication Verified');
 
   instance.config = calculatedConfig;
+}
+
+export function getStepStartStates(
+  context: IntegrationExecutionContext<UserIntegrationConfig>,
+): StepStartStates {
+  const { config } = context.instance;
+  const ingestWebAppScans = !!config.ingestWebAppScans;
+
+  return {
+    [STEP_FETCH_ACCOUNT]: {
+      disabled: false,
+    },
+    [STEP_FETCH_SERVICES]: {
+      disabled: false,
+    },
+    [STEP_FETCH_SCANNED_WEBAPPS]: {
+      disabled: !ingestWebAppScans,
+    },
+    [STEP_FETCH_SCANNED_WEBAPP_FINDINGS]: {
+      disabled: false,
+    },
+    [STEP_FETCH_SCANNED_HOST_IDS]: {
+      disabled: false,
+    },
+    [STEP_FETCH_SCANNED_HOST_DETAILS]: {
+      disabled: false,
+    },
+    [STEP_FETCH_SCANNED_HOST_FINDINGS]: {
+      disabled: false,
+    },
+    [STEP_FETCH_FINDING_VULNS]: {
+      disabled: false,
+    },
+  };
 }

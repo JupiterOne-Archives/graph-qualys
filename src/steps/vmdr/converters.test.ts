@@ -14,9 +14,12 @@ import { toArray } from '../../provider/client/util';
 import {
   createDiscoveredHostAssetTargetEntity,
   createEC2HostAssetTargetEntity,
+  createGCPHostAssetTargetEntity,
   createHostFindingEntity,
+  getEC2HostAccountId,
   getEC2HostAssetArn,
   getEC2HostAssetTags,
+  getGCPHostAssetSelfLink,
   getHostAssetDetails,
   getHostAssetFqdn,
   getHostAssetTags,
@@ -52,12 +55,12 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
       expect(
         createDiscoveredHostAssetTargetEntity(host),
       ).toMatchGraphObjectSchema({
-        _class: 'Host',
+        _class: ['Host'],
         schema: {
           properties: {
             _type: { const: 'discovered_host' },
             qualysAssetId: { type: 'number' },
-            qualysHostId: { type: 'number' },
+            qualysQwebHostId: { type: 'number' },
             qualysCreatedOn: { type: 'number' },
 
             scannedBy: { type: 'string' },
@@ -74,14 +77,13 @@ describe('createDiscoveredHostAssetTargetEntity', () => {
     expect(
       createDiscoveredHostAssetTargetEntity(hosts[0]),
     ).toMatchGraphObjectSchema({
-      _class: 'Host',
+      _class: ['Host'],
       schema: {
         required: [
           'hostname',
           'os',
           'platform',
           'qualysAssetId',
-          'qualysHostId',
           'qualysCreatedOn',
           'scannedBy',
           'lastScannedOn',
@@ -138,7 +140,7 @@ describe('createEC2HostAssetTargetEntity', () => {
     for (const host of hosts) {
       const arn = getEC2HostAssetArn(host);
       expect(createEC2HostAssetTargetEntity(host)).toMatchGraphObjectSchema({
-        _class: 'Host',
+        _class: ['Host'],
         schema: {
           properties: {
             _key: { const: arn },
@@ -166,7 +168,7 @@ describe('createEC2HostAssetTargetEntity', () => {
 
   test('required properties', () => {
     expect(createEC2HostAssetTargetEntity(hosts[0])).toMatchGraphObjectSchema({
-      _class: 'Host',
+      _class: ['Host'],
       schema: {
         required: [
           'qualysFirstDiscoveredOn',
@@ -249,6 +251,80 @@ describe('createEC2HostAssetTargetEntity', () => {
   });
 });
 
+describe('createGCPHostAssetTargetEntity', () => {
+  let hosts: HostAsset[];
+
+  beforeEach(() => {
+    const hostAssetsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'gcp-host-assets.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const hostList = xmlParser.parse(hostAssetsXml) as ListHostAssetsResponse;
+    hosts = toArray(hostList.ServiceResponse?.data?.HostAsset);
+  });
+
+  test('properties transferred', () => {
+    for (const host of hosts) {
+      const selfLink = getGCPHostAssetSelfLink(host);
+      expect(createGCPHostAssetTargetEntity(host)).toMatchGraphObjectSchema({
+        _class: ['Host'],
+        schema: {
+          properties: {
+            _key: { const: selfLink },
+            _type: { const: 'google_compute_instance' },
+            projectId: { type: 'string' },
+            state: { type: 'string' },
+            instanceId: { type: 'number' },
+            qualysFirstDiscoveredOn: { type: 'number' },
+            qualysLastUpdatedOn: { type: 'number' },
+            zone: { type: 'string' },
+            hostname: { type: 'string' },
+            machineType: { type: 'string' },
+            imageId: { type: 'string' },
+            network: { type: 'string' },
+            macAddress: { type: 'string' },
+            publicIpAddress: { type: 'string' },
+            privateIpAddress: { type: 'string' },
+          },
+        },
+      });
+    }
+  });
+
+  test('required properties', () => {
+    expect(createGCPHostAssetTargetEntity(hosts[0])).toMatchGraphObjectSchema({
+      _class: ['Host'],
+      schema: {
+        required: [
+          'qualysFirstDiscoveredOn',
+          'qualysLastUpdatedOn',
+          'projectId',
+          'state',
+          'instanceId',
+          'zone',
+          'hostname',
+          'machineType',
+          'network',
+          'macAddress',
+          'imageId',
+          'privateIpAddress',
+          'publicIpAddress',
+        ],
+      },
+    });
+  });
+});
+
 describe('createHostFindingEntity', () => {
   const detectionsXml = fs
     .readFileSync(
@@ -279,16 +355,18 @@ describe('createHostFindingEntity', () => {
         const hostTargets: HostAssetTargets = {
           fqdn: 'some.host.domain',
           ec2InstanceArn: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
+          awsAccountId: '1234',
         };
         expect(
-          createHostFindingEntity(
-            'finding-key',
-            detectionHost,
-            hostDetection,
-            hostTargets,
-          ),
+          createHostFindingEntity({
+            key: 'finding-key',
+            host: detectionHost,
+            detection: hostDetection,
+            detectionResults: undefined,
+            hostAssetTargets: hostTargets,
+          }),
         ).toMatchGraphObjectSchema({
-          _class: 'Finding',
+          _class: ['Finding'],
           schema: {
             properties: {
               id: {
@@ -302,6 +380,9 @@ describe('createHostFindingEntity', () => {
               },
               ec2InstanceArn: {
                 const: 'arn:aws:ec2:us-east-1a:1234:instance/abc',
+              },
+              awsAccountId: {
+                const: '1234',
               },
             },
             required: ['id'],
@@ -702,5 +783,60 @@ describe('getHostAssetTargets', () => {
     ).toMatchObject({
       fqdn: 'bobby',
     });
+  });
+});
+
+describe('#getEC2HostAccountId', () => {
+  test('should return undefined if `Ec2AssetSourceSimple` property not found on host asset', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          // This property is intentionally missing
+          // Ec2AssetSourceSimple: {},
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual(undefined);
+  });
+
+  test('should return undefined if EC2 `accountId` property not found on `Ec2AssetSourceSimple`', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {},
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual(undefined);
+  });
+
+  test('should return `accountId` as type `string` if EC2 `accountId` property found on `Ec2AssetSourceSimple` and `accountId` is type `number`', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {
+            accountId: 1234,
+          },
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual('1234');
+  });
+
+  test('should return `accountId` as type `string` if EC2 `accountId` property found on `Ec2AssetSourceSimple` and `accountId` is type `string`', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {
+            accountId: ('1234' as unknown) as number,
+          },
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual('1234');
   });
 });
