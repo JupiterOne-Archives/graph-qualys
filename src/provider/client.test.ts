@@ -83,9 +83,25 @@ describe('events', () => {
     });
   });
 
-  test('response', async () => {
+  test.only('response', async () => {
+    const rateLimitXMLBody = `
+        <SIMPLE_RETURN>
+          <RESPONSE>
+          <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+          <CODE>1965</CODE>
+          <TEXT> This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.</TEXT>
+          <ITEM_LIST>
+          <ITEM>
+          <KEY>SECONDS_TO_WAIT</KEY>
+          <VALUE>68928</VALUE>
+          </ITEM>
+          </ITEM_LIST>
+          </RESPONSE>
+        </SIMPLE_RETURN>`;
+
     recording.server.any().intercept((req, res) => {
       res
+        .status(409)
         .setHeaders({
           'x-ratelimit-limit': String(123),
           'x-ratelimit-remaining': String(99),
@@ -93,8 +109,9 @@ describe('events', () => {
           'x-ratelimit-window-sec': String(2400),
           'x-concurrency-limit-limit': String(6),
           'x-concurrency-limit-running': String(3),
+          'content-type': 'text/xml',
         })
-        .sendStatus(200);
+        .send(rateLimitXMLBody);
     });
 
     let responseEvent: ClientResponseEvent | undefined;
@@ -102,7 +119,9 @@ describe('events', () => {
       responseEvent = event;
     });
 
-    await client.executeAuthenticatedAPIRequest(url, {});
+    await expect(
+      client.executeAuthenticatedAPIRequest(url, {}),
+    ).rejects.toThrowError(IntegrationProviderAPIError);
 
     expect(responseEvent).toEqual({
       type: ClientEvents.RESPONSE,
@@ -115,16 +134,19 @@ describe('events', () => {
         limitWindowSeconds: 2400,
         toWaitSeconds: 2,
       },
-      rateLimitedAttempts: 0,
+      rateLimitedAttempts: 5,
       retryAttempts: 0,
       retryConfig: DEFAULT_RETRY_CONFIG,
       retryable: true,
-      totalAttempts: 1,
+      totalAttempts: 5,
       url,
       hash: expect.any(String),
-      completed: true,
-      status: 200,
-      statusText: 'OK',
+      completed: false,
+      status: 409,
+      statusText: 'Conflict',
+      errorCode: 1965,
+      errorText:
+        'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
     });
   });
 
