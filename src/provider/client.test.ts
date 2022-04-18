@@ -133,6 +133,7 @@ describe('events', () => {
     });
   });
 
+  // TODO: include a test that asserts maxAttempts is 10
   test('retry', async () => {
     const rateLimitXMLBody = `
         <SIMPLE_RETURN>

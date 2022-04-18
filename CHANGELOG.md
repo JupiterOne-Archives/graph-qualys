@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.11.2] - 2022-04-18
+
 ### Changed
 
 - Increased the rate limit attempts from 5 to 10
