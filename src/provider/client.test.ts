@@ -83,7 +83,7 @@ describe('events', () => {
     });
   });
 
-  test.only('response', async () => {
+  test('response', async () => {
     const rateLimitXMLBody = `
         <SIMPLE_RETURN>
           <RESPONSE>
