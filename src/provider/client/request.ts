@@ -245,7 +245,6 @@ async function attemptAPIRequest(
   const totalAttempts = request.totalAttempts + 1;
 
   const errorDetails = await (response as QualysAPIResponse).errorDetails();
-  const errorCode = errorDetails?.code;
 
   const apiResponse: APIResponse = {
     request: {
@@ -271,7 +270,7 @@ async function attemptAPIRequest(
     hash: request.hash,
     status: response.status,
     statusText: response.statusText,
-    errorCode: errorCode,
+    errorCode: errorDetails?.code,
     errorText: errorDetails?.text,
     completed,
     retryable: retryDecision.retryable,
