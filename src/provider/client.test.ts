@@ -84,6 +84,51 @@ describe('events', () => {
   });
 
   test('response', async () => {
+    recording.server.any().intercept((req, res) => {
+      res
+        .setHeaders({
+          'x-ratelimit-limit': String(123),
+          'x-ratelimit-remaining': String(99),
+          'x-ratelimit-towait-sec': String(2),
+          'x-ratelimit-window-sec': String(2400),
+          'x-concurrency-limit-limit': String(6),
+          'x-concurrency-limit-running': String(3),
+        })
+        .sendStatus(200);
+    });
+
+    let responseEvent: ClientResponseEvent | undefined;
+    client.onResponse((event) => {
+      responseEvent = event;
+    });
+
+    await client.executeAuthenticatedAPIRequest(url, {});
+
+    expect(responseEvent).toEqual({
+      type: ClientEvents.RESPONSE,
+      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitState: {
+        concurrency: 6,
+        concurrencyRunning: 3,
+        limit: 123,
+        limitRemaining: 99,
+        limitWindowSeconds: 2400,
+        toWaitSeconds: 2,
+      },
+      rateLimitedAttempts: 0,
+      retryAttempts: 0,
+      retryConfig: DEFAULT_RETRY_CONFIG,
+      retryable: true,
+      totalAttempts: 1,
+      url,
+      hash: expect.any(String),
+      completed: true,
+      status: 200,
+      statusText: 'OK',
+    });
+  });
+
+  test('retry', async () => {
     const rateLimitXMLBody = `
         <SIMPLE_RETURN>
           <RESPONSE>
@@ -103,56 +148,9 @@ describe('events', () => {
       res
         .status(409)
         .setHeaders({
-          'x-ratelimit-limit': String(123),
-          'x-ratelimit-remaining': String(99),
-          'x-ratelimit-towait-sec': String(2),
-          'x-ratelimit-window-sec': String(2400),
-          'x-concurrency-limit-limit': String(6),
-          'x-concurrency-limit-running': String(3),
           'content-type': 'text/xml',
         })
         .send(rateLimitXMLBody);
-    });
-
-    let responseEvent: ClientResponseEvent | undefined;
-    client.onResponse((event) => {
-      responseEvent = event;
-    });
-
-    await expect(
-      client.executeAuthenticatedAPIRequest(url, {}),
-    ).rejects.toThrowError(IntegrationProviderAPIError);
-
-    expect(responseEvent).toEqual({
-      type: ClientEvents.RESPONSE,
-      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
-      rateLimitState: {
-        concurrency: 6,
-        concurrencyRunning: 3,
-        limit: 123,
-        limitRemaining: 99,
-        limitWindowSeconds: 2400,
-        toWaitSeconds: 2,
-      },
-      rateLimitedAttempts: 5,
-      retryAttempts: 0,
-      retryConfig: DEFAULT_RETRY_CONFIG,
-      retryable: true,
-      totalAttempts: 5,
-      url,
-      hash: expect.any(String),
-      completed: false,
-      status: 409,
-      statusText: 'Conflict',
-      errorCode: 1965,
-      errorText:
-        'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
-    });
-  });
-
-  test('retry', async () => {
-    recording.server.any().intercept((req, res) => {
-      res.sendStatus(409);
     });
 
     const requestEvents: ClientRequestEvent[] = [];
@@ -244,6 +242,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 1,
         url,
         hash: expect.any(String),
@@ -259,6 +260,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 2,
         url,
         hash: expect.any(String),
@@ -274,6 +278,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 3,
         url,
         hash: expect.any(String),
@@ -289,6 +296,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 4,
         url,
         hash: expect.any(String),
@@ -304,6 +314,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 5,
         url,
         hash: expect.any(String),

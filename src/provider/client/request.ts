@@ -244,6 +244,7 @@ async function attemptAPIRequest(
 
   const totalAttempts = request.totalAttempts + 1;
 
+  // TODO: Simplify this logic
   const errorDetails = await (response as QualysAPIResponse).errorDetails();
 
   const apiResponse: APIResponse = {
