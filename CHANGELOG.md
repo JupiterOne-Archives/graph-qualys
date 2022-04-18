@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.11.1] - 2022-04-18
+
 ### Changed
 
 - Logging the rate limit/concurrency error message from Qualys rather than the
