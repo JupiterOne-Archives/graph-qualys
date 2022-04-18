@@ -49,7 +49,12 @@ describe('events', () => {
   const url = 'https://example.com/api/test';
 
   beforeEach(() => {
-    client = new QualysAPIClient({ config });
+    client = new QualysAPIClient({
+      config,
+      rateLimitConfig: {
+        maxAttempts: 5,
+      },
+    });
 
     recording = setupQualysRecording({
       directory: __dirname,
@@ -71,7 +76,7 @@ describe('events', () => {
 
     expect(requestEvent).toEqual({
       type: ClientEvents.REQUEST,
-      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
       rateLimitState: STANDARD_RATE_LIMIT_STATE,
       rateLimitedAttempts: 0,
       retryAttempts: 0,
@@ -106,7 +111,7 @@ describe('events', () => {
 
     expect(responseEvent).toEqual({
       type: ClientEvents.RESPONSE,
-      rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+      rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
       rateLimitState: {
         concurrency: 6,
         concurrencyRunning: 3,
@@ -170,7 +175,7 @@ describe('events', () => {
     expect(requestEvents).toEqual([
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 0,
         retryAttempts: 0,
@@ -182,7 +187,7 @@ describe('events', () => {
       },
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 1,
         retryAttempts: 0,
@@ -194,7 +199,7 @@ describe('events', () => {
       },
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 2,
         retryAttempts: 0,
@@ -206,7 +211,7 @@ describe('events', () => {
       },
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 3,
         retryAttempts: 0,
@@ -218,7 +223,7 @@ describe('events', () => {
       },
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 4,
         retryAttempts: 0,
@@ -234,7 +239,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: false,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 1,
         retryAttempts: 0,
@@ -252,7 +257,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: false,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 2,
         retryAttempts: 0,
@@ -270,7 +275,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: false,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 3,
         retryAttempts: 0,
@@ -288,7 +293,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: false,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 4,
         retryAttempts: 0,
@@ -306,7 +311,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: false,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 5,
         retryAttempts: 0,
@@ -364,7 +369,7 @@ describe('events', () => {
     expect(requestEvents).toEqual([
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: STANDARD_RATE_LIMIT_STATE,
         rateLimitedAttempts: 0,
         retryAttempts: 0,
@@ -376,7 +381,7 @@ describe('events', () => {
       },
       {
         type: ClientEvents.REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: {
           ...STANDARD_RATE_LIMIT_STATE,
           limit: 10,
@@ -396,7 +401,7 @@ describe('events', () => {
     expect(delayedRequestEvents).toEqual([
       {
         type: ClientEvents.DELAYED_REQUEST,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: {
           ...STANDARD_RATE_LIMIT_STATE,
           limit: 10,
@@ -418,7 +423,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: false,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: {
           ...STANDARD_RATE_LIMIT_STATE,
           limit: 10,
@@ -438,7 +443,7 @@ describe('events', () => {
       {
         type: ClientEvents.RESPONSE,
         completed: true,
-        rateLimitConfig: DEFAULT_RATE_LIMIT_CONFIG,
+        rateLimitConfig: { ...DEFAULT_RATE_LIMIT_CONFIG, maxAttempts: 5 },
         rateLimitState: {
           ...STANDARD_RATE_LIMIT_STATE,
           limit: 10,
@@ -1756,6 +1761,7 @@ describe('executeAPIRequest', () => {
     const client = new QualysAPIClient({
       config,
       rateLimitConfig: {
+        maxAttempts: 5,
         reserveLimit: 8,
         cooldownPeriod: 1000,
       },
