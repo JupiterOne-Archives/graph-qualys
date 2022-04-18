@@ -202,7 +202,7 @@ export type IterateHostDetectionsOptions = {
  * An extension of a Response to simplify access to the body of SIMPLE_RETURN
  * responses.
  */
-type QualysAPIResponse = Response & {
+export type QualysAPIResponse = Response & {
   /**
    * Consume the body and return a Promise that resolves SIMPLE_RETURN content.
    * The result is cached since the body is consumed, to allow multiple calls.

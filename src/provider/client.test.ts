@@ -129,8 +129,28 @@ describe('events', () => {
   });
 
   test('retry', async () => {
+    const rateLimitXMLBody = `
+        <SIMPLE_RETURN>
+          <RESPONSE>
+          <DATETIME>2017-04-12T14:52:39Z </DATETIME>
+          <CODE>1965</CODE>
+          <TEXT> This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.</TEXT>
+          <ITEM_LIST>
+          <ITEM>
+          <KEY>SECONDS_TO_WAIT</KEY>
+          <VALUE>68928</VALUE>
+          </ITEM>
+          </ITEM_LIST>
+          </RESPONSE>
+        </SIMPLE_RETURN>`;
+
     recording.server.any().intercept((req, res) => {
-      res.sendStatus(409);
+      res
+        .status(409)
+        .setHeaders({
+          'content-type': 'text/xml',
+        })
+        .send(rateLimitXMLBody);
     });
 
     const requestEvents: ClientRequestEvent[] = [];
@@ -222,6 +242,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 1,
         url,
         hash: expect.any(String),
@@ -237,6 +260,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 2,
         url,
         hash: expect.any(String),
@@ -252,6 +278,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 3,
         url,
         hash: expect.any(String),
@@ -267,6 +296,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 4,
         url,
         hash: expect.any(String),
@@ -282,6 +314,9 @@ describe('events', () => {
         retryable: true,
         status: 409,
         statusText: 'Conflict',
+        errorCode: 1965,
+        errorText:
+          'This API cannot be run again for another 23 hours, 57 minutes and 54 seconds.',
         totalAttempts: 5,
         url,
         hash: expect.any(String),

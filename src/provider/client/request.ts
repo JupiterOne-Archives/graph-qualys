@@ -16,6 +16,8 @@ import {
   RetryConfig,
 } from './types';
 
+import { QualysAPIResponse } from '.';
+
 /**
  * @param events `ClientEventEmitter` to which request lifecycle `ClientEvents` will
  * be published, allowing a client to reuse the emitter across a number of
@@ -242,6 +244,9 @@ async function attemptAPIRequest(
 
   const totalAttempts = request.totalAttempts + 1;
 
+  // TODO: Simplify this logic
+  const errorDetails = await (response as QualysAPIResponse).errorDetails();
+
   const apiResponse: APIResponse = {
     request: {
       ...request,
@@ -266,6 +271,8 @@ async function attemptAPIRequest(
     hash: request.hash,
     status: response.status,
     statusText: response.statusText,
+    errorCode: errorDetails?.code,
+    errorText: errorDetails?.text,
     completed,
     retryable: retryDecision.retryable,
     retryConfig: request.retryConfig,
