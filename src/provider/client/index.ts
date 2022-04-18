@@ -145,7 +145,7 @@ export const STANDARD_RATE_LIMIT_STATE: RateLimitState = {
 
 export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
   responseCode: 409,
-  maxAttempts: 5,
+  maxAttempts: 10,
   reserveLimit: 30,
   cooldownPeriod: 1000,
   concurrencyDelay: 10000,
