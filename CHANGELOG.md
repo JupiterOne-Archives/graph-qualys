@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-## [5.11.3] - 2022-04-19
+## [5.11.4] - 2022-04-20
+
+### Changed
+
+- Use sync `jobState.hasKey()` when doing concurrent ingestion to avoid
+  duplicate key error
+
+## [5.11.3] - 2022-04-20
 
 ### Changed
 
