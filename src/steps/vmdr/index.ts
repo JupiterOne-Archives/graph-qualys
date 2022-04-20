@@ -261,7 +261,7 @@ export async function fetchScannedHostFindings({
             hostId: host.ID,
           });
 
-          if (await jobState.hasKey(findingKey)) continue;
+          if (jobState.hasKey(findingKey)) continue;
 
           vulnerabilityFindingKeysCollector.addVulnerabilityFindingKey(
             detection.QID!,
