@@ -6,7 +6,8 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "files": [
-    "src"
+    "src",
+    "jupiterone"
   ],
   "publishConfig": {
     "access": "public"
@@ -16,15 +17,21 @@
     "sync": "JUPITERONE_DEV=true j1-integration sync -i 1c1aed28-d2ae-4af2-bd15-72b4688c2dff",
     "lint": "eslint . --cache --fix --ext .ts,.tsx",
     "format": "prettier --write '**/*.{ts,js,json,css,md,yml}'",
+    "format:check": "prettier --check '**/*.{ts,js,json,css,md,yml}'",
     "type-check": "tsc",
     "test": "jest",
-    "test:ci": "yarn lint && yarn type-check && yarn test",
+    "test:ci": "yarn format:check && yarn lint && yarn type-check && yarn test",
     "test:env": "LOAD_ENV=1 yarn test",
-    "build": "tsc -p tsconfig.dist.json --declaration && cp README.md dist/README.md",
-    "prepush": "yarn lint && yarn type-check && jest --changedSince main",
+    "build": "tsc -p tsconfig.dist.json --declaration && cp README.md dist/README.md && cp -r jupiterone/ dist/jupiterone/",
+    "prepush": "yarn format:check && yarn lint && yarn type-check && jest --changedSince main",
     "start:qualys": "yarn ts-node ./tools/qualys-server/start.ts",
     "link-dist": "yarn --cwd ./dist link",
-    "unlink-dist": "yarn --cwd ./dist unlink"
+    "unlink-dist": "yarn --cwd ./dist unlink",
+    "graph": "j1-integration visualize",
+    "graph:spec": "j1-integration visualize-types --project-path docs/spec --output-file ./.j1-integration/types-graph/index.spec.html",
+    "graph:types": "j1-integration visualize-types",
+    "validate:questions": "j1-integration validate-question-file -a $MANAGED_QUESTIONS_JUPITERONE_ACCOUNT_ID -k $MANAGED_QUESTIONS_JUPITERONE_API_KEY",
+    "validate:questions:dry": "j1-integration validate-question-file --dry-run"
   },
   "dependencies": {
     "@lifeomic/attempt": "^3.0.0",

@@ -1,0 +1,4 @@
+---
+sourceId: managed:qualys
+integrationDefinitionId: "${integration_definition_id}"
+questions: []

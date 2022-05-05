@@ -60,7 +60,13 @@ async function start() {
     res.setHeader('x-concurrency-limit-limit', concurrencyLimit);
 
     if (concurrencyRunning >= concurrencyLimit) {
-      console.warn(Date.now(), req.url, 'request concurrency exceeded', concurrencyRunning, 409);
+      console.warn(
+        Date.now(),
+        req.url,
+        'request concurrency exceeded',
+        concurrencyRunning,
+        409,
+      );
 
       // This header becomes an indication of no more concurrency limit
       // remaining in the Qualys API.
@@ -70,7 +76,12 @@ async function start() {
     } else {
       // Increment concurrency running to include this request
       concurrencyRunning++;
-      console.info(Date.now(), req.url, 'request concurrency', concurrencyRunning);
+      console.info(
+        Date.now(),
+        req.url,
+        'request concurrency',
+        concurrencyRunning,
+      );
 
       res.setHeader('x-concurrency-limit-running', concurrencyRunning);
       res.setHeader('content-type', contentType);
@@ -162,8 +173,8 @@ async function start() {
   });
 
   app.post('/api/2.0/fo/asset/host/vm/detection/', (req, res) => {
-      const hostIds = req.body.ids.split(',');
-      const hosts = hostIds.map((e) => hostData.hostsById.get(Number(e)));
+    const hostIds = req.body.ids.split(',');
+    const hosts = hostIds.map((e) => hostData.hostsById.get(Number(e)));
 
     renderWithConcurrency(
       req,
@@ -172,7 +183,7 @@ async function start() {
       'host-detection-list',
       { hosts },
       'text/xml',
-      );
+    );
   });
 
   app.post('/api/2.0/fo/knowledge_base/vuln', (req, res) => {
