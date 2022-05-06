@@ -1,4 +1,41 @@
 ---
 sourceId: managed:qualys
 integrationDefinitionId: "${integration_definition_id}"
-questions: []
+questions: 
+- id: managed-question-qualys-finding-is-vulnerability
+  title: Which of my qualys findings are vulnerabilities?
+  description: Return all qualys findings that are vulnerabilities.
+  queries:
+    - name: Host Findings
+      query: |
+        FIND qualys_host_finding as finding
+          THAT IS qualys_vuln as vuln
+        RETURN
+          finding.displayName, finding.type, finding.severity, finding.numericSeverity, finding.status,
+          vuln.displayName, vuln.webLink, vuln.severityLevel, vuln.cvssScore, vuln.cvssScore, vuln.cvssScoreV3, vuln.vulnType, vuln.solution
+    - name: Web App Findings
+      query: |
+        FIND qualys_web_app_finding as finding
+          THAT IS qualys_vuln as vuln
+        RETURN
+          finding.displayName, finding.type, finding.severity, finding.numericSeverity, finding.status,
+          vuln.displayName, vuln.webLink, vuln.severityLevel, vuln.cvssScore, vuln.cvssScore, vuln.cvssScoreV3, vuln.vulnType, vuln.solution
+  tags:
+  - finding
+  - vuln
+- id: managed-question-qualys-host-severe-vulnerability
+  title: Which of my hosts have high severity qualys vulnerabilities?
+  description: Return all hosts that have vulnerabilities with a CVSS3 score greater than or equal to 5.
+  queries:
+    - query: |
+        FIND Host
+          THAT HAS qualys_host_finding AS finding 
+          THAT IS qualys_vuln AS vuln 
+        WHERE vuln.cvssScoreV3 >= 5
+        RETURN 
+          Host.instanceId, 
+          finding.displayName, finding.qid, finding.protocol, finding.port, 
+          vuln.displayName, vuln.[cvssScoreV3], vuln.solution
+  tags:
+  - finding
+  - vuln
