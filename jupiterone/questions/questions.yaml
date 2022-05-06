@@ -23,7 +23,7 @@ questions:
   tags:
   - finding
   - vuln
-- id: managed-question-qualys-finding-is-vulnerability
+- id: managed-question-qualys-host-severe-vulnerability
   title: Which of my hosts have high severity qualys vulnerabilities?
   description: Return all hosts that have vulnerabilities with a CVSS3 score greater than or equal to 5.
   queries:
