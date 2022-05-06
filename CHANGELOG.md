@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [5.11.5] - 2022-05-06
+
+### Added
+
+- `code-ql` workflow
+- `questions` workflow
+- managed questions
+
 ## [5.11.4] - 2022-04-20
 
 ### Changed
