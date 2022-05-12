@@ -407,6 +407,11 @@ function getEC2HostAssetSource(hostAsset: assets.HostAsset) {
   return hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
 }
 
+/**
+ * AWS Account IDs are 12 characters long. If they are less than 12,
+ * they should be padded with leading 0's as they were likely stripped
+ * by the XML parser
+ */
 function getValidAWSAccountId(accountId: number) {
   return accountId.toString().padStart(12, '0');
 }
