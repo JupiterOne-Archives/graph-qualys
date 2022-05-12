@@ -36,9 +36,9 @@ for more information.
 After testing for quite a bit, this integration was unable to ingest host
 findings with the built-in READER role event after adding all of the modules.
 This may be related to parts of the Qualys "host detection" feature being
-controlled by a license setting. Instead use the built-in MANAGER role if
-you do not want to create a custom role. Please refer to the Troubleshooting
-section below, if you would like to issue granular permissions to J1.
+controlled by a license setting. Instead use the built-in MANAGER role if you do
+not want to create a custom role. Please refer to the Troubleshooting section
+below, if you would like to issue granular permissions to J1.
 
 ### In JupiterOne
 
