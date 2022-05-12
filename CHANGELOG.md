@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.11.6] - 2022-05-12
+
 ### Fixed
 
 - Pad AWS Account IDs with leading 0's if they are less than 12 characters,
