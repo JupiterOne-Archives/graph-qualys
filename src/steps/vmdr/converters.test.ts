@@ -145,7 +145,7 @@ describe('createEC2HostAssetTargetEntity', () => {
           properties: {
             _key: { const: arn },
             _type: { const: 'aws_instance' },
-            accountId: { type: 'number' },
+            accountId: { type: 'string' },
             state: { type: 'string' },
             instanceId: { type: 'string' },
             qualysFirstDiscoveredOn: { type: 'number' },
@@ -817,13 +817,13 @@ describe('#getEC2HostAccountId', () => {
       sourceInfo: {
         list: {
           Ec2AssetSourceSimple: {
-            accountId: 1234,
+            accountId: 123456789123,
           },
         },
       },
     };
 
-    expect(getEC2HostAccountId(hostAsset)).toEqual('1234');
+    expect(getEC2HostAccountId(hostAsset)).toEqual('123456789123');
   });
 
   test('should return `accountId` as type `string` if EC2 `accountId` property found on `Ec2AssetSourceSimple` and `accountId` is type `string`', () => {
@@ -831,12 +831,25 @@ describe('#getEC2HostAccountId', () => {
       sourceInfo: {
         list: {
           Ec2AssetSourceSimple: {
-            accountId: ('1234' as unknown) as number,
+            accountId: ('123456789123' as unknown) as number,
           },
         },
       },
     };
 
-    expect(getEC2HostAccountId(hostAsset)).toEqual('1234');
+    expect(getEC2HostAccountId(hostAsset)).toEqual('123456789123');
+  });
+  test('should pad EC2 instance account ID with leading 0s', () => {
+    const hostAsset: HostAsset = {
+      sourceInfo: {
+        list: {
+          Ec2AssetSourceSimple: {
+            accountId: 123456789,
+          },
+        },
+      },
+    };
+
+    expect(getEC2HostAccountId(hostAsset)).toEqual('000123456789');
   });
 });

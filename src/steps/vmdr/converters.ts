@@ -407,18 +407,26 @@ function getEC2HostAssetSource(hostAsset: assets.HostAsset) {
   return hostAsset.sourceInfo?.list?.Ec2AssetSourceSimple;
 }
 
+function getValidAWSAccountId(accountId: number) {
+  return accountId.toString().padStart(12, '0');
+}
+
 export function getEC2HostAssetArn(
   hostAsset: assets.HostAsset,
 ): string | undefined {
   const ec2 = getEC2HostAssetSource(hostAsset);
   if (ec2?.region && ec2.accountId && ec2.instanceId) {
-    return `arn:aws:ec2:${ec2.region}:${ec2.accountId}:instance/${ec2.instanceId}`;
+    return `arn:aws:ec2:${ec2.region}:${getValidAWSAccountId(
+      ec2.accountId,
+    )}:instance/${ec2.instanceId}`;
   }
 }
 
 export function getEC2HostAccountId(hostAsset: assets.HostAsset) {
   const ec2 = getEC2HostAssetSource(hostAsset);
-  return ec2?.accountId === undefined ? undefined : ec2.accountId.toString();
+  return ec2?.accountId === undefined
+    ? undefined
+    : getValidAWSAccountId(ec2.accountId);
 }
 
 export function getEC2HostAssetTags(
@@ -443,7 +451,7 @@ export function getEC2HostAssetDetails(
 
     id: ec2.instanceId,
     instanceId: ec2.instanceId,
-    accountId: ec2.accountId,
+    accountId: ec2.accountId ? getValidAWSAccountId(ec2.accountId) : undefined,
     region: ec2.region,
     state: ec2.instanceState?.toLowerCase(),
     reservationId: ec2.reservationId,
