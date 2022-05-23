@@ -483,7 +483,7 @@ describe('verifyAuthentication', () => {
     });
 
     await expect(client.verifyAuthentication()).rejects.toThrow(
-      'Provider authentication failed at /api/2.0/fo/activity_log/: 401 Unauthorized',
+      'Provider authentication failed at /qps/rest/portal/version: INVALID_CREDENTIALS OK',
     );
 
     expect(requestCount).toBe(1);
@@ -520,16 +520,20 @@ describe('verifyAuthentication', () => {
       options: { recordFailedRequests: true },
     });
 
-    const xml = `<SIMPLE_RETURN>
-    <RESPONSE>
-    <DATETIME>2017-04-12T14:52:39Z </DATETIME>
-    <CODE>1234</CODE>
-    <TEXT> Anything unexpected </TEXT>
-    </RESPONSE>
-  </SIMPLE_RETURN>`;
+    const unauthorizedResponse = [
+      `
+      <?xml version="1.0" encoding="UTF-8"?>
+        <ServiceResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/webapp.xsd">
+        <responseCode>UNAUTHORIZED</responseCode>
+      </ServiceResponse>
+      `,
+    ].reverse();
 
     recording.server.any().intercept((req, res) => {
-      res.setHeader('content-type', 'text/xml').status(200).send(xml);
+      res.setHeader('content-type', 'text/xml');
+
+      res.status(200).send(unauthorizedResponse.pop());
     });
 
     const rejects = expect(createClient().verifyAuthentication()).rejects;
@@ -559,30 +563,6 @@ describe('verifyAuthentication', () => {
     const rejects = expect(createClient().verifyAuthentication()).rejects;
     await rejects.toBeInstanceOf(IntegrationProviderAuthenticationError);
     await rejects.toThrow(/1903.*?parameters/);
-  });
-
-  test('unrecognized parameter username is assumed to be successful authentication', async () => {
-    recording = setupQualysRecording({
-      directory: __dirname,
-      name: 'verifyAuthenticationUnrecognizedParameterUsername',
-      options: { recordFailedRequests: true },
-    });
-
-    const xml = `<SIMPLE_RETURN>
-    <RESPONSE>
-    <DATETIME>2017-04-12T14:52:39Z </DATETIME>
-    <CODE>1901</CODE>
-    <TEXT>Unrecognized parameter(s): username</TEXT>
-    </RESPONSE>
-  </SIMPLE_RETURN>`;
-
-    recording.server.any().intercept((req, res) => {
-      res.setHeader('content-type', 'text/xml').status(400).send(xml);
-    });
-
-    await expect(
-      createClient().verifyAuthentication(),
-    ).resolves.not.toThrowError();
   });
 });
 
@@ -1737,7 +1717,7 @@ describe('executeAPIRequest', () => {
       },
     });
 
-    await expect(client.verifyAuthentication()).rejects.toThrowError(/2/);
+    await expect(client.verifyAuthentication()).rejects.toThrowError();
 
     expect(requestTimes.length).toBe(2);
   });
@@ -1753,6 +1733,8 @@ describe('executeAPIRequest', () => {
 
     recording.server.any().intercept((_req, res) => {
       limitRemaining--;
+      res.setHeader('content-type', 'text/xml');
+
       res.status(201).setHeaders({
         'x-ratelimit-limit': String(10),
         'x-ratelimit-remaining': String(limitRemaining),
