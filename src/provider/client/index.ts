@@ -106,8 +106,6 @@ const RETRYABLE_409_CODES = [
   RATE_LIMIT_RESPONSE_ERROR_CODE,
 ];
 
-// const ERROR_CODE_ACCOUNT_EXPIRED = 2001;
-
 const QPS_REST_ENDPOINT = new RegExp('/qps/rest/([23]\\.0|portal)/.+');
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
