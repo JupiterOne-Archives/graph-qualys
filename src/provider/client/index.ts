@@ -106,11 +106,7 @@ const RETRYABLE_409_CODES = [
   RATE_LIMIT_RESPONSE_ERROR_CODE,
 ];
 
-const ERROR_CODE_ACCOUNT_EXPIRED = 2001;
-
-const QPS_REST_ENDPOINT = new RegExp(
-  '/qps/rest/([23]\\.0|portal)/.+',
-).compile();
+const QPS_REST_ENDPOINT = new RegExp('/qps/rest/([23]\\.0|portal)/.+');
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxAttempts: 5,
@@ -325,38 +321,23 @@ export class QualysAPIClient {
    * The response body contains CSV on 200, XML on some other error responses.
    */
   public async verifyAuthentication(): Promise<void> {
-    const endpoint = '/api/2.0/fo/activity_log/';
+    const endpoint = '/qps/rest/portal/version';
 
     let response: QualysAPIResponse | undefined = undefined;
     try {
       response = await this.executeAuthenticatedAPIRequest(
-        this.qualysUrl(endpoint, {
-          action: 'list',
-          username: this.config.qualysUsername,
-          truncation_limit: 1,
-        }),
+        this.qualysUrl(endpoint, {}),
         {
           method: 'GET',
-          timeout: 60000, // Setting timeout for this call to 1min. This is a lightweight call
         },
       );
     } catch (err) {
       const status = err.status || err.code;
       const statusText = err.statusText || err.message;
 
-      if (
-        status === 400 &&
-        /Unrecognized parameter\(s\): username/.test(statusText)
-      ) {
-        // "The API request contained one or more parameters which are not
-        // supported, or are not available to the browsing user." Since 401 is
-        // documented as "Bad Login/Password", we're going to assume we
-        // authenticated and this user is simply unable to view the
-        // activity_log.
-      } else if (status === 'request-timeout') {
-        // In some instances there may be a large amount of data and the timeout will
-        // occur on this call. We did not recieve a "Bad Login/Password" which is the main
-        // issue we are looking for here, so we should allow the integration to continue.
+      if (status === 'request-timeout') {
+        // We dont necessarily care if we hit a request timeout as long as we haven't recieved an unauthorized reponse which
+        // can't be retried.
       } else {
         throw new IntegrationProviderAuthenticationError({
           cause: err,
@@ -367,28 +348,34 @@ export class QualysAPIClient {
       }
     }
 
-    const simpleReturn = await response?.simpleReturn();
-    if (response && simpleReturn?.SIMPLE_RETURN?.RESPONSE) {
-      const { CODE, TEXT } = simpleReturn.SIMPLE_RETURN?.RESPONSE;
-      const isError = CODE && TEXT;
-      if (isError) {
-        const apiError = new IntegrationProviderAPIError({
+    if (response) {
+      const bodyT = await parseXMLResponse<qps.ServiceResponseBody<any>>(
+        response,
+      );
+      const responseCode = bodyT.ServiceResponse?.responseCode;
+      if (!responseCode || responseCode === 'SUCCESS') return;
+
+      const apiError = new IntegrationProviderAPIError({
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        code: String(responseCode),
+        message: `Unexpected responseCode in authentication verification: ${responseCode}: ${response.statusText}`,
+      });
+
+      // Qualys may return a 200 even though the request was unauthorized
+      if (
+        responseCode === 'UNAUTHORIZED' ||
+        responseCode === 'INVALID_CREDENTIALS'
+      ) {
+        throw new IntegrationProviderAuthenticationError({
+          cause: apiError,
           endpoint,
-          status: response.status,
+          status: responseCode,
           statusText: response.statusText,
-          code: String(CODE),
-          message: `Unexpected responseCode in authentication verification: ${CODE}: ${TEXT}`,
         });
-        if (CODE === ERROR_CODE_ACCOUNT_EXPIRED) {
-          throw new IntegrationProviderAuthenticationError({
-            cause: apiError,
-            endpoint,
-            status: response.status,
-            statusText: response.statusText,
-          });
-        } else {
-          throw apiError;
-        }
+      } else {
+        throw apiError;
       }
     }
   }

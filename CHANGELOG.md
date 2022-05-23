@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## [5.11.7] - 2022-05-23
+
+### Fixed
+
+- Changed validate invocation function to hit `qps/portal/version` endpoint
+  because it is more lightweight than `activity_log`, which caused errors for
+  larger customers
+- QPS endpoints will now check for `INVALID_CREDENTIALS` response and throw an
+  appropriate error
+- Removed deprecated `.compile()` call for regex
+
 ## [5.11.6] - 2022-05-12
 
 ### Fixed

@@ -108,7 +108,10 @@ export async function extractServiceResponseFromResponseBody<
   if (!responseCode || responseCode === 'SUCCESS') return bodyT;
 
   // Qualys may return a 200 even though the request was unauthorized
-  if (responseCode === 'UNAUTHORIZED') {
+  if (
+    responseCode === 'UNAUTHORIZED' ||
+    responseCode === 'INVALID_CREDENTIALS'
+  ) {
     throw new IntegrationProviderAuthorizationError({
       endpoint,
       status: responseCode,
