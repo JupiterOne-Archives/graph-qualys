@@ -39,3 +39,63 @@ questions:
   tags:
   - finding
   - vuln
+- id: managed-question-what-hosts-were-scanned-by-qualys
+  title: What Hosts were scanned by Qualys?
+  description: |
+    Today JupiterOne creates a mapped relationship to aws_instance hosts, 
+    qualys_discovered_hosts, and google_compute_instances.  
+    View how many hosts were identified/scanned using qualys.
+  queries:
+    - query: |
+        FIND qualys_vulnerability_manager 
+          THAT SCANS Host AS h 
+        RETURN h._type AS 'Host Type', count(h) AS 'Number of Hosts'
+  tags:
+  - qualys
+  - host
+- id: managed-question-what-are-my-open-qualys-vulnerabilities
+  title: What are my open Qualys Vulnerabilities?
+  description: |
+    View how many open vulnerabilities are impacting your hosts scanned by Qualys.  
+    iew by severity level and host scanned with information on whether the
+     vulnerable host is public or in production.  
+  queries:
+    - name: Open Findings by Severity
+      resultsAre: INFORMATIVE
+      query: |
+        FIND Host AS h 
+          THAT HAS qualys_host_finding WITH open=true AS f 
+        RETURN f.severity as "Severity Level", count(f) AS 'Open Findings'
+    - name: Findings by Host Scanned
+      resultsAre: INFORMATIVE
+      query: |
+        FIND Host AS h 
+          THAT HAS qualys_host_finding WITH open=true AS f 
+        RETURN
+          h.hostname AS 'Hostname', 
+          f.public AS 'Public', 
+          f.production AS 'Production', 
+          count(f) AS 'Open Findings'
+  tags:
+  - qualys
+  - host
+  - vuln
+- id: managed-question-what-vulnerabilities-are-impacting-the-most-qualys-hosts
+  title: What Vulnerabilities are impacting the most hosts in Qualys today?
+  description: |
+    Identify what vulnerabilities are impacting the most Qualys hosts.  
+    This helps identify top areas for your teams to prioritize during remediation planning.
+  queries:
+    - query: |
+        FIND Host AS h 
+          THAT HAS Finding WITH open=true AS f 
+          THAT IS Vulnerability AS v 
+        RETURN 
+          v.displayName AS 'Vulnerability', 
+          v.cveIds AS 'CVE IDs', 
+          v.severityLevel AS 'Severity Level', 
+          count(h) AS 'Hosts Impacted'
+  tags:
+  - qualys
+  - host
+  - vuln
