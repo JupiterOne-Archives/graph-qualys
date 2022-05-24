@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [5.11.8] - 2022-05-24
+
+## Added
+
+- managed question
+
 ## [5.11.7] - 2022-05-23
 
 ### Fixed
