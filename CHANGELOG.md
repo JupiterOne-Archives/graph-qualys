@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [5.11.9] - 2022-06-01
+
+### Fixed
+
+- Updated the filter for web app scans and web app findings to use `GREATER`
+  operator when querying using the last since date. Previously this was using
+  `EQUAL` which caused no data to be ingested for those steps
+
 ## [5.11.8] - 2022-05-24
 
 ## Added

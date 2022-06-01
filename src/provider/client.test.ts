@@ -714,10 +714,18 @@ describe('fetchScannedWebAppIds', () => {
       name: 'fetchScannedWebAppIds',
     });
 
-    const webAppId = 81221901;
-    await expect(createClient().fetchScannedWebAppIds()).resolves.toEqual([
-      webAppId,
-    ]);
+    const webAppIds = [
+      238483924,
+      238483925,
+      238483926,
+      238483927,
+      238483928,
+      251316885,
+      251316904,
+    ];
+    await expect(createClient().fetchScannedWebAppIds()).resolves.toEqual(
+      webAppIds,
+    );
   });
 
   test('mocked, unknown content type', async () => {
@@ -959,7 +967,7 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
     expect(onRequestError).not.toHaveBeenCalled();
     expect(findings.length).toEqual(0);
     expect(receivedBody).toMatch(
-      /<Criteria field="lastDetectedDate" operator="EQUALS">2020-09-11T23:00:30Z<\/Criteria>/,
+      /<Criteria field="lastDetectedDate" operator="GREATER">2020-09-11T23:00:30Z<\/Criteria>/,
     );
   });
 
