@@ -28,6 +28,10 @@ function buildFilterXml(
         ',',
       )}</Criteria>`;
     } else {
+      if (name.includes('last')) {
+        // If a 'last' date filter, the operator should be GREATER
+        return `<Criteria field="${name}" operator="GREATER">${value}</Criteria>`;
+      }
       return `<Criteria field="${name}" operator="EQUALS">${value}</Criteria>`;
     }
   });
