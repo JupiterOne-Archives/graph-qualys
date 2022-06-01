@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [5.11.9] - 2022-06-01
+
 ### Fixed
 
 - Updated the filter for web app scans and web app findings to use `GREATER`

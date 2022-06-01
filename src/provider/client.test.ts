@@ -714,10 +714,18 @@ describe('fetchScannedWebAppIds', () => {
       name: 'fetchScannedWebAppIds',
     });
 
-    const webAppId = 81221901;
-    await expect(createClient().fetchScannedWebAppIds()).resolves.toEqual([
-      webAppId,
-    ]);
+    const webAppIds = [
+      238483924,
+      238483925,
+      238483926,
+      238483927,
+      238483928,
+      251316885,
+      251316904,
+    ];
+    await expect(createClient().fetchScannedWebAppIds()).resolves.toEqual(
+      webAppIds,
+    );
   });
 
   test('mocked, unknown content type', async () => {
