@@ -13,7 +13,7 @@ import {
   IntegrationProviderAuthorizationError,
 } from '@jupiterone/integration-sdk-core';
 
-import { UserIntegrationConfig } from '../../types';
+import { CalculatedIntegrationConfig } from '../../types';
 import { withConcurrency } from './concurrency';
 import { ClientEventEmitter, executeAPIRequest } from './request';
 import {
@@ -148,7 +148,7 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
 };
 
 export type QualysAPIClientConfig = {
-  config: UserIntegrationConfig;
+  config: CalculatedIntegrationConfig;
 
   /**
    * Initializes the API client with a `RateLimitConfig`.
@@ -271,7 +271,7 @@ function createQualysAPIResponse(response: Response): QualysAPIResponse {
 export class QualysAPIClient {
   private events: ClientEventEmitter;
 
-  private config: UserIntegrationConfig;
+  private config: CalculatedIntegrationConfig;
   private retryConfig: RetryConfig;
   private rateLimitConfig: RateLimitConfig;
 
@@ -412,31 +412,56 @@ export class QualysAPIClient {
     let offset = options?.pagination?.offset || 1;
 
     let hasMoreRecords = true;
-    do {
-      const response = await this.executeQpsRestAPIRequest<
-        was.ListWebAppsResponse
-      >(this.qualysUrl(endpoint, {}), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/xml',
-        },
-        body: buildServiceRequestBody({
-          limit,
-          offset,
-          filters: options?.filters,
-        }),
-      });
 
-      for (const webApp of toArray(response.ServiceResponse?.data?.WebApp)) {
-        await iteratee(webApp);
+    if (this.config.webAppScanApplicationIDs.length) {
+      // Check to see if they are filtering
+      for (const webAppId of this.config.webAppScanApplicationIDs) {
+        const response = await this.executeQpsRestAPIRequest<
+          was.ListWebAppsResponse
+        >(this.qualysUrl(endpoint, {}), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+          body: buildServiceRequestBody({
+            limit,
+            offset,
+            filters: { ...options?.filters, id: webAppId },
+          }),
+        });
+
+        const webApp = toArray(response.ServiceResponse?.data?.WebApp);
+        if (webApp[0]) {
+          await iteratee(webApp[0]);
+        }
       }
+    } else {
+      do {
+        const response = await this.executeQpsRestAPIRequest<
+          was.ListWebAppsResponse
+        >(this.qualysUrl(endpoint, {}), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+          body: buildServiceRequestBody({
+            limit,
+            offset,
+            filters: options?.filters,
+          }),
+        });
 
-      hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
+        for (const webApp of toArray(response.ServiceResponse?.data?.WebApp)) {
+          await iteratee(webApp);
+        }
 
-      if (hasMoreRecords) {
-        offset += limit;
-      }
-    } while (hasMoreRecords);
+        hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
+
+        if (hasMoreRecords) {
+          offset += limit;
+        }
+      } while (hasMoreRecords);
+    }
   }
 
   public async fetchScannedWebAppIds(): Promise<number[]> {

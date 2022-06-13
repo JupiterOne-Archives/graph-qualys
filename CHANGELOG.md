@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [5.12.0] - 2022-06-13
+
+### Added
+
+- Added `webAppScanApplicationIdFilter` config variable to only request/ingest
+  web apps that match IDs provided in the filter
+
 ## [5.11.9] - 2022-06-01
 
 ### Fixed
