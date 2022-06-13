@@ -176,6 +176,10 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
   //   type: 'string',
   //   // virtual: true,
   // },
+
+  webAppScanApplicationIDFilter: {
+    type: 'string',
+  },
 };
 
 export default instanceConfigFields;

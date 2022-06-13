@@ -13,7 +13,7 @@ import {
   IntegrationProviderAuthorizationError,
 } from '@jupiterone/integration-sdk-core';
 
-import { UserIntegrationConfig } from '../../types';
+import { CalculatedIntegrationConfig } from '../../types';
 import { withConcurrency } from './concurrency';
 import { ClientEventEmitter, executeAPIRequest } from './request';
 import {
@@ -148,7 +148,7 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
 };
 
 export type QualysAPIClientConfig = {
-  config: UserIntegrationConfig;
+  config: CalculatedIntegrationConfig;
 
   /**
    * Initializes the API client with a `RateLimitConfig`.
@@ -271,7 +271,7 @@ function createQualysAPIResponse(response: Response): QualysAPIResponse {
 export class QualysAPIClient {
   private events: ClientEventEmitter;
 
-  private config: UserIntegrationConfig;
+  private config: CalculatedIntegrationConfig;
   private retryConfig: RetryConfig;
   private rateLimitConfig: RateLimitConfig;
 
@@ -428,7 +428,14 @@ export class QualysAPIClient {
       });
 
       for (const webApp of toArray(response.ServiceResponse?.data?.WebApp)) {
-        await iteratee(webApp);
+        if (!!this.config.webAppScanApplicationIDs.length) {
+          // If customer is filtering for specific apps, check if this webapp ID is included in their filter
+          if (this.config.webAppScanApplicationIDs.includes(webApp.id!)) {
+            await iteratee(webApp);
+          }
+        } else {
+          await iteratee(webApp);
+        }
       }
 
       hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;

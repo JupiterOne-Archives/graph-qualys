@@ -12,6 +12,7 @@ import {
   DEFAULT_VMDR_FINDING_TYPES,
   DEFAULT_VMDR_FINDING_RESULT_QIDS,
   VALID_VMDR_FINDING_TYPES,
+  DEFAULT_WEB_APP_SCAN_APPLICATION_ID_FILTER,
 } from './constants';
 import { CalculatedIntegrationConfig, UserIntegrationConfig } from './types';
 
@@ -76,6 +77,12 @@ export function calculateConfig({
     defaultValue: DEFAULT_VMDR_FINDING_RESULT_QIDS,
   });
 
+  const webAppScanApplicationIDs = readPropertyAsNumberArrayFromEnvOrConfig({
+    config,
+    propertyName: 'webAppScanApplicationIDFilter',
+    defaultValue: DEFAULT_WEB_APP_SCAN_APPLICATION_ID_FILTER,
+  });
+
   return {
     ...config,
 
@@ -90,6 +97,8 @@ export function calculateConfig({
     vmdrFindingSeverityNumbers,
     vmdrFindingTypeValues,
     vmdrFindingResultQidNumbers,
+
+    webAppScanApplicationIDs,
   };
 }
 

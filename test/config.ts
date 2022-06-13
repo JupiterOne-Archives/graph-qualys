@@ -2,6 +2,7 @@ import {
   DEFAULT_FINDINGS_SINCE_DAYS,
   DEFAULT_SCANNED_SINCE_DAYS,
   DEFAULT_VMDR_FINDING_RESULT_QIDS,
+  DEFAULT_WEB_APP_SCAN_APPLICATION_ID_FILTER,
 } from '../src/constants';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -21,4 +22,5 @@ export const config = {
   minScannedSinceDays: DEFAULT_SCANNED_SINCE_DAYS,
   minFindingsSinceDays: DEFAULT_FINDINGS_SINCE_DAYS,
   vmdrFindingResultQidNumbers: DEFAULT_VMDR_FINDING_RESULT_QIDS,
+  webAppScanApplicationIDs: DEFAULT_WEB_APP_SCAN_APPLICATION_ID_FILTER,
 } as QualysIntegrationConfig;

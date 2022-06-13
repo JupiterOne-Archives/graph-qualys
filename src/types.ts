@@ -46,6 +46,8 @@ export type UserIntegrationConfig = {
   vmdrFindingTypes?: string | string[];
 
   ingestWebAppScans: boolean;
+
+  webAppScanApplicationIDFilter: string | string[];
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {
@@ -93,6 +95,8 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
    * contain an incredible amount of data.
    */
   vmdrFindingResultQidNumbers: number[];
+
+  webAppScanApplicationIDs: number[];
 };
 
 /**

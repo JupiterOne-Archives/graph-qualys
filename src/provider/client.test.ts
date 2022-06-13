@@ -696,6 +696,30 @@ describe('iterateWebApps', () => {
     );
     expect(iteratee).not.toHaveBeenCalled();
   });
+
+  test('filter web apps', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebApps',
+    });
+
+    config.webAppScanApplicationIDs = [251316904];
+
+    const webApps: was.WebApp[] = [];
+    await createClient().iterateWebApps(
+      (webApp) => {
+        webApps.push(webApp);
+      },
+      {
+        filters: {
+          isScanned: true,
+        },
+      },
+    );
+
+    expect(webApps.length).toBeGreaterThan(0);
+    config.webAppScanApplicationIDs = [];
+  });
 });
 
 describe('fetchScannedWebAppIds', () => {
