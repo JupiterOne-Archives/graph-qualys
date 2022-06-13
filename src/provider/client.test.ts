@@ -701,7 +701,7 @@ describe('iterateWebApps', () => {
   test('filter web apps', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'iterateWebApps',
+      name: 'iterateWebAppsFiltered',
     });
 
     const filteredWebAppConfig: CalculatedIntegrationConfig = {
@@ -734,7 +734,7 @@ describe('iterateWebApps', () => {
   test('filter web apps - not found', async () => {
     recording = setupQualysRecording({
       directory: __dirname,
-      name: 'iterateWebApps',
+      name: 'iterateWebAppsFilteredNotFound',
     });
 
     const filteredWebAppConfig: CalculatedIntegrationConfig = {
@@ -760,6 +760,8 @@ describe('iterateWebApps', () => {
         },
       },
     );
+
+    console.log(webApps);
 
     expect(webApps.length).toBe(0);
   });
