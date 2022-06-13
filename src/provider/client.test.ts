@@ -704,7 +704,7 @@ describe('iterateWebApps', () => {
       name: 'iterateWebApps',
     });
 
-    let filteredWebAppConfig: CalculatedIntegrationConfig = {
+    const filteredWebAppConfig: CalculatedIntegrationConfig = {
       ...config,
       webAppScanApplicationIDs: [251316904],
     };
@@ -715,8 +715,6 @@ describe('iterateWebApps', () => {
         maxAttempts: 5,
       },
     });
-
-    // .webAppScanApplicationIDs = [251316904];
 
     const webApps: was.WebApp[] = [];
     await client.iterateWebApps(

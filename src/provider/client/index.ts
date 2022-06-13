@@ -413,7 +413,7 @@ export class QualysAPIClient {
 
     let hasMoreRecords = true;
 
-    if (!!this.config.webAppScanApplicationIDs.length) {
+    if (this.config.webAppScanApplicationIDs.length) {
       // Check to see if they are filtering
       for (const webAppId of this.config.webAppScanApplicationIDs) {
         const response = await this.executeQpsRestAPIRequest<
