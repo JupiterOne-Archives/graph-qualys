@@ -412,38 +412,54 @@ export class QualysAPIClient {
     let offset = options?.pagination?.offset || 1;
 
     let hasMoreRecords = true;
-    do {
-      const response = await this.executeQpsRestAPIRequest<
-        was.ListWebAppsResponse
-      >(this.qualysUrl(endpoint, {}), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/xml',
-        },
-        body: buildServiceRequestBody({
-          limit,
-          offset,
-          filters: options?.filters,
-        }),
-      });
 
-      for (const webApp of toArray(response.ServiceResponse?.data?.WebApp)) {
-        if (!!this.config.webAppScanApplicationIDs.length) {
-          // If customer is filtering for specific apps, check if this webapp ID is included in their filter
-          if (this.config.webAppScanApplicationIDs.includes(webApp.id!)) {
-            await iteratee(webApp);
-          }
-        } else {
+    if (!!this.config.webAppScanApplicationIDs.length) {
+      // Check to see if they are filtering
+      for (const webAppId of this.config.webAppScanApplicationIDs) {
+        const response = await this.executeQpsRestAPIRequest<
+          was.ListWebAppsResponse
+        >(this.qualysUrl(endpoint, {}), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+          body: buildServiceRequestBody({
+            limit,
+            offset,
+            filters: { ...options?.filters, id: webAppId },
+          }),
+        });
+
+        const webApp = toArray(response.ServiceResponse?.data?.WebApp);
+        await iteratee(webApp[0]);
+      }
+    } else {
+      do {
+        const response = await this.executeQpsRestAPIRequest<
+          was.ListWebAppsResponse
+        >(this.qualysUrl(endpoint, {}), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+          body: buildServiceRequestBody({
+            limit,
+            offset,
+            filters: options?.filters,
+          }),
+        });
+
+        for (const webApp of toArray(response.ServiceResponse?.data?.WebApp)) {
           await iteratee(webApp);
         }
-      }
 
-      hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
+        hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
 
-      if (hasMoreRecords) {
-        offset += limit;
-      }
-    } while (hasMoreRecords);
+        if (hasMoreRecords) {
+          offset += limit;
+        }
+      } while (hasMoreRecords);
+    }
   }
 
   public async fetchScannedWebAppIds(): Promise<number[]> {

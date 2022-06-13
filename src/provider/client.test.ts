@@ -27,6 +27,7 @@ import {
   was,
 } from './client';
 import { ClientEvents } from './client/types';
+import { CalculatedIntegrationConfig } from '../types';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -703,10 +704,22 @@ describe('iterateWebApps', () => {
       name: 'iterateWebApps',
     });
 
-    config.webAppScanApplicationIDs = [251316904];
+    let filteredWebAppConfig: CalculatedIntegrationConfig = {
+      ...config,
+      webAppScanApplicationIDs: [251316904],
+    };
+
+    const client = new QualysAPIClient({
+      config: filteredWebAppConfig,
+      rateLimitConfig: {
+        maxAttempts: 5,
+      },
+    });
+
+    // .webAppScanApplicationIDs = [251316904];
 
     const webApps: was.WebApp[] = [];
-    await createClient().iterateWebApps(
+    await client.iterateWebApps(
       (webApp) => {
         webApps.push(webApp);
       },
@@ -718,7 +731,6 @@ describe('iterateWebApps', () => {
     );
 
     expect(webApps.length).toBeGreaterThan(0);
-    config.webAppScanApplicationIDs = [];
   });
 });
 
