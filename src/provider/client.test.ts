@@ -761,8 +761,6 @@ describe('iterateWebApps', () => {
       },
     );
 
-    console.log(webApps);
-
     expect(webApps.length).toBe(0);
   });
 });
