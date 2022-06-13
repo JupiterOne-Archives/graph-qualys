@@ -730,6 +730,39 @@ describe('iterateWebApps', () => {
 
     expect(webApps.length).toBeGreaterThan(0);
   });
+
+  test('filter web apps - not found', async () => {
+    recording = setupQualysRecording({
+      directory: __dirname,
+      name: 'iterateWebApps',
+    });
+
+    const filteredWebAppConfig: CalculatedIntegrationConfig = {
+      ...config,
+      webAppScanApplicationIDs: [1234],
+    };
+
+    const client = new QualysAPIClient({
+      config: filteredWebAppConfig,
+      rateLimitConfig: {
+        maxAttempts: 5,
+      },
+    });
+
+    const webApps: was.WebApp[] = [];
+    await client.iterateWebApps(
+      (webApp) => {
+        webApps.push(webApp);
+      },
+      {
+        filters: {
+          isScanned: true,
+        },
+      },
+    );
+
+    expect(webApps.length).toBe(0);
+  });
 });
 
 describe('fetchScannedWebAppIds', () => {

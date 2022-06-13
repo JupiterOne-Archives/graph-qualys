@@ -431,7 +431,9 @@ export class QualysAPIClient {
         });
 
         const webApp = toArray(response.ServiceResponse?.data?.WebApp);
-        await iteratee(webApp[0]);
+        if (webApp[0]) {
+          await iteratee(webApp[0]);
+        }
       }
     } else {
       do {
