@@ -969,11 +969,11 @@ xsi:noNamespaceSchemaLocation="https://qualysapi.qualys.com/qps/xsd/3.0/was/find
     recording.server.any().intercept((req, res) => {
       res.setHeader('content-type', 'text/xml');
 
-      if (/1,2,3,4,5,6,7,8,9,10/.test(req.body)) {
+      if (/1,2,3,4,5,6,7,8,9,10/.test(req.body!)) {
         if (set1Responses.length === 0)
           throw 'No more responses to give from set1Responses';
         res.status(200).send(set1Responses.pop());
-      } else if (/11,12/.test(req.body)) {
+      } else if (/11,12/.test(req.body!)) {
         if (set2Responses.length === 0)
           throw 'No more responses to give from set2Responses';
         res.status(200).send(set2Responses.pop());
@@ -1335,7 +1335,7 @@ describe('iterateHostDetails', () => {
     const hostIds = [1, 2, 3];
     const requests: string[] = [];
     recording.server.any().intercept((req, res) => {
-      requests.push(req.body);
+      requests.push(req.body!);
       res.status(200).send(responseBody);
     });
 
