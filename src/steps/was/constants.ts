@@ -53,7 +53,7 @@ export const WasEntities: Record<string, StepEntityMetadata> = {
     resourceName: 'Web App Finding',
     partial: true,
     indexMetadata: {
-      enabled: true,
+      enabled: false,
     },
   },
   WEBAPP_ASSESSMENT: {
@@ -62,7 +62,7 @@ export const WasEntities: Record<string, StepEntityMetadata> = {
     resourceName: 'Web App Assessment',
     partial: true,
     indexMetadata: {
-      enabled: true,
+      enabled: false,
     },
   },
 };
@@ -75,7 +75,7 @@ export const WasRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_WEBAPP_FINDING,
     partial: true,
     indexMetadata: {
-      enabled: true,
+      enabled: false,
     },
   },
 };
@@ -92,7 +92,7 @@ export const WasMappedRelationships: Record<
     partial: true,
     direction: RelationshipDirection.FORWARD,
     indexMetadata: {
-      enabled: true,
+      enabled: false,
     },
   },
   WEBAPP_HAS_FINDING: {
@@ -103,7 +103,7 @@ export const WasMappedRelationships: Record<
     partial: true,
     direction: RelationshipDirection.FORWARD,
     indexMetadata: {
-      enabled: true,
+      enabled: false,
     },
   },
   WEBAPP_HAS_ASSESSMENT: {
@@ -114,7 +114,7 @@ export const WasMappedRelationships: Record<
     partial: true,
     direction: RelationshipDirection.FORWARD,
     indexMetadata: {
-      enabled: true,
+      enabled: false,
     },
   },
 };
