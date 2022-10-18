@@ -54,7 +54,7 @@ export const accountSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _type: ENTITY_TYPE_QUALYS_ACCOUNT,
         _class: 'Account',
         indexMetadata: {
-          enabled: false,
+          enabled: true,
         },
       },
     ],

@@ -126,6 +126,7 @@ The following entities are created:
 | Account                 | `qualys_account`               | `Account`       |
 | Host Detection          | `qualys_host_finding`          | `Finding`       |
 | Vulnerability Manager   | `qualys_vulnerability_manager` | `Service`       |
+| Web App Assessment      | `qualys_web_app_assessment`    | `Assessment`    |
 | Web App Finding         | `qualys_web_app_finding`       | `Finding`       |
 | Web Application Scanner | `qualys_web_app_scanner`       | `Service`       |
 
@@ -142,17 +143,19 @@ The following relationships are created:
 | `qualys_web_app_finding` | **IS**                | `cve`                          |
 | `qualys_web_app_finding` | **IS**                | `qualys_vuln`                  |
 | `qualys_web_app_scanner` | **IDENTIFIED**        | `qualys_web_app_finding`       |
-| `qualys_web_app_scanner` | **SCANS**             | `web_app`                      |
 
 ### Mapped Relationships
 
 The following mapped relationships are created:
 
-| Source Entity `_type`          | Relationship `_class` | Target Entity `_type`       | Direction |
-| ------------------------------ | --------------------- | --------------------------- | --------- |
-| `qualys_vulnerability_manager` | **SCANS**             | `*aws_instance*`            | FORWARD   |
-| `qualys_vulnerability_manager` | **SCANS**             | `*discovered_host*`         | FORWARD   |
-| `qualys_vulnerability_manager` | **SCANS**             | `*google_compute_instance*` | FORWARD   |
+| Source Entity `_type`          | Relationship `_class` | Target Entity `_type`         | Direction |
+| ------------------------------ | --------------------- | ----------------------------- | --------- |
+| `qualys_vulnerability_manager` | **SCANS**             | `*aws_instance*`              | FORWARD   |
+| `qualys_vulnerability_manager` | **SCANS**             | `*discovered_host*`           | FORWARD   |
+| `qualys_vulnerability_manager` | **SCANS**             | `*google_compute_instance*`   | FORWARD   |
+| `qualys_web_app_scanner`       | **SCANS**             | `*web_app*`                   | FORWARD   |
+| `web_app`                      | **HAS**               | `*qualys_web_app_assessment*` | FORWARD   |
+| `web_app`                      | **HAS**               | `*qualys_web_app_finding*`    | FORWARD   |
 
 <!--
 ********************************************************************************
