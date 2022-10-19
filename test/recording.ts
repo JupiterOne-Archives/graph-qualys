@@ -31,7 +31,29 @@ function mutateRecordingEntry(entry: RecordingEntry): void {
     (e) => e.name === 'transfer-encoding',
   );
 
-  if (contentEncoding && contentEncoding.value === 'gzip') {
+  if (
+    entry.response.content.encoding &&
+    entry.response.content.encoding === 'base64'
+  ) {
+    const chunkBuffers: Buffer[] = [];
+    const base64Chunks = JSON.parse(responseText) as string[];
+
+    base64Chunks.forEach((chunk) => {
+      const chunkBuffer = Buffer.from(chunk, 'base64');
+      chunkBuffers.push(chunkBuffer);
+    });
+
+    responseText = gunzipSync(Buffer.concat(chunkBuffers)).toString('utf-8');
+
+    // Remove encoding/chunking since content is now unzipped
+    entry.response.headers = entry.response.headers.filter(
+      (e) => e && e !== contentEncoding && e !== transferEncoding,
+    );
+
+    // Remove recording binary marker
+    delete (entry.response.content as any)._isBinary;
+    entry.response.content.text = responseText;
+  } else if (contentEncoding && contentEncoding.value === 'gzip') {
     const chunkBuffers: Buffer[] = [];
     const hexChunks = JSON.parse(responseText) as string[];
     hexChunks.forEach((chunk) => {

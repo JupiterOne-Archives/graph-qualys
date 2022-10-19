@@ -15,7 +15,11 @@ import {
   fetchScannedHostIds,
 } from '../vmdr';
 import { fetchFindingVulnerabilities } from '../vulns';
-import { fetchScannedWebAppFindings, fetchScannedWebApps } from '../was';
+import {
+  fetchAssessments,
+  fetchScannedWebAppFindings,
+  fetchScannedWebApps,
+} from '../was';
 
 jest.setTimeout(1000 * 60 * 1);
 
@@ -97,7 +101,7 @@ test('steps', async () => {
           items: { type: 'object' },
         },
       },
-      required: ['name', 'version'],
+      required: ['name'],
     },
   });
 });
@@ -152,4 +156,33 @@ test('fetchScannedHostFindings', async () => {
     collectedRelationships: context.jobState.collectedRelationships,
     encounteredTypes: context.jobState.encounteredTypes,
   }).toMatchSnapshot('fetchScannedHostFindings');
+});
+
+test('fetchAssessments', async () => {
+  recording = setupQualysRecording({
+    directory: __dirname,
+    name: 'fetchAssessments',
+  });
+
+  const nowTimestamp = 1599865230000; // '2020-09-11T23:00:30Z';
+  jest.spyOn(Date, 'now').mockImplementation(() => nowTimestamp);
+
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
+    instanceConfig: config,
+  });
+
+  context.instance.config = calculateConfig(context);
+
+  await fetchAccountDetails(context);
+  await fetchServices(context);
+  await fetchScannedWebApps(context);
+  await fetchAssessments(context);
+
+  expect({
+    numCollectedEntities: context.jobState.collectedEntities.length,
+    numCollectedRelationships: context.jobState.collectedRelationships.length,
+    collectedEntities: context.jobState.collectedEntities,
+    collectedRelationships: context.jobState.collectedRelationships,
+    encounteredTypes: context.jobState.encounteredTypes,
+  }).toMatchSnapshot('fetchAssessments');
 });

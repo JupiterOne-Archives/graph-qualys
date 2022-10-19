@@ -44,8 +44,6 @@ import {
   buildSearchReportRequestBody,
   buildServiceRequestBody,
 } from './was/util';
-import { report } from 'process';
-
 export * from './types';
 
 /**
