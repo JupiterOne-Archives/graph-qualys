@@ -12,7 +12,9 @@ export type ListWebAppsFilterInputParameter =
   | 'isScheduled'
   | 'isScanned'
   | 'lastScan.status'
-  | 'lastScan.date';
+  | 'lastScan.date'
+  | 'webApp.id'
+  | 'format';
 
 export type ListWebAppsFilters = Partial<
   Record<

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Added
+
+The following entities are **now** created:
+
+| Resources          | Entity `_type`              | Entity `_class` |
+| ------------------ | --------------------------- | --------------- |
+| Web App Assessment | `qualys_web_app_assessment` | `Assessment`    |
+
+The following mapped relationships are **now** created:
+
+| Source Entity `_type` | Relationship `_class` | Target Entity `_type`         | Direction |
+| --------------------- | --------------------- | ----------------------------- | --------- |
+| `web_app`             | **HAS**               | `*qualys_web_app_assessment*` | FORWARD   |
+| `web_app`             | **HAS**               | `*qualys_web_app_finding*`    | FORWARD   |
+
 ## [5.12.0] - 2022-06-13
 
 ### Added

@@ -15,6 +15,7 @@ import {
 } from './steps/vmdr/constants';
 import { STEP_FETCH_FINDING_VULNS } from './steps/vulns/constants';
 import {
+  STEP_FETCH_ASSESSMENTS,
   STEP_FETCH_SCANNED_WEBAPPS,
   STEP_FETCH_SCANNED_WEBAPP_FINDINGS,
 } from './steps/was/constants';
@@ -96,6 +97,9 @@ export function getStepStartStates(
       disabled: false,
     },
     [STEP_FETCH_FINDING_VULNS]: {
+      disabled: false,
+    },
+    [STEP_FETCH_ASSESSMENTS]: {
       disabled: false,
     },
   };

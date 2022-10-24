@@ -39,8 +39,11 @@ import {
   parseXMLResponse,
   toArray,
 } from './util';
-import { buildServiceRequestBody } from './was/util';
-
+import {
+  buildScanReportRequestBody,
+  buildSearchReportRequestBody,
+  buildServiceRequestBody,
+} from './was/util';
 export * from './types';
 
 /**
@@ -462,6 +465,104 @@ export class QualysAPIClient {
         }
       } while (hasMoreRecords);
     }
+  }
+
+  /**
+   * Iterate web applications scans.
+   */
+  public async iterateWebAppScans(
+    iteratee: ResourceIteratee<was.WasScan>,
+    options?: {
+      filters?: was.ListWebAppScansFilters;
+      pagination?: was.ListWebAppScansPagination;
+    },
+  ): Promise<void> {
+    const endpoint = '/qps/rest/3.0/search/was/wasscan';
+
+    // The WAS APIs have no rate limits on them; iterate in smaller batches to
+    // keep memory pressure low.
+    const limit = options?.pagination?.limit || 100;
+    let offset = options?.pagination?.offset || 1;
+
+    let hasMoreRecords = true;
+
+    do {
+      const response = await this.executeQpsRestAPIRequest<
+        was.ListWasScanResponse
+      >(this.qualysUrl(endpoint, {}), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
+        },
+        body: buildServiceRequestBody({
+          limit,
+          offset,
+          filters: options?.filters,
+        }),
+      });
+
+      for (const wasScan of toArray(response.ServiceResponse?.data?.WasScan)) {
+        await iteratee(wasScan);
+      }
+
+      hasMoreRecords = !!response.ServiceResponse?.hasMoreRecords;
+
+      if (hasMoreRecords) {
+        offset += limit;
+      }
+    } while (hasMoreRecords);
+  }
+
+  public async fetchScanReport(id: number): Promise<was.WasScanReport> {
+    const endpoint = `/qps/rest/3.0/download/was/report/${id}`;
+
+    const response = (await this.executeQpsRestAPIRequest<any>(
+      this.qualysUrl(endpoint, {}),
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'text/xml',
+        },
+      },
+    )) as was.WasScanReportResponse;
+
+    return response.WAS_SCAN_REPORT;
+  }
+
+  public async searchReport(id: number): Promise<any> {
+    const endpoint = '/qps/rest/3.0/search/was/report';
+
+    const response = await this.executeQpsRestAPIRequest<
+      was.WasSearchReportResponse
+    >(this.qualysUrl(endpoint, {}), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: buildSearchReportRequestBody({
+        reportId: id,
+      }),
+    });
+
+    return response.ServiceResponse?.data?.Report;
+  }
+
+  public async createScanReport(id: number): Promise<any> {
+    const endpoint = '/qps/rest/3.0/create/was/report';
+
+    const response = await this.executeQpsRestAPIRequest<
+      was.WasCreateScanReportResponse
+    >(this.qualysUrl(endpoint, {}), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: buildScanReportRequestBody({
+        wasScanId: id,
+      }),
+    });
+
+    return response.ServiceResponse?.data?.Report;
   }
 
   public async fetchScannedWebAppIds(): Promise<number[]> {
