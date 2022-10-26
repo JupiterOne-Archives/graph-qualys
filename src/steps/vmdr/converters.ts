@@ -261,7 +261,7 @@ export function createHostFindingEntity({
 }): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
-  return createIntegrationEntity({
+  const hostEntity = createIntegrationEntity({
     entityData: {
       // Do NOT include the host in every Finding, there will be a relationship to it.
       // Esp. avoid storing the DETECTION_LIST by accident, it will exhaust disk storage.
@@ -328,6 +328,10 @@ export function createHostFindingEntity({
       },
     },
   });
+
+  assignTags(hostEntity, getHostTags(host));
+
+  return hostEntity;
 }
 
 /**
@@ -385,6 +389,22 @@ export function getHostAssetFqdn(host: assets.HostAsset): string | undefined {
     fqdn = undefined;
   }
   return fqdn;
+}
+
+export function getHostTags(host: vmpc.DetectionHost): string[] {
+  const tags: string[] = [];
+
+  const tagList = toArray(host.TAGS?.TAG);
+  tagList
+    ?.filter((e) => typeof e.NAME === 'string')
+    .forEach((e) => tags.push(e.NAME));
+
+  const oldTagList = toArray(host.TAGS?.TAG);
+  oldTagList
+    ?.filter((e) => typeof e.NAME === 'string')
+    .forEach((e) => tags.push(e.NAME));
+
+  return uniq(tags);
 }
 
 export function getHostAssetTags(hostAsset: assets.HostAsset): string[] {

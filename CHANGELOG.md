@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Added `tags` property to `qualys_host_finding` entities.
+
 ## [5.12.0] - 2022-06-13
 
 ### Added

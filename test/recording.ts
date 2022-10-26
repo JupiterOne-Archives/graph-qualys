@@ -35,7 +35,9 @@ function mutateRecordingEntry(entry: RecordingEntry): void {
     const chunkBuffers: Buffer[] = [];
     const hexChunks = JSON.parse(responseText) as string[];
     hexChunks.forEach((chunk) => {
-      const chunkBuffer = Buffer.from(chunk, 'hex');
+      const encoding: BufferEncoding =
+        (entry.response.content.encoding as BufferEncoding) || 'hex';
+      const chunkBuffer = Buffer.from(chunk, encoding);
       chunkBuffers.push(chunkBuffer);
     });
 
