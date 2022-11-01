@@ -87,7 +87,6 @@ async function createVulnerabilityManagementService(
   accountEntity: Entity,
   portalInfo?: PortalInfo,
 ): Promise<void> {
-  console.log('portalInfo', portalInfo);
   const name = 'Qualys Vulnerability Manager';
   const serviceEntity = await jobState.addEntity(
     createIntegrationEntity({
