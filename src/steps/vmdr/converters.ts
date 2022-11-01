@@ -261,7 +261,7 @@ export function createHostFindingEntity({
 }): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
-  const hostEntity = createIntegrationEntity({
+  const hostFindingEntity = createIntegrationEntity({
     entityData: {
       // Do NOT include the host in every Finding, there will be a relationship to it.
       // Esp. avoid storing the DETECTION_LIST by accident, it will exhaust disk storage.
@@ -329,9 +329,9 @@ export function createHostFindingEntity({
     },
   });
 
-  assignTags(hostEntity, getHostTags(host));
+  assignTags(hostFindingEntity, getHostTags(host));
 
-  return hostEntity;
+  return hostFindingEntity;
 }
 
 /**

@@ -62,7 +62,8 @@ async function createWebApplicationScannerService(
           function: ['DAST'],
           description:
             'Automated Web Application Security Assessment and Reporting',
-          version: portalInfo?.['Portal-Version']?.['WAS-VERSION'],
+          // Note: 'WAS-VERSION' is missing from the portalInfo
+          version: portalInfo?.['Portal-Version']?.['WAS-VERSION'] || 'unknown',
           createdOn: undefined,
           updatedOn: undefined,
         },
@@ -86,6 +87,7 @@ async function createVulnerabilityManagementService(
   accountEntity: Entity,
   portalInfo?: PortalInfo,
 ): Promise<void> {
+  console.log('portalInfo', portalInfo);
   const name = 'Qualys Vulnerability Manager';
   const serviceEntity = await jobState.addEntity(
     createIntegrationEntity({
@@ -101,7 +103,8 @@ async function createVulnerabilityManagementService(
           function: ['vulnerability-management'],
           description:
             'Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.',
-          version: portalInfo?.['Portal-Version']?.['VM-VERSION'],
+          // Note: 'VM-VERSION' is missing from the portalInfo
+          version: portalInfo?.['Portal-Version']?.['VM-VERSION'] || 'unknown',
           createdOn: undefined,
           updatedOn: undefined,
         },
