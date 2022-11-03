@@ -29,6 +29,13 @@ test('steps', async () => {
   recording = setupQualysRecording({
     directory: __dirname,
     name: 'steps',
+    options: {
+      matchRequestsBy: {
+        url: {
+          query: false,
+        },
+      },
+    },
   });
 
   const nowTimestamp = 1599865230000; // '2020-09-11T23:00:30Z';
@@ -97,7 +104,7 @@ test('steps', async () => {
           items: { type: 'object' },
         },
       },
-      required: ['name', 'version'],
+      required: ['name'],
     },
   });
 });

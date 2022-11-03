@@ -52,6 +52,12 @@ export type DetectionHost = {
   QG_HOSTID?: QGHostId;
   LAST_VM_AUTH_SCANNED_DATE?: ISODateString;
   LAST_PC_SCANNED_DATE?: ISODateString;
+  TAGS?: {
+    TAG?: PossibleArray<{
+      TAG_ID: string;
+      NAME: string;
+    }>;
+  };
 };
 
 export type HostDetectionList = {
