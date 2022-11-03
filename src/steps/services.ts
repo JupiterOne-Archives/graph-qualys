@@ -62,8 +62,7 @@ async function createWebApplicationScannerService(
           function: ['DAST'],
           description:
             'Automated Web Application Security Assessment and Reporting',
-          // Note: 'WAS-VERSION' is missing from the portalInfo
-          version: portalInfo?.['Portal-Version']?.['WAS-VERSION'] || 'unknown',
+          version: portalInfo?.['Portal-Version']?.['WAS-VERSION'],
           createdOn: undefined,
           updatedOn: undefined,
         },
@@ -102,8 +101,7 @@ async function createVulnerabilityManagementService(
           function: ['vulnerability-management'],
           description:
             'Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.',
-          // Note: 'VM-VERSION' is missing from the portalInfo
-          version: portalInfo?.['Portal-Version']?.['VM-VERSION'] || 'unknown',
+          version: portalInfo?.['Portal-Version']?.['VM-VERSION'],
           createdOn: undefined,
           updatedOn: undefined,
         },

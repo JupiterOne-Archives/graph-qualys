@@ -104,7 +104,7 @@ test('steps', async () => {
           items: { type: 'object' },
         },
       },
-      required: ['name', 'version'],
+      required: ['name'],
     },
   });
 });
