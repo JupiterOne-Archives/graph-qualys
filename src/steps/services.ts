@@ -130,7 +130,7 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _class: 'Service',
         resourceName: 'Web Application Scanner',
         indexMetadata: {
-          enabled: false,
+          enabled: true,
         },
       },
       {
@@ -138,7 +138,7 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         _class: 'Service',
         resourceName: 'Vulnerability Manager',
         indexMetadata: {
-          enabled: false,
+          enabled: true,
         },
       },
     ],
@@ -153,7 +153,7 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         sourceType: ENTITY_TYPE_QUALYS_ACCOUNT,
         targetType: ENTITY_TYPE_SERVICE_WAS,
         indexMetadata: {
-          enabled: false,
+          enabled: true,
         },
       },
       {
@@ -166,7 +166,7 @@ export const serviceSteps: IntegrationStep<QualysIntegrationConfig>[] = [
         sourceType: ENTITY_TYPE_QUALYS_ACCOUNT,
         targetType: ENTITY_TYPE_SERVICE_VMDR,
         indexMetadata: {
-          enabled: false,
+          enabled: true,
         },
       },
     ],

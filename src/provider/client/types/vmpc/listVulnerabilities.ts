@@ -23,6 +23,8 @@ export type Vuln = {
   QID?: QWebHostId;
   VULN_TYPE?: string;
   SOLUTION?: string;
+  DIAGNOSIS?: string;
+  CONSEQUENCE?: string;
   CATEGORY?: string;
   DISCOVERY?: QualysDiscovery;
   SEVERITY_LEVEL?: QualyNumericSeverity;

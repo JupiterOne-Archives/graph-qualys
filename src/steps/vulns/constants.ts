@@ -48,7 +48,7 @@ export const VulnRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_QUALYS_VULNERABILITY,
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
   HOST_FINDING_CVE_VULN: {
@@ -58,7 +58,7 @@ export const VulnRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_CVE_VULNERABILITY,
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
   WEBAPP_FINDING_QUALYS_VULN: {
@@ -68,7 +68,7 @@ export const VulnRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_QUALYS_VULNERABILITY,
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
   WEBAPP_FINDING_CVE_VULN: {
@@ -78,7 +78,7 @@ export const VulnRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_CVE_VULNERABILITY,
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
 };

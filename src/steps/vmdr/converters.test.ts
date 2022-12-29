@@ -364,6 +364,7 @@ describe('createHostFindingEntity', () => {
             detection: hostDetection,
             detectionResults: undefined,
             hostAssetTargets: hostTargets,
+            desc: {},
           }),
         ).toMatchGraphObjectSchema({
           _class: ['Finding'],

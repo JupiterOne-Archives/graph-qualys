@@ -30,7 +30,7 @@ import {
   MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST,
 } from './constants';
-import { HostAssetTargets } from './types';
+import { Description, HostAssetTargets } from './types';
 
 /**
  * Creates a mapped relationship between a Service and Host. This should not be
@@ -252,12 +252,14 @@ export function createHostFindingEntity({
   detection,
   detectionResults,
   hostAssetTargets,
+  desc,
 }: {
   key: string;
   host: vmpc.DetectionHost;
   detection: vmpc.HostDetection;
   detectionResults: string | undefined;
   hostAssetTargets: HostAssetTargets | undefined;
+  desc: Description;
 }): Entity {
   const findingDisplayName = `QID ${detection.QID}`;
 
@@ -325,6 +327,8 @@ export function createHostFindingEntity({
         // TODO: These are required but not sure what values to use
         production: true,
         public: true,
+
+        ...desc,
       },
     },
   });
