@@ -7,6 +7,10 @@
 - Added `recommendation`, `reference`, `description`, and `impact` fields to
   `qualys_host_finding`
 
+### Changed
+
+- Changed severities to be uppercased words (e.g. `critical` -> `Critical`).
+
 ## [5.13.0] - 2022-11-03
 
 ### Added
