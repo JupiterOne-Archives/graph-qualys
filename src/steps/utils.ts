@@ -76,12 +76,12 @@ export class VulnerabilityFindingKeysCollector {
 }
 
 const SEVERITY_MAPPINGS = [
-  'none',
-  'informational',
-  'low',
-  'medium',
-  'high',
-  'critical',
+  'None',
+  'Informational',
+  'Low',
+  'Medium',
+  'High',
+  'Critical',
 ];
 
 export function convertNumericSeverityToString(
@@ -90,7 +90,7 @@ export function convertNumericSeverityToString(
   if (numericSeverity === undefined || numericSeverity < 0) {
     return SEVERITY_MAPPINGS[1];
   }
-  return numericSeverity <= 5 ? SEVERITY_MAPPINGS[numericSeverity] : 'critical';
+  return numericSeverity <= 5 ? SEVERITY_MAPPINGS[numericSeverity] : 'Critical';
 }
 
 export function normalizeNumericSeverity(
