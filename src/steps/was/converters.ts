@@ -11,8 +11,15 @@ import {
   normalizeNumericSeverity,
 } from '../utils';
 import { ENTITY_TYPE_WEBAPP_FINDING } from './constants';
+import { Description } from './types';
 
-export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
+export function createWebAppFindingEntity({
+  finding,
+  desc,
+}: {
+  finding: was.WebAppFinding;
+  desc: Description;
+}): Entity {
   return createIntegrationEntity({
     entityData: {
       // source: finding,
@@ -48,6 +55,8 @@ export function createWebAppFindingEntity(finding: was.WebAppFinding): Entity {
         category: 'app-scan',
         status: finding.status,
         open: !finding.status || !/fixed/i.test(finding.status),
+
+        ...desc,
       },
     },
   });

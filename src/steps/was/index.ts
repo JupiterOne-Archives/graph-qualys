@@ -25,6 +25,7 @@ import {
   WasRelationships,
 } from './constants';
 import { createWebAppFindingEntity } from './converters';
+import { Description } from './types';
 
 export async function fetchScannedWebApps({
   logger,
@@ -105,8 +106,40 @@ export async function fetchScannedWebAppFindings({
   await apiClient.iterateWebAppFindings(
     scannedWebAppIds,
     async (finding) => {
+      let desc: Description = {};
+      if (finding.qid) {
+        await apiClient.iterateVulnerabilities(
+          [finding.qid],
+          (details) => {
+            const {
+              DIAGNOSIS: description,
+              CONSEQUENCE: impact,
+              SOLUTION: recommendation,
+              CVE_LIST: cveList,
+            } = details;
+
+            console.log(finding.qid);
+            console.log(details);
+
+            desc = {
+              description,
+              impact,
+              recommendation,
+              reference: Array.isArray(cveList?.CVE)
+                ? cveList?.CVE?.map((cve) => cve.URL).join('\n')
+                : cveList?.CVE?.URL,
+            };
+          },
+          {
+            onRequestError: (_pageIds, err) => {
+              logger.error(err);
+            },
+          },
+        );
+      }
+
       const findingEntity = await jobState.addEntity(
-        createWebAppFindingEntity(finding),
+        createWebAppFindingEntity({ finding, desc }),
       );
 
       await jobState.addRelationship(

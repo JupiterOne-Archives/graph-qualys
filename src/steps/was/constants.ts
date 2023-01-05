@@ -37,7 +37,7 @@ export const WasEntities: Record<string, StepEntityMetadata> = {
     resourceName: 'Web App Finding',
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
 };
@@ -50,7 +50,7 @@ export const WasRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_WEBAPP_FINDING,
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
   SERVICE_SCANS_WEBAPP: {
@@ -60,7 +60,7 @@ export const WasRelationships: Record<string, StepRelationshipMetadata> = {
     targetType: ENTITY_TYPE_WEBAPP,
     partial: true,
     indexMetadata: {
-      enabled: false,
+      enabled: true,
     },
   },
 };
