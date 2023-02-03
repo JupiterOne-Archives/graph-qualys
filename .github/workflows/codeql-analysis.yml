@@ -9,7 +9,6 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-
 name: 'CodeQL'
 
 on:
@@ -66,5 +65,5 @@ jobs:
       #   echo "Run, Build Application using script"
       #   ./location_of_script_within_repo/buildscript.sh
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
