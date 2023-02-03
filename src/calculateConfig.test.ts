@@ -212,7 +212,7 @@ describe('maxFindingsSinceISODate', () => {
     });
     const config = calculateConfig(context);
     expect(config.maxFindingsSinceISODate).toEqual(nowISODate);
-    expect(config.minFindingsSinceISODate).toEqual('2019-05-31T18:43:44Z');
+    expect(config.minFindingsSinceISODate).toEqual('2020-10-09T18:43:44Z');
   });
 });
 
