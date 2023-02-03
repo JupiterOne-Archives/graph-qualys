@@ -194,7 +194,7 @@ describe('maxScannedSinceISODate', () => {
     });
     const config = calculateConfig(context);
     expect(config.maxScannedSinceISODate).toEqual(nowISODate);
-    expect(config.minScannedSinceISODate).toEqual('2019-05-31T18:43:44Z');
+    expect(config.minScannedSinceISODate).toEqual('2020-10-09T18:43:44Z');
   });
 });
 
