@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Added `recommendation`, `reference`, `description`, and `impact` fields to
+  `qualys_web_app_finding`
+
 ## [5.13.0] - 2022-11-03
 
 ### Added

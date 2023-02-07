@@ -160,3 +160,60 @@ test('fetchScannedHostFindings', async () => {
     encounteredTypes: context.jobState.encounteredTypes,
   }).toMatchSnapshot('fetchScannedHostFindings');
 });
+
+test('fetchScannedWebApps', async () => {
+  recording = setupQualysRecording({
+    directory: __dirname,
+    name: 'fetchScannedWebApps',
+  });
+
+  const nowTimestamp = 1652212328000; // '2020-05-10T07:52:08Z';
+  jest.spyOn(Date, 'now').mockImplementation(() => nowTimestamp);
+
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
+    instanceConfig: config,
+  });
+
+  context.instance.config = calculateConfig(context);
+
+  await fetchAccountDetails(context);
+  await fetchServices(context);
+  await fetchScannedWebApps(context);
+
+  expect({
+    numCollectedEntities: context.jobState.collectedEntities.length,
+    numCollectedRelationships: context.jobState.collectedRelationships.length,
+    collectedEntities: context.jobState.collectedEntities,
+    collectedRelationships: context.jobState.collectedRelationships,
+    encounteredTypes: context.jobState.encounteredTypes,
+  }).toMatchSnapshot('fetchScannedWebApps');
+});
+
+test('fetchScannedWebAppFindings', async () => {
+  recording = setupQualysRecording({
+    directory: __dirname,
+    name: 'fetchScannedWebAppFindings',
+  });
+
+  const nowTimestamp = 1652212328000; // '2020-05-10T07:52:08Z';
+  jest.spyOn(Date, 'now').mockImplementation(() => nowTimestamp);
+
+  const context = createMockStepExecutionContext<QualysIntegrationConfig>({
+    instanceConfig: config,
+  });
+
+  context.instance.config = calculateConfig(context);
+
+  await fetchAccountDetails(context);
+  await fetchServices(context);
+  await fetchScannedWebApps(context);
+  await fetchScannedWebAppFindings(context);
+
+  expect({
+    numCollectedEntities: context.jobState.collectedEntities.length,
+    numCollectedRelationships: context.jobState.collectedRelationships.length,
+    collectedEntities: context.jobState.collectedEntities,
+    collectedRelationships: context.jobState.collectedRelationships,
+    encounteredTypes: context.jobState.encounteredTypes,
+  }).toMatchSnapshot('fetchScannedWebAppFindings');
+});

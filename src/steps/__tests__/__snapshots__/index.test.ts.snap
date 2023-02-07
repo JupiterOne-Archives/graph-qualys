@@ -245,3 +245,191 @@ Object {
   "numCollectedRelationships": 2,
 }
 `;
+
+exports[`fetchScannedWebAppFindings: fetchScannedWebAppFindings 1`] = `
+Object {
+  "collectedEntities": Array [
+    Object {
+      "_class": Array [
+        "Account",
+      ],
+      "_key": "qualys-account:local-integration-instance",
+      "_rawData": Array [
+        Object {
+          "name": "default",
+          "rawData": Object {
+            "portal": undefined,
+          },
+        },
+      ],
+      "_type": "qualys_account",
+      "createdOn": undefined,
+      "displayName": "Qualys - Local Integration",
+      "name": "Qualys - Local Integration",
+    },
+    Object {
+      "_class": Array [
+        "Service",
+      ],
+      "_key": "qualys-service:was",
+      "_rawData": Array [],
+      "_type": "qualys_web_app_scanner",
+      "category": Array [
+        "software",
+        "other",
+      ],
+      "createdOn": undefined,
+      "description": "Automated Web Application Security Assessment and Reporting",
+      "displayName": "Qualys Web Application Scanner",
+      "function": Array [
+        "DAST",
+      ],
+      "name": "Qualys Web Application Scanner",
+      "updatedOn": undefined,
+      "version": undefined,
+    },
+    Object {
+      "_class": Array [
+        "Service",
+      ],
+      "_key": "qualys-service:vmdr",
+      "_rawData": Array [],
+      "_type": "qualys_vulnerability_manager",
+      "category": Array [
+        "software",
+        "other",
+      ],
+      "createdOn": undefined,
+      "description": "Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.",
+      "displayName": "Qualys Vulnerability Manager",
+      "function": Array [
+        "vulnerability-management",
+      ],
+      "name": "Qualys Vulnerability Manager",
+      "updatedOn": undefined,
+      "version": undefined,
+    },
+  ],
+  "collectedRelationships": Array [
+    Object {
+      "_class": "HAS",
+      "_fromEntityKey": "qualys-account:local-integration-instance",
+      "_key": "qualys-account:local-integration-instance|has|qualys-service:was",
+      "_toEntityKey": "qualys-service:was",
+      "_type": "qualys_account_has_web_app_scanner",
+      "displayName": "HAS",
+    },
+    Object {
+      "_class": "HAS",
+      "_fromEntityKey": "qualys-account:local-integration-instance",
+      "_key": "qualys-account:local-integration-instance|has|qualys-service:vmdr",
+      "_toEntityKey": "qualys-service:vmdr",
+      "_type": "qualys_account_has_vulnerability_manager",
+      "displayName": "HAS",
+    },
+  ],
+  "encounteredTypes": Array [
+    "qualys_account",
+    "qualys_web_app_scanner",
+    "qualys_vulnerability_manager",
+    "qualys_account_has_web_app_scanner",
+    "qualys_account_has_vulnerability_manager",
+  ],
+  "numCollectedEntities": 3,
+  "numCollectedRelationships": 2,
+}
+`;
+
+exports[`fetchScannedWebApps: fetchScannedWebApps 1`] = `
+Object {
+  "collectedEntities": Array [
+    Object {
+      "_class": Array [
+        "Account",
+      ],
+      "_key": "qualys-account:local-integration-instance",
+      "_rawData": Array [
+        Object {
+          "name": "default",
+          "rawData": Object {
+            "portal": undefined,
+          },
+        },
+      ],
+      "_type": "qualys_account",
+      "createdOn": undefined,
+      "displayName": "Qualys - Local Integration",
+      "name": "Qualys - Local Integration",
+    },
+    Object {
+      "_class": Array [
+        "Service",
+      ],
+      "_key": "qualys-service:was",
+      "_rawData": Array [],
+      "_type": "qualys_web_app_scanner",
+      "category": Array [
+        "software",
+        "other",
+      ],
+      "createdOn": undefined,
+      "description": "Automated Web Application Security Assessment and Reporting",
+      "displayName": "Qualys Web Application Scanner",
+      "function": Array [
+        "DAST",
+      ],
+      "name": "Qualys Web Application Scanner",
+      "updatedOn": undefined,
+      "version": undefined,
+    },
+    Object {
+      "_class": Array [
+        "Service",
+      ],
+      "_key": "qualys-service:vmdr",
+      "_rawData": Array [],
+      "_type": "qualys_vulnerability_manager",
+      "category": Array [
+        "software",
+        "other",
+      ],
+      "createdOn": undefined,
+      "description": "Detect, prioritize and remediate vulnerabilities, and monitor using dashboards.",
+      "displayName": "Qualys Vulnerability Manager",
+      "function": Array [
+        "vulnerability-management",
+      ],
+      "name": "Qualys Vulnerability Manager",
+      "updatedOn": undefined,
+      "version": undefined,
+    },
+  ],
+  "collectedRelationships": Array [
+    Object {
+      "_class": "HAS",
+      "_fromEntityKey": "qualys-account:local-integration-instance",
+      "_key": "qualys-account:local-integration-instance|has|qualys-service:was",
+      "_toEntityKey": "qualys-service:was",
+      "_type": "qualys_account_has_web_app_scanner",
+      "displayName": "HAS",
+    },
+    Object {
+      "_class": "HAS",
+      "_fromEntityKey": "qualys-account:local-integration-instance",
+      "_key": "qualys-account:local-integration-instance|has|qualys-service:vmdr",
+      "_toEntityKey": "qualys-service:vmdr",
+      "_type": "qualys_account_has_vulnerability_manager",
+      "displayName": "HAS",
+    },
+  ],
+  "encounteredTypes": Array [
+    "qualys_account",
+    "qualys_web_app_scanner",
+    "qualys_vulnerability_manager",
+    "qualys_account_has_web_app_scanner",
+    "qualys_account_has_vulnerability_manager",
+  ],
+  "numCollectedEntities": 3,
+  "numCollectedRelationships": 2,
+}
+`;
