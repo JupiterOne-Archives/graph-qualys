@@ -21,3 +21,10 @@ export type HostAssetTargets = {
  * Maps a QWeb Host ID to `HostAssetTargets`.
  */
 export type HostAssetTargetsMap = Record<number, HostAssetTargets>;
+
+export type Description = {
+  recommendation?: string;
+  reference?: string;
+  description?: string;
+  impact?: string;
+};

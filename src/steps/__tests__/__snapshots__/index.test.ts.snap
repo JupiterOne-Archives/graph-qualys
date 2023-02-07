@@ -12,36 +12,7 @@ Object {
         Object {
           "name": "default",
           "rawData": Object {
-            "portal": Object {
-              "Portal-Version": Object {
-                "AV2-VERSION": "0.1.0",
-                "CA-VERSION": "2.23.0.0",
-                "CERTVIEW-VERSION": "2.7.0.0-67",
-                "CLOUDVIEW-VERSION": "1.11.0.0-1",
-                "CM-VERSION": "1.30.0.0",
-                "CS-VERSION": "1.6.8.2-23",
-                "FIM-VERSION": "2.3.1.0",
-                "IOC-VERSION": "3.0.0.0-5",
-                "ITAM-VERSION": "1.2.1.1-1",
-                "MDS-VERSION": "2.15.7.0",
-                "PM-VERSION": "1.4.3.0-289",
-                "PS-VERSION": "1.2.1.0-4",
-                "PortalApplication-VERSION": "3.1.2.0-2 OFFICIAL #597 (2020-09-15T15:54:59Z)",
-                "QGS-VERSION": "1.2.0.0-6",
-                "QUESTIONNAIRE-VERSION": "2.23.1.0",
-                "QUESTIONNAIRE__V2-VERSION": "1.10.1.0",
-                "THREAT__PROTECT-VERSION": "1.2.0.0",
-                "UD-VERSION": "0.0.6",
-                "VM-VERSION": "1.0.3",
-                "WAF-VERSION": "2.12.4.0",
-                "WAS-VERSION": "6.13.1.0",
-              },
-              "QWeb-Version": Object {
-                "SCANNER-VERSION": "12.1.67-1",
-                "VULNSIGS-VERSION": "2.5.13-2",
-                "WEB-VERSION": "10.3.0.3-2",
-              },
-            },
+            "portal": undefined,
           },
         },
       ],
@@ -69,7 +40,7 @@ Object {
       ],
       "name": "Qualys Web Application Scanner",
       "updatedOn": undefined,
-      "version": "6.13.1.0",
+      "version": undefined,
     },
     Object {
       "_class": Array [
@@ -90,7 +61,7 @@ Object {
       ],
       "name": "Qualys Vulnerability Manager",
       "updatedOn": undefined,
-      "version": "1.0.3",
+      "version": undefined,
     },
   ],
   "collectedRelationships": Array [
@@ -135,36 +106,7 @@ Object {
         Object {
           "name": "default",
           "rawData": Object {
-            "portal": Object {
-              "Portal-Version": Object {
-                "AV2-VERSION": "0.1.0",
-                "CA-VERSION": "2.23.0.0",
-                "CERTVIEW-VERSION": "2.7.0.0-67",
-                "CLOUDVIEW-VERSION": "1.11.0.0-1",
-                "CM-VERSION": "1.30.0.0",
-                "CS-VERSION": "1.6.8.2-23",
-                "FIM-VERSION": "2.3.1.0",
-                "IOC-VERSION": "3.0.0.0-5",
-                "ITAM-VERSION": "1.2.1.1-1",
-                "MDS-VERSION": "2.15.7.0",
-                "PM-VERSION": "1.4.3.0-289",
-                "PS-VERSION": "1.2.1.0-4",
-                "PortalApplication-VERSION": "3.1.2.0-2 OFFICIAL #597 (2020-09-15T15:54:59Z)",
-                "QGS-VERSION": "1.2.0.0-6",
-                "QUESTIONNAIRE-VERSION": "2.23.1.0",
-                "QUESTIONNAIRE__V2-VERSION": "1.10.1.0",
-                "THREAT__PROTECT-VERSION": "1.2.0.0",
-                "UD-VERSION": "0.0.6",
-                "VM-VERSION": "1.0.3",
-                "WAF-VERSION": "2.12.4.0",
-                "WAS-VERSION": "6.13.1.0",
-              },
-              "QWeb-Version": Object {
-                "SCANNER-VERSION": "12.1.67-1",
-                "VULNSIGS-VERSION": "2.5.13-2",
-                "WEB-VERSION": "10.3.0.3-2",
-              },
-            },
+            "portal": undefined,
           },
         },
       ],
@@ -192,7 +134,7 @@ Object {
       ],
       "name": "Qualys Web Application Scanner",
       "updatedOn": undefined,
-      "version": "6.13.1.0",
+      "version": undefined,
     },
     Object {
       "_class": Array [
@@ -213,7 +155,7 @@ Object {
       ],
       "name": "Qualys Vulnerability Manager",
       "updatedOn": undefined,
-      "version": "1.0.3",
+      "version": undefined,
     },
   ],
   "collectedRelationships": Array [

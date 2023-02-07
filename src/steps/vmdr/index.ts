@@ -40,7 +40,7 @@ import {
   getGCPHostProjectId,
   getHostAssetTargets,
 } from './converters';
-import { HostAssetTargetsMap } from './types';
+import { Description, HostAssetTargetsMap } from './types';
 
 /**
  * This is the number of pages that must be traversed before producing a more
@@ -268,6 +268,33 @@ export async function fetchScannedHostFindings({
             findingKey,
           );
 
+          let desc: Description = {};
+          await apiClient.iterateVulnerabilities(
+            [detection.QID],
+            (details) => {
+              const {
+                DIAGNOSIS: description,
+                CONSEQUENCE: impact,
+                SOLUTION: recommendation,
+                CVE_LIST: cveList,
+              } = details;
+
+              desc = {
+                description,
+                impact,
+                recommendation,
+                reference: Array.isArray(cveList?.CVE)
+                  ? cveList?.CVE?.map((cve) => cve.URL).join('\n')
+                  : cveList?.CVE?.URL,
+              };
+            },
+            {
+              onRequestError: (_pageIds, err) => {
+                logger.error(err);
+              },
+            },
+          );
+
           const findingEntity = createHostFindingEntity({
             key: findingKey,
             host,
@@ -279,6 +306,7 @@ export async function fetchScannedHostFindings({
               ? detection.RESULTS?.substring(0, 300)
               : undefined,
             hostAssetTargets: hostAssetTargetsMap[host.ID!],
+            desc,
           });
           entities.push(findingEntity);
 
