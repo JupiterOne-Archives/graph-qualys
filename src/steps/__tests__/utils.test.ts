@@ -40,38 +40,38 @@ describe('normalizeNumericSeverity', () => {
 
 describe('convertNumericSeverityToString', () => {
   test('undefined', () => {
-    expect(convertNumericSeverityToString(undefined)).toBe('Informational');
+    expect(convertNumericSeverityToString(undefined)).toBe('informational');
   });
 
   test('< 0', () => {
     expect(convertNumericSeverityToString(-1 as QualyNumericSeverity)).toBe(
-      'Informational',
+      'informational',
     );
   });
 
   test('> 5', () => {
     expect(convertNumericSeverityToString(6 as QualyNumericSeverity)).toBe(
-      'Critical',
+      'critical',
     );
   });
 
   test('1', () => {
-    expect(convertNumericSeverityToString(1)).toBe('Informational');
+    expect(convertNumericSeverityToString(1)).toBe('informational');
   });
 
   test('2', () => {
-    expect(convertNumericSeverityToString(2)).toBe('Low');
+    expect(convertNumericSeverityToString(2)).toBe('low');
   });
 
   test('3', () => {
-    expect(convertNumericSeverityToString(3)).toBe('Medium');
+    expect(convertNumericSeverityToString(3)).toBe('medium');
   });
 
   test('4', () => {
-    expect(convertNumericSeverityToString(4)).toBe('High');
+    expect(convertNumericSeverityToString(4)).toBe('high');
   });
 
   test('5', () => {
-    expect(convertNumericSeverityToString(5)).toBe('Critical');
+    expect(convertNumericSeverityToString(5)).toBe('critical');
   });
 });
