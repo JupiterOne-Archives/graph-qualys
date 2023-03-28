@@ -2,7 +2,9 @@
 export QUSERNAME='QUALYS_USERNAME'
 export QHOSTNAME='qualysapi.qg2.apps.qualys.com' # Ensure this is the correct endpoint
 
-alias qcurl="curl -v -u ${QUSERNAME} -H 'X-Requested-With: Curl'"
+qcurl() {
+  curl -v -u ${QUSERNAME} -H 'X-Requested-With: Curl' "$@"
+}
 
 qcurl "https://${QHOSTNAME}/api/2.0/fo/activity_log/?action=list&username=${QUSERNAME}&truncation_limit=1"
 qcurl "https://${QHOSTNAME}/api/2.0/fo/asset/host/?action=list&details=None&truncation_limit=1"
