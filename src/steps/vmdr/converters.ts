@@ -170,6 +170,7 @@ export function createServiceScansAzureHostAssetRelationship(
       relationshipDirection: RelationshipDirection.FORWARD,
       targetFilterKeys: [['_type', '_key']],
       targetEntity: createAzureHostAssetTargetEntity(host),
+      skipTargetCreation: true,
     },
   });
 }
