@@ -43,7 +43,7 @@ questions:
   title: What Hosts were scanned by Qualys?
   description: |
     Today JupiterOne creates a mapped relationship to aws_instance hosts, 
-    qualys_discovered_hosts, and google_compute_instances.  
+    qualys_discovered_hosts, google_compute_instances and azure_vms.
     View how many hosts were identified/scanned using qualys.
   queries:
     - query: |
