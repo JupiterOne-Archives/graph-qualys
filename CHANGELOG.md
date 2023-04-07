@@ -10,7 +10,7 @@
   | --------------------- | ---------------------------------------- |
   | `qualys_host_finding` | `azureSubscriptionId`, `azureVmSourceId` |
 
-- Ingest GCP data from Host Detection to support new relationships:
+- Ingest Azure data from Host Detection to support new relationships:
 
   | Source Entity                  | Relationship | Target Entity |
   | ------------------------------ | ------------ | ------------- |
