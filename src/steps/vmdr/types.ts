@@ -15,6 +15,8 @@ export type HostAssetTargets = {
   awsAccountId?: string;
   gcpInstanceSelfLink?: string;
   gcpProjectId?: string;
+  azureSubscriptionId?: string;
+  azureVmSourceId?: string;
 };
 
 /**

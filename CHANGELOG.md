@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Changed
+
+- New properties added to resources:
+
+  | Entity                | Properties                               |
+  | --------------------- | ---------------------------------------- |
+  | `qualys_host_finding` | `azureSubscriptionId`, `azureVmSourceId` |
+
+- Ingest Azure data from Host Detection to support new relationships:
+
+  | Source Entity                  | Relationship | Target Entity |
+  | ------------------------------ | ------------ | ------------- |
+  | `qualys_vulnerability_manager` | `SCANS`      | `azure_vm`    |
+  | `qualys_host_finding`          | `HAS`        | `azure_vm`    |
+
 ## [5.13.0] - 2022-11-03
 
 ### Added

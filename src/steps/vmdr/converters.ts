@@ -22,10 +22,12 @@ import {
   normalizeNumericSeverity,
 } from '../utils';
 import {
+  ENTITY_TYPE_AZURE_HOST,
   ENTITY_TYPE_DISCOVERED_HOST,
   ENTITY_TYPE_EC2_HOST,
   ENTITY_TYPE_GCP_HOST,
   ENTITY_TYPE_HOST_FINDING,
+  MAPPED_RELATIONSHIP_TYPE_VDMR_AZURE_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_DISCOVERED_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_EC2_HOST,
   MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST,
@@ -137,6 +139,42 @@ export function createServiceScansGCPHostAssetRelationship(
   });
 }
 
+/**
+ * Creates a mapped relationship between a Service and Azure Host.
+ *
+ * The `targetEntity` is defined in a way to allow the mapper to relate to
+ * existing Azure Host entities and, when they don't already exist, allows the Azure
+ * integration to adopt the placeholder entity.
+ *
+ * @see createServiceScansDiscoveredHostAssetRelationship
+ *
+ * @param serviceEntity the Service that provides scanning of the host
+ * @param host a HostAsset that is scanned by the Service
+ */
+export function createServiceScansAzureHostAssetRelationship(
+  serviceEntity: Entity,
+  host: assets.HostAsset,
+): Relationship {
+  return createMappedRelationship({
+    // Ensure unique key based on host identity, not GCP selfLink.
+    _key: generateRelationshipKey(
+      RelationshipClass.SCANS,
+      serviceEntity,
+      generateHostAssetKey(host),
+    ),
+    _class: RelationshipClass.SCANS,
+    // TODO require _type https://github.com/JupiterOne/sdk/issues/347
+    _type: MAPPED_RELATIONSHIP_TYPE_VDMR_AZURE_HOST,
+    _mapping: {
+      sourceEntityKey: serviceEntity._key,
+      relationshipDirection: RelationshipDirection.FORWARD,
+      targetFilterKeys: [['_type', '_key']],
+      targetEntity: createAzureHostAssetTargetEntity(host),
+      skipTargetCreation: true,
+    },
+  });
+}
+
 export function createDiscoveredHostAssetTargetEntity(
   hostAsset: assets.HostAsset,
 ) {
@@ -201,6 +239,34 @@ export function createGCPHostAssetTargetEntity(hostAsset: assets.HostAsset) {
   }
 
   assignTags(hostEntity, getGCPHostAssetTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = [...allTags, ...(hostEntity.tags as string[])];
+  }
+
+  hostEntity.tags = uniq(allTags);
+
+  return markInvalidTags(hostEntity);
+}
+
+export function createAzureHostAssetTargetEntity(hostAsset: assets.HostAsset) {
+  const hostEntity: TargetEntityProperties = {
+    _class: ['Host'],
+    _type: ENTITY_TYPE_AZURE_HOST,
+    _key: getAzureHostAssetSourceId(hostAsset),
+    ...getHostAssetDetails(hostAsset),
+    ...getHostAssetIPAddresses(hostAsset),
+    ...getAzureHostAssetDetails(hostAsset),
+  };
+
+  // Bug: https://github.com/JupiterOne/sdk/issues/460
+  let allTags: string[] = [];
+
+  assignTags(hostEntity, getHostAssetTags(hostAsset));
+  if (Array.isArray(hostEntity.tags)) {
+    allTags = hostEntity.tags as string[];
+  }
+
+  assignTags(hostEntity, getAzureHostAssetTags(hostAsset));
   if (Array.isArray(hostEntity.tags)) {
     allTags = [...allTags, ...(hostEntity.tags as string[])];
   }
@@ -277,6 +343,8 @@ export function createHostFindingEntity({
         awsAccountId: hostAssetTargets?.awsAccountId,
         gcpInstanceSelfLink: hostAssetTargets?.gcpInstanceSelfLink,
         gcpProjectId: hostAssetTargets?.gcpProjectId,
+        azureVmSourceId: hostAssetTargets?.azureVmSourceId,
+        azureSubscriptionId: hostAssetTargets?.azureSubscriptionId,
         fqdn: hostAssetTargets?.fqdn,
         hostId: host.ID, // (QWebHostId) Used to map to Host.qualysAssetId (streamed mapping)
 
@@ -377,6 +445,8 @@ export function getHostAssetTargets(host: assets.HostAsset): HostAssetTargets {
     awsAccountId: getEC2HostAccountId(host),
     gcpInstanceSelfLink: getGCPHostAssetSelfLink(host),
     gcpProjectId: getGCPHostProjectId(host),
+    azureVmSourceId: getAzureHostAssetSourceId(host),
+    azureSubscriptionId: getAzureHostSubscriptionId(host),
   };
 }
 
@@ -534,6 +604,50 @@ export function getGCPHostAssetDetails(
     ...gcp,
     gcpInstanceTags: undefined, // Exclude this as it gets properly added to the entity later
   };
+}
+
+function getAzureHostAssetSource(hostAsset: assets.HostAsset) {
+  return hostAsset.sourceInfo?.list?.AzureAssetSourceSimple;
+}
+
+export function getAzureHostAssetSourceId(
+  hostAsset: assets.HostAsset,
+): string | undefined {
+  const azure = getAzureHostAssetSource(hostAsset);
+  if (azure?.subscriptionId && azure?.resourceGroupName && azure?.name) {
+    return `/subscriptions/${azure.subscriptionId}/resourcegroups/${azure.resourceGroupName}/providers/microsoft.compute/virtualmachines/${azure.name}`.toLowerCase();
+  }
+}
+
+export function getAzureHostAssetDetails(
+  hostAsset: assets.HostAsset,
+): object | undefined {
+  const azure = getAzureHostAssetSource(hostAsset);
+  if (!azure) return undefined;
+
+  return {
+    id: azure.vmId?.toString(),
+    displayName: hostAsset.name,
+    qualysFirstDiscoveredOn: parseTimePropertyValue(azure.firstDiscovered),
+    qualysLastUpdatedOn: parseTimePropertyValue(azure.lastUpdated),
+    ...azure,
+    azureVmTags: undefined, // Exclude this as it gets properly added to the entity later
+  };
+}
+
+export function getAzureHostSubscriptionId(hostAsset: assets.HostAsset) {
+  const azure = getAzureHostAssetSource(hostAsset);
+  return azure?.subscriptionId;
+}
+
+export function getAzureHostAssetTags(
+  hostAsset: assets.HostAsset,
+): { key: string; value: string }[] | undefined {
+  const azure = getAzureHostAssetSource(hostAsset);
+  const tags = toArray(azure?.azureVmTags?.tags?.list?.AzureTags);
+  return tags
+    .filter((e) => typeof e.key === 'string' && typeof e.value !== 'object')
+    .map((e) => ({ key: e.key, value: String(e.value) }));
 }
 
 /**

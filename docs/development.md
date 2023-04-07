@@ -37,7 +37,14 @@ This project also provides a [mock Qualys server](#mock-qualys-server).
 
 GCP Cloud Agent can be used to ingest detections from GCP Hosts. The
 instructions on this page can be followed to connect Qualys with a GCP Project:
-[Deploy Cloud Agent Fromt GCP](https://success.qualys.com/discussions/s/article/000005839)
+[Deploy Cloud Agent From GCP](https://success.qualys.com/discussions/s/article/000005839)
+
+## Azure Virtual Scanner
+
+Qualys Virtual Scanners can be used to ingest detections from Azure Virtual
+Machines. The instructions on this page can be followed to connect Qualys
+Virtual Scanner with Azure:
+[Deploying Scanners in Azure Platform](https://www.qualys.com/docs/qualys-securing-azure-with-qualys.pdf)
 
 ## Mock Qualys Server
 

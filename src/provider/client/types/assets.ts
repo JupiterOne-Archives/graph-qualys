@@ -175,6 +175,7 @@ export type SourceInfo = {
 export type SourceInfoList = {
   Ec2AssetSourceSimple?: Ec2AssetSourceSimple;
   GcpAssetSourceSimple?: GcpAssetSourceSimple;
+  AzureAssetSourceSimple?: AzureAssetSourceSimple;
   AssetSource?: string;
 };
 
@@ -251,6 +252,45 @@ export type GCPTags = {
 };
 
 export type GCPTag = { key: string; value: string | number | boolean };
+
+export type AzureAssetSourceSimple = {
+  type?: string;
+  assetId?: string;
+  firstDiscovered: ISODateString;
+  lastUpdated: ISODateString;
+  azureVmTags?: AzureVMTags;
+  name?: string;
+  location?: string;
+  vmSize?: string;
+  vmId?: string;
+  offer?: string;
+  state?: string[] | string;
+  publisher?: string;
+  version?: string;
+  osType?: string;
+  subnet?: string;
+  subscriptionId?: string;
+  resourceGroupName?: string;
+  macAddress?: string;
+  privateIpAddress?: string;
+};
+
+export interface AzureVMTags {
+  tags?: AzureVMTagsTags;
+}
+
+export interface AzureVMTagsTags {
+  list?: PurpleList;
+}
+
+export interface PurpleList {
+  AzureTags?: PossibleArray<AzureTag>;
+}
+
+export interface AzureTag {
+  key: string;
+  value: string | number | boolean;
+}
 
 export type HostAssetTags = {
   list?: TagsList;

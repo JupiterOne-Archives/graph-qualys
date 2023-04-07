@@ -12,10 +12,12 @@ import {
 } from '../../provider/client/types/vmpc';
 import { toArray } from '../../provider/client/util';
 import {
+  createAzureHostAssetTargetEntity,
   createDiscoveredHostAssetTargetEntity,
   createEC2HostAssetTargetEntity,
   createGCPHostAssetTargetEntity,
   createHostFindingEntity,
+  getAzureHostAssetSourceId,
   getEC2HostAccountId,
   getEC2HostAssetArn,
   getEC2HostAssetTags,
@@ -319,6 +321,83 @@ describe('createGCPHostAssetTargetEntity', () => {
           'imageId',
           'privateIpAddress',
           'publicIpAddress',
+        ],
+      },
+    });
+  });
+});
+
+describe('createAzureHostAssetTargetEntity', () => {
+  let hosts: HostAsset[];
+  beforeEach(() => {
+    const hostAssetsXml = fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          '..',
+          'test',
+          'fixtures',
+          'azure-host-assets.xml',
+        ),
+      )
+      .toString('utf8');
+
+    const hostList = xmlParser.parse(hostAssetsXml) as ListHostAssetsResponse;
+    hosts = toArray(hostList.ServiceResponse?.data?.HostAsset);
+  });
+
+  test('properties transferred', () => {
+    for (const host of hosts) {
+      const azureSourceId = getAzureHostAssetSourceId(host);
+      expect(createAzureHostAssetTargetEntity(host)).toMatchGraphObjectSchema({
+        _class: ['Host'],
+        schema: {
+          properties: {
+            _key: { const: azureSourceId },
+            _type: { const: 'azure_vm' },
+            subscriptionId: { type: 'string' },
+            resourceGroupName: { type: 'string' },
+            vmId: { type: 'string' },
+            vmSize: { type: 'string' },
+            qualysFirstDiscoveredOn: { type: 'number' },
+            qualysLastUpdatedOn: { type: 'number' },
+            state: { type: 'string' },
+            hostname: { type: 'string' },
+            macAddress: { type: 'string' },
+            publicIpAddress: { type: 'string' },
+            privateIpAddress: { type: 'string' },
+            name: { type: 'string' },
+            subnet: { type: 'string' },
+            type: { type: 'string' },
+            displayName: { type: 'string' },
+          },
+        },
+      });
+    }
+  });
+
+  test('required properties', () => {
+    const chivi = createAzureHostAssetTargetEntity(hosts[0]);
+    expect(chivi).toMatchGraphObjectSchema({
+      _class: ['Host'],
+      schema: {
+        required: [
+          'subscriptionId',
+          'resourceGroupName',
+          'vmId',
+          'vmSize',
+          'qualysFirstDiscoveredOn',
+          'qualysLastUpdatedOn',
+          'state',
+          'hostname',
+          'macAddress',
+          'privateIpAddress',
+          'name',
+          'subnet',
+          'type',
+          'displayName',
         ],
       },
     });

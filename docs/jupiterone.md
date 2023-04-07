@@ -151,6 +151,7 @@ The following mapped relationships are created:
 | Source Entity `_type`          | Relationship `_class` | Target Entity `_type`       | Direction |
 | ------------------------------ | --------------------- | --------------------------- | --------- |
 | `qualys_vulnerability_manager` | **SCANS**             | `*aws_instance*`            | FORWARD   |
+| `qualys_vulnerability_manager` | **SCANS**             | `*azure_vm*`                | FORWARD   |
 | `qualys_vulnerability_manager` | **SCANS**             | `*discovered_host*`         | FORWARD   |
 | `qualys_vulnerability_manager` | **SCANS**             | `*google_compute_instance*` | FORWARD   |
 

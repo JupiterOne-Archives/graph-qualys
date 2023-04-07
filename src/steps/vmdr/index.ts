@@ -33,9 +33,11 @@ import {
 } from './constants';
 import {
   createHostFindingEntity,
+  createServiceScansAzureHostAssetRelationship,
   createServiceScansDiscoveredHostAssetRelationship,
   createServiceScansEC2HostAssetRelationship,
   createServiceScansGCPHostAssetRelationship,
+  getAzureHostAssetSourceId,
   getEC2HostAssetArn,
   getGCPHostProjectId,
   getHostAssetTargets,
@@ -141,6 +143,10 @@ export async function fetchScannedHostDetails({
       } else if (getGCPHostProjectId(host)) {
         await jobState.addRelationship(
           createServiceScansGCPHostAssetRelationship(vdmrServiceEntity, host),
+        );
+      } else if (getAzureHostAssetSourceId(host)) {
+        await jobState.addRelationship(
+          createServiceScansAzureHostAssetRelationship(vdmrServiceEntity, host),
         );
       } else {
         await jobState.addRelationship(
@@ -405,6 +411,7 @@ export const hostDetectionSteps: IntegrationStep<QualysIntegrationConfig>[] = [
       VmdrMappedRelationships.SERVICE_DISCOVERED_HOST,
       VmdrMappedRelationships.SERVICE_EC2_HOST,
       VmdrMappedRelationships.SERVICE_GCP_HOST,
+      VmdrMappedRelationships.SERVICE_AZURE_HOST,
     ],
     relationships: [],
     dependsOn: [STEP_FETCH_SERVICES, STEP_FETCH_SCANNED_HOST_IDS],
