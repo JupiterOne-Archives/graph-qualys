@@ -29,6 +29,7 @@ export const ENTITY_TYPE_HOST_FINDING = 'qualys_host_finding';
 export const ENTITY_TYPE_DISCOVERED_HOST = 'discovered_host';
 export const ENTITY_TYPE_EC2_HOST = 'aws_instance';
 export const ENTITY_TYPE_GCP_HOST = 'google_compute_instance';
+export const ENTITY_TYPE_AZURE_HOST = 'azure_vm';
 
 export const RELATIONSHIP_TYPE_SERVICE_HOST_FINDING = generateRelationshipType(
   RelationshipClass.IDENTIFIED,
@@ -51,6 +52,12 @@ export const MAPPED_RELATIONSHIP_TYPE_VDMR_GCP_HOST = generateRelationshipType(
   RelationshipClass.SCANS,
   ENTITY_TYPE_SERVICE_VMDR,
   ENTITY_TYPE_GCP_HOST,
+);
+
+export const MAPPED_RELATIONSHIP_TYPE_VDMR_AZURE_HOST = generateRelationshipType(
+  RelationshipClass.SCANS,
+  ENTITY_TYPE_SERVICE_VMDR,
+  ENTITY_TYPE_AZURE_HOST,
 );
 
 export const VmdrEntities: Record<string, StepEntityMetadata> = {
@@ -110,6 +117,17 @@ export const VmdrMappedRelationships: Record<
     sourceType: ENTITY_TYPE_SERVICE_VMDR,
     direction: RelationshipDirection.FORWARD,
     targetType: ENTITY_TYPE_GCP_HOST,
+    partial: true,
+    indexMetadata: {
+      enabled: false,
+    },
+  },
+  SERVICE_AZURE_HOST: {
+    _type: MAPPED_RELATIONSHIP_TYPE_VDMR_AZURE_HOST,
+    _class: RelationshipClass.SCANS,
+    sourceType: ENTITY_TYPE_SERVICE_VMDR,
+    direction: RelationshipDirection.FORWARD,
+    targetType: ENTITY_TYPE_AZURE_HOST,
     partial: true,
     indexMetadata: {
       enabled: false,

@@ -33,9 +33,11 @@ import {
 } from './constants';
 import {
   createHostFindingEntity,
+  createServiceScansAzureHostAssetRelationship,
   createServiceScansDiscoveredHostAssetRelationship,
   createServiceScansEC2HostAssetRelationship,
   createServiceScansGCPHostAssetRelationship,
+  getAzureHostAssetSourceId,
   getEC2HostAssetArn,
   getGCPHostProjectId,
   getHostAssetTargets,
@@ -141,6 +143,10 @@ export async function fetchScannedHostDetails({
       } else if (getGCPHostProjectId(host)) {
         await jobState.addRelationship(
           createServiceScansGCPHostAssetRelationship(vdmrServiceEntity, host),
+        );
+      } else if (getAzureHostAssetSourceId(host)) {
+        await jobState.addRelationship(
+          createServiceScansAzureHostAssetRelationship(vdmrServiceEntity, host),
         );
       } else {
         await jobState.addRelationship(
