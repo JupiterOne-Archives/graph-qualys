@@ -2,6 +2,10 @@
   "name": "@jupiterone/graph-qualys",
   "version": "5.14.0",
   "description": "Qualys integration for JupiterOne",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JupiterOne/graph-qualys"
+  },
   "license": "MPL-2.0",
   "main": "src/index.js",
   "types": "src/index.d.ts",
