@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [5.14.1] - 2023-04-07
+
+### Changed
+
+- INT-9960: add tag based detections filtering
+
 ## [5.14.0] - 2023-04-07
 
 ### Changed
