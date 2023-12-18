@@ -8,7 +8,8 @@ export type ListHostDetectionsFilterInputParameter =
   | 'detection_updated_since'
   | 'detection_updated_before'
   | 'severities'
-  | 'status';
+  | 'status'
+  | 'tag_set_include';
 
 export type ListHostDetectionsFilters = Partial<
   Record<

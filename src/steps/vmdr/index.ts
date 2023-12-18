@@ -338,11 +338,13 @@ export async function fetchScannedHostFindings({
     },
     {
       includeResults: !!config.vmdrFindingResultQidNumbers.length,
+      useIncludeOnlyTags: !!config.includeOnlyDetectionTags?.length,
       filters: {
         detection_updated_since: config.minFindingsSinceISODate,
         detection_updated_before: config.maxFindingsSinceISODate,
         severities: config.vmdrFindingSeverityNumbers,
         status: 'New,Fixed,Active,Re-Opened',
+        tag_set_include: config.includeOnlyDetectionTags,
       },
       onRequestError(pageIds, err) {
         totalPageErrors++;
