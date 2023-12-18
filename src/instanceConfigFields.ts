@@ -180,6 +180,9 @@ const instanceConfigFields: IntegrationInstanceConfigFieldMap<UserIntegrationCon
   webAppScanApplicationIDFilter: {
     type: 'string',
   },
+  includeOnlyDetectionTags: {
+    type: 'string',
+  },
 };
 
 export default instanceConfigFields;
