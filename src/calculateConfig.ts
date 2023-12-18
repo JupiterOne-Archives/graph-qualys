@@ -13,6 +13,7 @@ import {
   DEFAULT_VMDR_FINDING_RESULT_QIDS,
   VALID_VMDR_FINDING_TYPES,
   DEFAULT_WEB_APP_SCAN_APPLICATION_ID_FILTER,
+  DEFAULT_INCLUDE_ONLY_DETECTION_TAGS,
 } from './constants';
 import { CalculatedIntegrationConfig, UserIntegrationConfig } from './types';
 
@@ -83,6 +84,12 @@ export function calculateConfig({
     defaultValue: DEFAULT_WEB_APP_SCAN_APPLICATION_ID_FILTER,
   });
 
+  const includeOnlyDetectionTags = readPropertyAsStringArrayFromEnvOrConfig({
+    config,
+    propertyName: 'includeOnlyDetectionTags',
+    defaultValue: DEFAULT_INCLUDE_ONLY_DETECTION_TAGS,
+  });
+
   return {
     ...config,
 
@@ -99,6 +106,8 @@ export function calculateConfig({
     vmdrFindingResultQidNumbers,
 
     webAppScanApplicationIDs,
+
+    includeOnlyDetectionTags,
   };
 }
 

@@ -189,6 +189,7 @@ export type IterateHostDetectionsOptions = {
    * the XML payload.
    */
   includeResults?: boolean;
+  useIncludeOnlyTags?: boolean;
 
   // TODO make this a required argument and update tests
   onRequestError?: (pageIds: number[], err: Error) => void;
@@ -794,6 +795,13 @@ export class QualysAPIClient {
     const fetchHostDetections = async (
       ids: QWebHostId[],
     ): Promise<vmpc.DetectionHost[]> => {
+      const includeOnlyTags = options?.useIncludeOnlyTags
+        ? {
+            use_tags: '1',
+            tag_set_by: 'name',
+          }
+        : {};
+
       const params = new URLSearchParams({
         ...filters,
         action: 'list',
@@ -803,6 +811,7 @@ export class QualysAPIClient {
         output_format: 'XML',
         truncation_limit: String(ids.length),
         ids: ids.map(String),
+        ...includeOnlyTags,
       });
 
       const response = await this.executeAuthenticatedAPIRequest(

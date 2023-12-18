@@ -48,6 +48,8 @@ export type UserIntegrationConfig = {
   ingestWebAppScans: boolean;
 
   webAppScanApplicationIDFilter: string | string[];
+
+  includeOnlyDetectionTags?: string | string[];
 };
 
 export type CalculatedIntegrationConfig = UserIntegrationConfig & {
@@ -97,6 +99,8 @@ export type CalculatedIntegrationConfig = UserIntegrationConfig & {
   vmdrFindingResultQidNumbers: number[];
 
   webAppScanApplicationIDs: number[];
+
+  includeOnlyDetectionTags?: string[];
 };
 
 /**
