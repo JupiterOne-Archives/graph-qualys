@@ -354,6 +354,7 @@ export async function fetchScannedHostFindings({
         );
       },
     },
+    logger,
   );
 
   logger.info(
