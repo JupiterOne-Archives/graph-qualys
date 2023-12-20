@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid';
 
 import {
   IntegrationError,
+  IntegrationLogger,
   IntegrationProviderAPIError,
   IntegrationProviderAuthenticationError,
   IntegrationProviderAuthorizationError,
@@ -779,6 +780,7 @@ export class QualysAPIClient {
       detections: vmpc.HostDetection[];
     }>,
     options?: IterateHostDetectionsOptions,
+    logger?: IntegrationLogger,
   ): Promise<void> {
     const endpoint = '/api/2.0/fo/asset/host/vm/detection/';
 
@@ -813,6 +815,10 @@ export class QualysAPIClient {
         ids: ids.map(String),
         ...includeOnlyTags,
       });
+
+      if (logger) {
+        logger.info(`Fetching detections with parameters: ${params}`);
+      }
 
       const response = await this.executeAuthenticatedAPIRequest(
         this.qualysUrl(endpoint),
